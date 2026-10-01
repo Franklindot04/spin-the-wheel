@@ -6,6 +6,18 @@ export type WheelEntry = {
   color: string;
   question?: string;
   answer?: string;
+
+  // Individual slice appearance
+  textColor?: string;
+  fontFamily?: string;
+  image?: string;
+
+  // Slice behavior
+  weight?: number;
+  hidden?: boolean;
+
+  // Winner customization
+  winnerSound?: string;
 };
 
 type WheelProps = {
@@ -47,6 +59,7 @@ function describeArc(
     radius,
     endAngle,
   );
+
   const end = polarToCartesian(
     center,
     radius,
@@ -54,7 +67,9 @@ function describeArc(
   );
 
   const largeArcFlag =
-    endAngle - startAngle <= 180 ? "0" : "1";
+    endAngle - startAngle <= 180
+      ? "0"
+      : "1";
 
   return [
     `M ${center} ${center}`,
@@ -75,9 +90,14 @@ export default function Wheel({
 }: WheelProps) {
   const center = 180;
   const radius = 168;
+
+  const visibleEntries = entries.filter(
+    (entry) => !entry.hidden,
+  );
+
   const segmentAngle =
-    entries.length > 0
-      ? 360 / entries.length
+    visibleEntries.length > 0
+      ? 360 / visibleEntries.length
       : 360;
 
   return (
@@ -114,58 +134,82 @@ export default function Wheel({
               strokeWidth="7"
             />
 
-            {entries.map((entry, index) => {
-              const startAngle =
-                -90 + index * segmentAngle;
-              const endAngle =
-                startAngle + segmentAngle;
-              const labelAngle =
-                startAngle + segmentAngle / 2;
-              const labelRadius =
-                entries.length <= 2
-                  ? 88
-                  : entries.length <= 4
-                    ? 94
-                    : 104;
-              const labelPosition =
-                polarToCartesian(
-                  center,
-                  labelRadius,
-                  labelAngle,
-                );
+            {visibleEntries.map(
+              (entry, index) => {
+                const startAngle =
+                  -90 +
+                  index * segmentAngle;
 
-              return (
-                <g key={entry.id}>
-                  <path
-                    d={describeArc(
-                      center,
-                      radius,
-                      startAngle,
-                      endAngle,
-                    )}
-                    fill={entry.color}
-                    stroke="white"
-                    strokeWidth="2"
-                  />
+                const endAngle =
+                  startAngle +
+                  segmentAngle;
 
-                  <g
-                    transform={`translate(${labelPosition.x} ${labelPosition.y}) rotate(${labelAngle + 90})`}
-                  >
-                    <text
-                      x="0"
-                      y="0"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      className="fill-slate-900 text-[10px] font-semibold"
+                const labelAngle =
+                  startAngle +
+                  segmentAngle / 2;
+
+                const labelRadius =
+                  visibleEntries.length <= 2
+                    ? 88
+                    : visibleEntries.length <= 4
+                      ? 94
+                      : 104;
+
+                const labelPosition =
+                  polarToCartesian(
+                    center,
+                    labelRadius,
+                    labelAngle,
+                  );
+
+                const label =
+                  entry.label.length > 22
+                    ? `${entry.label.slice(
+                        0,
+                        22,
+                      )}…`
+                    : entry.label;
+
+                return (
+                  <g key={entry.id}>
+                    <path
+                      d={describeArc(
+                        center,
+                        radius,
+                        startAngle,
+                        endAngle,
+                      )}
+                      fill={entry.color}
+                      stroke="white"
+                      strokeWidth="2"
+                    />
+
+                    <g
+                      transform={`translate(${labelPosition.x} ${labelPosition.y}) rotate(${labelAngle + 90})`}
                     >
-                      {entry.label.length > 22
-                        ? `${entry.label.slice(0, 22)}…`
-                        : entry.label}
-                    </text>
+                      <text
+                        x="0"
+                        y="0"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill={
+                          entry.textColor ||
+                          "#0f172a"
+                        }
+                        style={{
+                          fontFamily:
+                            entry.fontFamily ||
+                            "Arial, Helvetica, sans-serif",
+                        }}
+                        className="text-[10px] font-semibold"
+                      >
+                        {label}
+                      </text>
+                    </g>
                   </g>
-                </g>
-              );
-            })}
+                );
+              },
+            )}
 
             <circle
               cx={center}
@@ -187,7 +231,11 @@ export default function Wheel({
       <button
         type="button"
         onClick={onSpin}
-        disabled={spinning || !canSpin || entries.length < 2}
+        disabled={
+          spinning ||
+          !canSpin ||
+          visibleEntries.length < 2
+        }
         className={`mt-6 rounded-full px-10 py-4 text-base font-semibold text-white shadow-lg transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none ${accentClass} ${accentHoverClass}`}
       >
         {spinning ? "Spinning…" : "Spin"}
