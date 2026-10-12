@@ -401,7 +401,7 @@ export default function SettingsPanel({
           </button>
         </div>
 
-        <div className="mt-5 flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1">
+        <div className="mt-5 flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-white p-1">
           {TABS.map((tab) => {
             const active =
               activeTab === tab.id;
@@ -413,7 +413,7 @@ export default function SettingsPanel({
                 onClick={() =>
                   setActiveTab(tab.id)
                 }
-                className={`whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-bold transition ${
+                className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition sm:px-4 sm:py-2.5 ${
                   active
                     ? `${accentClass} text-white`
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"

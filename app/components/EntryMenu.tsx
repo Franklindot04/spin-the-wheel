@@ -669,7 +669,7 @@ export default function EntryMenu({
             entry.label ||
             "entry"
           }`}
-          className={`absolute right-0 top-10 z-50 w-72 overflow-hidden rounded-xl border ${theme.borderClass} ${theme.surfaceClass} shadow-xl ring-1 ring-white/10`}
+          className={`absolute right-0 top-10 z-50 w-72 max-w-[calc(100vw-6.5rem)] overflow-hidden rounded-xl border ${theme.borderClass} ${theme.surfaceClass} shadow-xl ring-1 ring-white/10`}
         >
           <div
             className={`border-b ${theme.borderClass} ${theme.subtleSurfaceClass} px-3 py-2.5`}
