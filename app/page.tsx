@@ -261,6 +261,10 @@ export default function Home() {
         }));
         if (mode === "standard") {
             setStandardEntries(updated);
+            if (shouldHide) {
+                setSelectedEntry(null);
+                setShowAnswer(false);
+            }
         }
         else {
             setQuizEntries(updated);
@@ -761,7 +765,7 @@ export default function Home() {
             "--wheel-accent-hover": theme.accentHoverHex,
         } as CSSProperties}>
       <header className={`border-b ${headerBorderClass} ${headerSurfaceClass}`}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h1 className={`truncate text-xl font-bold tracking-tight ${headerTextClass}`} style={{ color: headerTextColor }}>
@@ -786,8 +790,8 @@ export default function Home() {
               </button>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label="Select wheel" className={`rounded-lg border px-3 py-2 text-sm font-medium outline-none transition ${theme.controlClass} ${headerHoverClass} focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50`}>
+          <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:flex-nowrap">
+            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label="Select wheel" className={`max-w-[9rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none transition md:max-w-none ${theme.controlClass} ${headerHoverClass} focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50`}>
               {appData.wheels.map((wheel) => (<option key={wheel.id} value={wheel.id}>
                     {wheel.name}
                   </option>))}
@@ -802,13 +806,13 @@ export default function Home() {
             <button type="button" onClick={renameActiveWheel} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
               Rename
             </button>
-            <button type="button" onClick={() => setSettingsOpen(true)} disabled={spinning} className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
+            <button type="button" onClick={() => setSettingsOpen(true)} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
               Settings
             </button>
           </div>
         </div>
       </header>
-      <div className="mx-auto max-w-7xl px-6 pt-6">
+      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
         <div className={`flex w-fit rounded-xl border p-1 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
           <button type="button" onClick={() => changeMode("standard")} disabled={spinning} className={`rounded-lg px-5 py-2 text-sm font-medium transition ${mode === "standard"
             ? `${actionAccentClass} text-white`
@@ -822,11 +826,11 @@ export default function Home() {
           </button>
         </div>
       </div>
-      <section className="mx-auto grid max-w-7xl gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className={`rounded-2xl border p-8 shadow-sm transition-colors ${theme.borderClass} ${theme.surfaceClass}`}>
+      <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className={`min-w-0 rounded-2xl border p-4 shadow-sm transition-colors sm:p-8 ${theme.borderClass} ${theme.surfaceClass}`}>
           <div className={mode === "quiz"
-            ? "flex min-h-[560px] items-center justify-center"
-            : "flex min-h-[620px] items-center justify-center"}>
+            ? "flex min-h-0 items-center justify-center sm:min-h-[560px]"
+            : "flex min-h-0 items-center justify-center sm:min-h-[620px]"}>
             <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} canSpin={spinAllowed} spinDuration={activeWheel
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
@@ -851,14 +855,14 @@ export default function Home() {
               <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
                 And the question is...
               </p>
-              <p className={`mt-2 text-xl font-bold ${theme.textPrimaryClass}`}>
+              <p className={`mt-2 break-words text-xl font-bold ${theme.textPrimaryClass}`}>
                 {selectedEntry.label}
               </p>
               <div className={`mt-4 rounded-xl p-5 text-left ${theme.subtleSurfaceClass}`}>
                 <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
                   Your question
                 </p>
-                <p className={`mt-2 text-base leading-7 ${theme.textPrimaryClass}`}>
+                <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
                   {selectedEntry.question}
                 </p>
               </div>
@@ -866,7 +870,7 @@ export default function Home() {
                   <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
                     The answer
                   </p>
-                  <p className={`mt-2 text-base leading-7 ${theme.textPrimaryClass}`}>
+                  <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
                     {selectedEntry.answer}
                   </p>
                 </div>)}
@@ -887,10 +891,14 @@ export default function Home() {
             quizStarted &&
             !selectedEntry && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-5 text-center ${theme.borderClass} ${theme.subtleSurfaceClass}`}>
               <p className={`text-sm font-semibold ${theme.textPrimaryClass}`}>
-                Alright... give it a spin 😉
+                {spinning
+                ? "Spinning... 🎡"
+                : "Alright... give it a spin 😉"}
               </p>
               <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
-                The question is waiting.
+                {spinning
+                ? "The question will appear when the wheel stops."
+                : "The question is waiting."}
               </p>
             </div>)}
           {mode === "standard" &&
@@ -898,12 +906,12 @@ export default function Home() {
               <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
                 Result
               </p>
-              <p className={`mt-2 text-2xl font-bold ${theme.textPrimaryClass}`}>
+              <p className={`mt-2 break-words text-2xl font-bold ${theme.textPrimaryClass}`}>
                 {selectedEntry.label}
               </p>
             </div>)}
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
             <button type="button" onClick={() => setHistoryOpen(false)} className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition ${!historyOpen
             ? `${actionAccentClass} text-white shadow-sm`
@@ -1070,8 +1078,8 @@ export default function Home() {
             </div>)}
         </div>
       </section>
-      <footer className={`mx-auto flex max-w-7xl flex-col gap-2 border-t px-6 py-4 text-xs ${theme.borderClass} ${theme.textMutedClass} sm:flex-row sm:items-center sm:justify-between`}>
-        <span>
+      <footer className={`mx-auto flex max-w-7xl flex-col gap-2 border-t px-4 py-4 text-xs sm:px-6 ${theme.borderClass} ${theme.textMutedClass} sm:flex-row sm:items-center sm:justify-between`}>
+        <span className="min-w-0 break-words">
           {activeWheel.name}
         </span>
         <span>
