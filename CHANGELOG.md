@@ -9,11 +9,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Changed
 
 - The header title is larger and bolder, and the edit icons beside the title and description are larger with a bigger tap target.
+- The entry name input has its own line on small screens, so longer names fit.
+- Fullscreen and the wheel controls (size, mute, fullscreen) follow the selected theme.
 
 ### Fixed
 
 - The "No visible entries" overlay on the wheel now follows the selected theme.
 - The "..." menu of a hidden entry is no longer drawn translucent behind the rows below it.
+- The sidebar tab row wraps on narrow screens instead of clipping the Import button.
+- The Settings dialog keeps its Done button visible, and scrolling no longer moves the page behind it.
+- The Delete entry text in the entry menu has better contrast in every theme.
+- The entry menu's Duplicate and Delete buttons include the entry name in their accessible labels.
+- Icon buttons (wheel size, mute, fullscreen, header edit icons, and the sidebar eye, export and import) show a visible focus ring when reached by keyboard.
+- Clone and remote commands in the README and contributing guide are plain URLs that can be copied.
 
 ## [2.0.2] - 2026-10-14
 
