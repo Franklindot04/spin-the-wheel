@@ -201,18 +201,19 @@ export default function EntryList({
             const labelLength =
               entry.label.length;
 
+            const hiddenContentClass =
+              entry.hidden
+                ? "opacity-65"
+                : "";
+
             return (
               <div
                 key={entry.id}
-                className={`rounded-xl border p-3 transition ${
-                  entry.hidden
-                    ? `${theme.borderClass} ${theme.subtleSurfaceClass} opacity-65`
-                    : `${theme.borderClass} ${theme.subtleSurfaceClass}`
-                }`}
+                className={`rounded-xl border p-3 transition ${theme.borderClass} ${theme.subtleSurfaceClass}`}
               >
                 <div className="flex items-start gap-2">
                   <span
-                    className={`mt-2 h-3 w-3 shrink-0 rounded-full border shadow-sm ${theme.borderClass}`}
+                    className={`mt-2 h-3 w-3 shrink-0 rounded-full border shadow-sm ${theme.borderClass} ${hiddenContentClass}`}
                     style={{
                       backgroundColor:
                         entry.color,
@@ -220,7 +221,9 @@ export default function EntryList({
                     aria-hidden="true"
                   />
 
-                  <div className="min-w-0 flex-1">
+                  <div
+                    className={`min-w-0 flex-1 ${hiddenContentClass}`}
+                  >
                     <input
                       value={
                         entry.label
@@ -365,7 +368,7 @@ export default function EntryList({
                 </div>
 
                 <div
-                  className={`mt-2 flex items-center justify-between gap-3 border-t pt-2 ${theme.borderClass}`}
+                  className={`mt-2 flex items-center justify-between gap-3 border-t pt-2 ${theme.borderClass} ${hiddenContentClass}`}
                 >
                   <span
                     className={`text-[10px] font-semibold uppercase tracking-wide ${theme.textMutedClass}`}
@@ -418,7 +421,7 @@ export default function EntryList({
                 {mode ===
                   "quiz" && (
                   <div
-                    className={`mt-3 space-y-2 border-t pt-3 ${theme.borderClass}`}
+                    className={`mt-3 space-y-2 border-t pt-3 ${theme.borderClass} ${hiddenContentClass}`}
                   >
                     <textarea
                       value={
