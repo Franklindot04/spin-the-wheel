@@ -17,7 +17,7 @@ export default function Home() {
     const activeWheel = appData.wheels.find((wheel) => wheel.id ===
         appData.activeWheelId) ??
         appData.wheels[0];
-    const [remainingQuizEntries, setRemainingQuizEntries,] = useState<WheelEntry[]>([]);
+    const [askedQuizIds, setAskedQuizIds,] = useState<string[]>([]);
     const [quizStarted, setQuizStarted,] = useState(false);
     const [rotation, setRotation,] = useState(0);
     const [spinning, setSpinning,] = useState(false);
@@ -55,7 +55,7 @@ export default function Home() {
         setRotation(0);
         setSelectedEntry(null);
         setShowAnswer(false);
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setHistoryOpen(false);
     }
@@ -76,7 +76,7 @@ export default function Home() {
         setRotation(0);
         setSelectedEntry(null);
         setShowAnswer(false);
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setHistoryOpen(false);
     }
@@ -139,7 +139,7 @@ export default function Home() {
         setRotation(0);
         setSelectedEntry(null);
         setShowAnswer(false);
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setHistoryOpen(false);
     }
@@ -272,6 +272,7 @@ export default function Home() {
     }
     const allEntriesHidden = currentSetupEntries.length > 0 &&
         currentSetupEntries.every((entry) => entry.hidden);
+    const remainingQuizEntries = quizEntries.filter((entry) => !askedQuizIds.includes(entry.id));
     const remainingVisibleQuizCount = remainingQuizEntries.filter((entry) => !entry.hidden).length;
     const minSpinEntries = mode === "quiz"
         ? 1
@@ -294,6 +295,10 @@ export default function Home() {
             0 &&
         selectedEntry !== null;
     function addEntry() {
+        if (mode === "quiz" &&
+            spinning) {
+            return;
+        }
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
@@ -328,6 +333,10 @@ export default function Home() {
         setShowAnswer(false);
     }
     function updateEntry(id: string, changes: Partial<WheelEntry>) {
+        if (mode === "quiz" &&
+            spinning) {
+            return;
+        }
         if (mode === "standard") {
             setStandardEntries((current) => current.map((entry) => entry.id === id
                 ? {
@@ -348,6 +357,10 @@ export default function Home() {
         setShowAnswer(false);
     }
     function duplicateEntry(id: string) {
+        if (mode === "quiz" &&
+            spinning) {
+            return;
+        }
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
@@ -376,6 +389,10 @@ export default function Home() {
         setShowAnswer(false);
     }
     function deleteEntry(id: string) {
+        if (mode === "quiz" &&
+            spinning) {
+            return;
+        }
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
@@ -399,7 +416,7 @@ export default function Home() {
         setSelectedEntry(null);
         setShowAnswer(false);
         setQuizStarted(false);
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setRotation(0);
         setHistoryOpen(false);
     }
@@ -408,7 +425,7 @@ export default function Home() {
             spinning) {
             return;
         }
-        setRemainingQuizEntries([...quizEntries]);
+        setAskedQuizIds([]);
         setSelectedEntry(null);
         setShowAnswer(false);
         setRotation(0);
@@ -418,7 +435,7 @@ export default function Home() {
         if (spinning) {
             return;
         }
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setSelectedEntry(null);
         setShowAnswer(false);
         setQuizStarted(false);
@@ -594,8 +611,10 @@ export default function Home() {
             setSpinning(false);
             addHistoryItem(finalEntry, mode);
             if (mode === "quiz") {
-                setRemainingQuizEntries((current) => current.filter((entry) => entry.id !==
-                    finalEntry.id));
+                setAskedQuizIds((current) => [
+                    ...current,
+                    finalEntry.id,
+                ]);
             }
         }, spinDuration * 1000);
     }
@@ -621,7 +640,7 @@ export default function Home() {
             standardHistory: [],
             quizHistory: [],
         });
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setSelectedEntry(null);
         setShowAnswer(false);
@@ -677,7 +696,7 @@ export default function Home() {
         }
         setAppData(pendingImport);
         setMode("standard");
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setSelectedEntry(null);
         setShowAnswer(false);
