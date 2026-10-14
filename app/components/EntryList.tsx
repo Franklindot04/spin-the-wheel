@@ -211,7 +211,7 @@ export default function EntryList({
                 key={entry.id}
                 className={`rounded-xl border p-3 transition ${theme.borderClass} ${theme.subtleSurfaceClass}`}
               >
-                <div className="flex items-start gap-2">
+                <div className="flex flex-wrap items-start gap-2 sm:flex-nowrap">
                   <span
                     className={`mt-2 h-3 w-3 shrink-0 rounded-full border shadow-sm ${theme.borderClass} ${hiddenContentClass}`}
                     style={{
@@ -222,7 +222,7 @@ export default function EntryList({
                   />
 
                   <div
-                    className={`min-w-0 flex-1 ${hiddenContentClass}`}
+                    className={`order-first min-w-full flex-1 sm:order-none sm:min-w-0 ${hiddenContentClass}`}
                   >
                     <input
                       value={
@@ -272,7 +272,7 @@ export default function EntryList({
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-1">
+                  <div className="ml-auto flex shrink-0 items-center gap-1">
                     <button
                       type="button"
                       onClick={() =>
