@@ -305,7 +305,7 @@ export default function Home() {
             remainingQuizEntries.length === 0);
     function addEntry() {
         if (mode === "quiz" &&
-            spinning) {
+            quizStarted) {
             return;
         }
         const entries = mode === "standard"
@@ -369,7 +369,7 @@ export default function Home() {
     }
     function duplicateEntry(id: string) {
         if (mode === "quiz" &&
-            spinning) {
+            quizStarted) {
             return;
         }
         const entries = mode === "standard"
@@ -1000,7 +1000,8 @@ export default function Home() {
             <input ref={importInputRef} type="file" accept=".json,application/json" onChange={handleImportFile} className="hidden"/>
           </div>
           {!historyOpen && (<>
-              <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+              <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
+                quizStarted} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button type="button" onClick={resetWheelToDefaults} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries
