@@ -255,10 +255,24 @@ export default function Home() {
             return;
         }
         const shouldHide = entries.some((entry) => !entry.hidden);
-        const updated = entries.map((entry) => ({
-            ...entry,
-            hidden: shouldHide,
-        }));
+        const restoreMarkedOnly = !shouldHide &&
+            entries.some((entry) => entry.hiddenByHideAll === true);
+        const updated = entries.map((entry) => shouldHide
+            ? entry.hidden
+                ? entry
+                : {
+                    ...entry,
+                    hidden: true,
+                    hiddenByHideAll: true,
+                }
+            : restoreMarkedOnly &&
+                entry.hiddenByHideAll !== true
+                ? entry
+                : {
+                    ...entry,
+                    hidden: false,
+                    hiddenByHideAll: undefined,
+                });
         if (mode === "standard") {
             setStandardEntries(updated);
             if (shouldHide) {
