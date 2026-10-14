@@ -236,9 +236,12 @@ export default function Home() {
                 closeSettings();
             }
         }
+        const previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
         window.addEventListener("keydown", handleKeyDown);
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
+            document.body.style.overflow = previousBodyOverflow;
         };
     }, [settingsOpen]);
     const currentSetupEntries = mode === "standard"
@@ -1165,8 +1168,10 @@ export default function Home() {
                     closeSettings();
                 }
             }}>
-          <div className={`max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl shadow-2xl ${theme.surfaceClass}`}>
-            <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={resetWheelToDefaults} accentClass={actionAccentClass}/>
+          <div className={`flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl shadow-2xl ${theme.surfaceClass}`}>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={resetWheelToDefaults} accentClass={actionAccentClass}/>
+            </div>
             <div className={`border-t px-5 py-4 ${theme.borderClass} ${theme.surfaceClass}`}>
               <button type="button" onClick={closeSettings} className={`w-full rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
                 Done
