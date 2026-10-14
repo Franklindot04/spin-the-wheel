@@ -975,7 +975,7 @@ export default function Home() {
             </div>)}
         </div>
         <div className="min-w-0">
-          <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => setHistoryOpen(false)} className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition ${!historyOpen
             ? `${actionAccentClass} text-white shadow-sm`
             : `${theme.borderClass} ${theme.surfaceClass} ${theme.textMutedClass} ${theme.controlHoverClass}`}`} aria-label="Show entries" title="Entries">
