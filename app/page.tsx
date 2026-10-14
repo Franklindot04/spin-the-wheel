@@ -293,16 +293,20 @@ export default function Home() {
                 ]
                 : []
         : currentSetupEntries;
-    const quizReady = quizEntries.length >= 2 &&
+    const quizEntriesComplete = quizEntries.length >= 2 &&
         quizEntries.every((entry) => Boolean(entry.question?.trim()) &&
             Boolean(entry.answer?.trim()));
+    const enoughVisibleQuizEntries = quizEntries.filter((entry) => !entry.hidden).length >= 2;
+    const quizReady = quizEntriesComplete &&
+        enoughVisibleQuizEntries;
     const quizComplete = mode === "quiz" &&
         quizStarted &&
         !spinning &&
-        remainingVisibleQuizCount ===
-            0 &&
-        (displayedQuizEntry !== null ||
-            remainingQuizEntries.length === 0);
+        remainingQuizEntries.length === 0;
+    const remainingQuizEntriesHidden = mode === "quiz" &&
+        quizStarted &&
+        remainingQuizEntries.length > 0 &&
+        remainingVisibleQuizCount === 0;
     function addEntry() {
         if (mode === "quiz" &&
             quizStarted) {
@@ -881,8 +885,11 @@ export default function Home() {
               <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
                 Configure your questions and answers, then start the quiz before handing the wheel to the contestant.
               </p>
-              {!quizReady && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
+              {!quizEntriesComplete && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
                   Every question needs both a question and an answer before the quiz can start.
+                </div>)}
+              {!enoughVisibleQuizEntries && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
+                  Show at least 2 questions to start the quiz.
                 </div>)}
             </div>)}
           {mode === "quiz" &&
@@ -916,7 +923,8 @@ export default function Home() {
                 ? "Hide Answer"
                 : "Show Answer"}
                 </button>
-                {!quizComplete && (<button type="button" onClick={nextSpin} disabled={spinning ||
+                {!quizComplete &&
+                    !remainingQuizEntriesHidden && (<button type="button" onClick={nextSpin} disabled={spinning ||
                     remainingVisibleQuizCount <
                         1} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                     Give it another spin 😉
@@ -930,12 +938,16 @@ export default function Home() {
               <p className={`text-sm font-semibold ${theme.textPrimaryClass}`}>
                 {spinning
                 ? "Spinning... 🎡"
-                : "Alright... give it a spin 😉"}
+                : remainingQuizEntriesHidden
+                    ? "All remaining questions are hidden."
+                    : "Alright... give it a spin 😉"}
               </p>
               <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
                 {spinning
                 ? "The question will appear when the wheel stops."
-                : "The question is waiting."}
+                : remainingQuizEntriesHidden
+                    ? "Show one or go back to setup."
+                    : "The question is waiting."}
               </p>
             </div>)}
           {mode === "standard" &&
@@ -1085,8 +1097,11 @@ export default function Home() {
               <button type="button" onClick={startQuiz} disabled={!quizReady} className={`mt-5 w-full rounded-lg px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${actionAccentClass} ${actionHoverClass}`}>
                 Start Quiz
               </button>
-              {!quizReady && (<p className={`mt-2 text-center text-xs ${theme.textMutedClass}`}>
+              {!quizEntriesComplete && (<p className={`mt-2 text-center text-xs ${theme.textMutedClass}`}>
                   Every question needs both a question and an answer.
+                </p>)}
+              {!enoughVisibleQuizEntries && (<p className={`mt-2 text-center text-xs ${theme.textMutedClass}`}>
+                  Show at least 2 questions to start the quiz.
                 </p>)}
             </div>)}
           {mode ===
@@ -1100,7 +1115,9 @@ export default function Home() {
               <p className={`mt-1 text-sm ${theme.textSecondaryClass}`}>
                 {quizComplete
                 ? "All questions have been selected."
-                : "The contestant can now spin the wheel."}
+                : remainingQuizEntriesHidden
+                    ? "All remaining questions are hidden. Show one or go back to setup."
+                    : "The contestant can now spin the wheel."}
               </p>
               {!quizComplete && (<div className={`mt-5 rounded-xl p-4 ${theme.subtleSurfaceClass}`}>
                   <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
