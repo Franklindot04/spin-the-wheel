@@ -6,15 +6,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-10-14
+
 ### Added
 
 - `CONTRIBUTING.md` with development and contribution guidelines.
 - MIT license.
 - Standard Mode and Quiz Mode screenshots in the documentation.
+- Responsive layout screenshots in `docs/screenshots`.
+- "No visible entries" empty state on the wheel when every entry is hidden.
 
 ### Changed
 
 - Updated the README with the current application experience, setup instructions, and project documentation.
+- Improved the layout on smaller screens: the header stacks and wraps, the wheel scales to its container, and the wheel-size stepper is hidden below 640px.
+- The entry customization menu is capped to the viewport width so it is no longer clipped on phones.
+- Settings tabs wrap onto multiple lines instead of requiring horizontal scrolling.
+- Long quiz questions, answers, and result labels now wrap instead of overflowing the layout.
 
 ### Fixed
 
@@ -43,16 +51,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Overhauled the application structure around reusable wheel components, shared types, and utilities.
 - Improved wheel rendering, spin handling, and entry management.
-- Updated the interface for the new wheel-builder experience.
-
-### Removed
-
-- Default Next.js starter assets.
 
 ## [1.0.0]
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/Franklindot04/spin-the-wheel/releases/tag/v1.0.0
