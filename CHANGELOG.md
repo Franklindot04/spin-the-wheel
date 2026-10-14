@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-10-14
+
 ### Changed
 
 - Quiz Mode now completes only when no unasked questions are left. When every remaining question is hidden, the quiz shows a message instead of "Quiz Complete".
@@ -70,7 +72,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.2...HEAD
+[2.0.2]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/Franklindot04/spin-the-wheel/releases/tag/v1.0.0
