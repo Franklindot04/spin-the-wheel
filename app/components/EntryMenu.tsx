@@ -15,6 +15,7 @@ type EntryMenuProps = {
   entry: WheelEntry;
   open: boolean;
   spinning: boolean;
+  duplicateDisabled?: boolean;
   onToggle: () => void;
   onClose: () => void;
   onUpdate: (
@@ -379,6 +380,7 @@ export default function EntryMenu({
   entry,
   open,
   spinning,
+  duplicateDisabled = false,
   onToggle,
   onClose,
   onUpdate,
@@ -1069,7 +1071,15 @@ export default function EntryMenu({
               onClick={
                 handleDuplicate
               }
-              disabled={spinning}
+              disabled={
+                spinning ||
+                duplicateDisabled
+              }
+              title={
+                duplicateDisabled
+                  ? "Back to Setup to duplicate questions"
+                  : undefined
+              }
               className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-medium ${theme.textSecondaryClass} transition ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}
             >
               <MenuIcon type="duplicate" />

@@ -19,6 +19,7 @@ type EntryListProps = {
   ) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  additionsDisabled?: boolean;
   accentClass: string;
   accentHoverClass: string;
   theme: AppearanceThemeConfig;
@@ -86,6 +87,7 @@ export default function EntryList({
   onUpdate,
   onDelete,
   onDuplicate,
+  additionsDisabled = false,
   accentClass,
   accentHoverClass,
   theme,
@@ -175,7 +177,13 @@ export default function EntryList({
         <button
           type="button"
           onClick={onAdd}
-          className={`rounded-lg px-3 py-2 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-current focus:ring-offset-2 ${accentClass} ${accentHoverClass}`}
+          disabled={additionsDisabled}
+          title={
+            additionsDisabled
+              ? "Back to Setup to add questions"
+              : undefined
+          }
+          className={`rounded-lg px-3 py-2 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-current focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
         >
           + Add
         </button>
@@ -298,6 +306,9 @@ export default function EntryList({
                         entry.id
                       }
                       spinning={false}
+                      duplicateDisabled={
+                        additionsDisabled
+                      }
                       onToggle={() =>
                         setOpenMenuId(
                           (

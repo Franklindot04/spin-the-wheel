@@ -17,7 +17,7 @@ export default function Home() {
     const activeWheel = appData.wheels.find((wheel) => wheel.id ===
         appData.activeWheelId) ??
         appData.wheels[0];
-    const [remainingQuizEntries, setRemainingQuizEntries,] = useState<WheelEntry[]>([]);
+    const [askedQuizIds, setAskedQuizIds,] = useState<string[]>([]);
     const [quizStarted, setQuizStarted,] = useState(false);
     const [rotation, setRotation,] = useState(0);
     const [spinning, setSpinning,] = useState(false);
@@ -55,7 +55,7 @@ export default function Home() {
         setRotation(0);
         setSelectedEntry(null);
         setShowAnswer(false);
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setHistoryOpen(false);
     }
@@ -76,7 +76,7 @@ export default function Home() {
         setRotation(0);
         setSelectedEntry(null);
         setShowAnswer(false);
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setHistoryOpen(false);
     }
@@ -139,7 +139,7 @@ export default function Home() {
         setRotation(0);
         setSelectedEntry(null);
         setShowAnswer(false);
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setHistoryOpen(false);
     }
@@ -272,7 +272,11 @@ export default function Home() {
     }
     const allEntriesHidden = currentSetupEntries.length > 0 &&
         currentSetupEntries.every((entry) => entry.hidden);
+    const remainingQuizEntries = quizEntries.filter((entry) => !askedQuizIds.includes(entry.id));
     const remainingVisibleQuizCount = remainingQuizEntries.filter((entry) => !entry.hidden).length;
+    const displayedQuizEntry = selectedEntry
+        ? quizEntries.find((entry) => entry.id === selectedEntry.id) ?? null
+        : null;
     const minSpinEntries = mode === "quiz"
         ? 1
         : 2;
@@ -280,20 +284,34 @@ export default function Home() {
         quizStarted
         ? remainingVisibleQuizCount > 0
             ? remainingQuizEntries
-            : selectedEntry
-                ? [selectedEntry]
+            : displayedQuizEntry
+                ? [
+                    {
+                        ...displayedQuizEntry,
+                        hidden: false,
+                    },
+                ]
                 : []
         : currentSetupEntries;
-    const quizReady = quizEntries.length >= 2 &&
+    const quizEntriesComplete = quizEntries.length >= 2 &&
         quizEntries.every((entry) => Boolean(entry.question?.trim()) &&
             Boolean(entry.answer?.trim()));
+    const enoughVisibleQuizEntries = quizEntries.filter((entry) => !entry.hidden).length >= 2;
+    const quizReady = quizEntriesComplete &&
+        enoughVisibleQuizEntries;
     const quizComplete = mode === "quiz" &&
         quizStarted &&
         !spinning &&
-        remainingVisibleQuizCount ===
-            0 &&
-        selectedEntry !== null;
+        remainingQuizEntries.length === 0;
+    const remainingQuizEntriesHidden = mode === "quiz" &&
+        quizStarted &&
+        remainingQuizEntries.length > 0 &&
+        remainingVisibleQuizCount === 0;
     function addEntry() {
+        if (mode === "quiz" &&
+            quizStarted) {
+            return;
+        }
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
@@ -328,6 +346,10 @@ export default function Home() {
         setShowAnswer(false);
     }
     function updateEntry(id: string, changes: Partial<WheelEntry>) {
+        if (mode === "quiz" &&
+            spinning) {
+            return;
+        }
         if (mode === "standard") {
             setStandardEntries((current) => current.map((entry) => entry.id === id
                 ? {
@@ -344,10 +366,16 @@ export default function Home() {
                 }
                 : entry));
         }
-        setSelectedEntry(null);
-        setShowAnswer(false);
+        if (mode === "standard") {
+            setSelectedEntry(null);
+            setShowAnswer(false);
+        }
     }
     function duplicateEntry(id: string) {
+        if (mode === "quiz" &&
+            quizStarted) {
+            return;
+        }
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
@@ -376,6 +404,10 @@ export default function Home() {
         setShowAnswer(false);
     }
     function deleteEntry(id: string) {
+        if (mode === "quiz" &&
+            spinning) {
+            return;
+        }
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
@@ -388,8 +420,10 @@ export default function Home() {
         else {
             setQuizEntries((current) => current.filter((entry) => entry.id !== id));
         }
-        setSelectedEntry(null);
-        setShowAnswer(false);
+        if (mode === "standard") {
+            setSelectedEntry(null);
+            setShowAnswer(false);
+        }
     }
     function changeMode(nextMode: Mode) {
         if (spinning) {
@@ -399,7 +433,7 @@ export default function Home() {
         setSelectedEntry(null);
         setShowAnswer(false);
         setQuizStarted(false);
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setRotation(0);
         setHistoryOpen(false);
     }
@@ -408,7 +442,7 @@ export default function Home() {
             spinning) {
             return;
         }
-        setRemainingQuizEntries([...quizEntries]);
+        setAskedQuizIds([]);
         setSelectedEntry(null);
         setShowAnswer(false);
         setRotation(0);
@@ -418,7 +452,7 @@ export default function Home() {
         if (spinning) {
             return;
         }
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setSelectedEntry(null);
         setShowAnswer(false);
         setQuizStarted(false);
@@ -594,8 +628,10 @@ export default function Home() {
             setSpinning(false);
             addHistoryItem(finalEntry, mode);
             if (mode === "quiz") {
-                setRemainingQuizEntries((current) => current.filter((entry) => entry.id !==
-                    finalEntry.id));
+                setAskedQuizIds((current) => [
+                    ...current,
+                    finalEntry.id,
+                ]);
             }
         }, spinDuration * 1000);
     }
@@ -621,7 +657,7 @@ export default function Home() {
             standardHistory: [],
             quizHistory: [],
         });
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setSelectedEntry(null);
         setShowAnswer(false);
@@ -677,7 +713,7 @@ export default function Home() {
         }
         setAppData(pendingImport);
         setMode("standard");
-        setRemainingQuizEntries([]);
+        setAskedQuizIds([]);
         setQuizStarted(false);
         setSelectedEntry(null);
         setShowAnswer(false);
@@ -849,25 +885,28 @@ export default function Home() {
               <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
                 Configure your questions and answers, then start the quiz before handing the wheel to the contestant.
               </p>
-              {!quizReady && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
+              {!quizEntriesComplete && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
                   Every question needs both a question and an answer before the quiz can start.
+                </div>)}
+              {!enoughVisibleQuizEntries && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
+                  Show at least 2 questions to start the quiz.
                 </div>)}
             </div>)}
           {mode === "quiz" &&
             quizStarted &&
-            selectedEntry && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 text-center shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
+            displayedQuizEntry && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 text-center shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
               <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
                 And the question is...
               </p>
               <p className={`mt-2 break-words text-xl font-bold ${theme.textPrimaryClass}`}>
-                {selectedEntry.label}
+                {displayedQuizEntry.label}
               </p>
               <div className={`mt-4 rounded-xl p-5 text-left ${theme.subtleSurfaceClass}`}>
                 <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
                   Your question
                 </p>
                 <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
-                  {selectedEntry.question}
+                  {displayedQuizEntry.question}
                 </p>
               </div>
               {showAnswer && (<div className={`mt-4 rounded-xl border p-5 text-left ${theme.borderClass} ${theme.surfaceClass}`}>
@@ -875,7 +914,7 @@ export default function Home() {
                     The answer
                   </p>
                   <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
-                    {selectedEntry.answer}
+                    {displayedQuizEntry.answer}
                   </p>
                 </div>)}
               <div className="mt-5 flex flex-wrap justify-center gap-2">
@@ -884,7 +923,8 @@ export default function Home() {
                 ? "Hide Answer"
                 : "Show Answer"}
                 </button>
-                {!quizComplete && (<button type="button" onClick={nextSpin} disabled={spinning ||
+                {!quizComplete &&
+                    !remainingQuizEntriesHidden && (<button type="button" onClick={nextSpin} disabled={spinning ||
                     remainingVisibleQuizCount <
                         1} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                     Give it another spin 😉
@@ -893,16 +933,21 @@ export default function Home() {
             </div>)}
           {mode === "quiz" &&
             quizStarted &&
-            !selectedEntry && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-5 text-center ${theme.borderClass} ${theme.subtleSurfaceClass}`}>
+            !displayedQuizEntry &&
+            !quizComplete && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-5 text-center ${theme.borderClass} ${theme.subtleSurfaceClass}`}>
               <p className={`text-sm font-semibold ${theme.textPrimaryClass}`}>
                 {spinning
                 ? "Spinning... 🎡"
-                : "Alright... give it a spin 😉"}
+                : remainingQuizEntriesHidden
+                    ? "All remaining questions are hidden."
+                    : "Alright... give it a spin 😉"}
               </p>
               <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
                 {spinning
                 ? "The question will appear when the wheel stops."
-                : "The question is waiting."}
+                : remainingQuizEntriesHidden
+                    ? "Show one or go back to setup."
+                    : "The question is waiting."}
               </p>
             </div>)}
           {mode === "standard" &&
@@ -967,7 +1012,8 @@ export default function Home() {
             <input ref={importInputRef} type="file" accept=".json,application/json" onChange={handleImportFile} className="hidden"/>
           </div>
           {!historyOpen && (<>
-              <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+              <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
+                quizStarted} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button type="button" onClick={resetWheelToDefaults} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries
@@ -1051,8 +1097,11 @@ export default function Home() {
               <button type="button" onClick={startQuiz} disabled={!quizReady} className={`mt-5 w-full rounded-lg px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${actionAccentClass} ${actionHoverClass}`}>
                 Start Quiz
               </button>
-              {!quizReady && (<p className={`mt-2 text-center text-xs ${theme.textMutedClass}`}>
+              {!quizEntriesComplete && (<p className={`mt-2 text-center text-xs ${theme.textMutedClass}`}>
                   Every question needs both a question and an answer.
+                </p>)}
+              {!enoughVisibleQuizEntries && (<p className={`mt-2 text-center text-xs ${theme.textMutedClass}`}>
+                  Show at least 2 questions to start the quiz.
                 </p>)}
             </div>)}
           {mode ===
@@ -1066,7 +1115,9 @@ export default function Home() {
               <p className={`mt-1 text-sm ${theme.textSecondaryClass}`}>
                 {quizComplete
                 ? "All questions have been selected."
-                : "The contestant can now spin the wheel."}
+                : remainingQuizEntriesHidden
+                    ? "All remaining questions are hidden. Show one or go back to setup."
+                    : "The contestant can now spin the wheel."}
               </p>
               {!quizComplete && (<div className={`mt-5 rounded-xl p-4 ${theme.subtleSurfaceClass}`}>
                   <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
