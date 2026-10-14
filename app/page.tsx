@@ -274,6 +274,9 @@ export default function Home() {
         currentSetupEntries.every((entry) => entry.hidden);
     const remainingQuizEntries = quizEntries.filter((entry) => !askedQuizIds.includes(entry.id));
     const remainingVisibleQuizCount = remainingQuizEntries.filter((entry) => !entry.hidden).length;
+    const displayedQuizEntry = selectedEntry
+        ? quizEntries.find((entry) => entry.id === selectedEntry.id) ?? null
+        : null;
     const minSpinEntries = mode === "quiz"
         ? 1
         : 2;
@@ -281,8 +284,13 @@ export default function Home() {
         quizStarted
         ? remainingVisibleQuizCount > 0
             ? remainingQuizEntries
-            : selectedEntry
-                ? [selectedEntry]
+            : displayedQuizEntry
+                ? [
+                    {
+                        ...displayedQuizEntry,
+                        hidden: false,
+                    },
+                ]
                 : []
         : currentSetupEntries;
     const quizReady = quizEntries.length >= 2 &&
@@ -293,7 +301,8 @@ export default function Home() {
         !spinning &&
         remainingVisibleQuizCount ===
             0 &&
-        selectedEntry !== null;
+        (displayedQuizEntry !== null ||
+            remainingQuizEntries.length === 0);
     function addEntry() {
         if (mode === "quiz" &&
             spinning) {
@@ -353,8 +362,10 @@ export default function Home() {
                 }
                 : entry));
         }
-        setSelectedEntry(null);
-        setShowAnswer(false);
+        if (mode === "standard") {
+            setSelectedEntry(null);
+            setShowAnswer(false);
+        }
     }
     function duplicateEntry(id: string) {
         if (mode === "quiz" &&
@@ -405,8 +416,10 @@ export default function Home() {
         else {
             setQuizEntries((current) => current.filter((entry) => entry.id !== id));
         }
-        setSelectedEntry(null);
-        setShowAnswer(false);
+        if (mode === "standard") {
+            setSelectedEntry(null);
+            setShowAnswer(false);
+        }
     }
     function changeMode(nextMode: Mode) {
         if (spinning) {
@@ -874,19 +887,19 @@ export default function Home() {
             </div>)}
           {mode === "quiz" &&
             quizStarted &&
-            selectedEntry && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 text-center shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
+            displayedQuizEntry && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 text-center shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
               <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
                 And the question is...
               </p>
               <p className={`mt-2 break-words text-xl font-bold ${theme.textPrimaryClass}`}>
-                {selectedEntry.label}
+                {displayedQuizEntry.label}
               </p>
               <div className={`mt-4 rounded-xl p-5 text-left ${theme.subtleSurfaceClass}`}>
                 <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
                   Your question
                 </p>
                 <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
-                  {selectedEntry.question}
+                  {displayedQuizEntry.question}
                 </p>
               </div>
               {showAnswer && (<div className={`mt-4 rounded-xl border p-5 text-left ${theme.borderClass} ${theme.surfaceClass}`}>
@@ -894,7 +907,7 @@ export default function Home() {
                     The answer
                   </p>
                   <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
-                    {selectedEntry.answer}
+                    {displayedQuizEntry.answer}
                   </p>
                 </div>)}
               <div className="mt-5 flex flex-wrap justify-center gap-2">
@@ -912,7 +925,8 @@ export default function Home() {
             </div>)}
           {mode === "quiz" &&
             quizStarted &&
-            !selectedEntry && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-5 text-center ${theme.borderClass} ${theme.subtleSurfaceClass}`}>
+            !displayedQuizEntry &&
+            !quizComplete && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-5 text-center ${theme.borderClass} ${theme.subtleSurfaceClass}`}>
               <p className={`text-sm font-semibold ${theme.textPrimaryClass}`}>
                 {spinning
                 ? "Spinning... 🎡"
