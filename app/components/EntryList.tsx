@@ -102,6 +102,7 @@ export default function EntryList({
   ) {
     onUpdate(entry.id, {
       hidden: !entry.hidden,
+      hiddenByHideAll: undefined,
     });
   }
 

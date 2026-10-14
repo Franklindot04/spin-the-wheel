@@ -85,6 +85,7 @@ export type WheelEntry = {
   answer?: string;
 
   hidden?: boolean;
+  hiddenByHideAll?: boolean;
 
   weight?: number;
 };
