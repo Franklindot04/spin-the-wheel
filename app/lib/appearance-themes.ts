@@ -33,7 +33,7 @@ export const APPEARANCE_THEMES: Record<
     controlClass: "bg-slate-900 border-slate-700 text-slate-200",
     controlHoverClass: "hover:bg-slate-800",
     inputClass:
-      "bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-slate-500 focus:ring-slate-700",
+      "bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-300",
   },
 
   ocean: {
@@ -62,7 +62,7 @@ export const APPEARANCE_THEMES: Record<
     controlClass: "bg-cyan-900 border-cyan-700 text-cyan-100",
     controlHoverClass: "hover:bg-cyan-800",
     inputClass:
-      "bg-cyan-800 border-cyan-700 text-cyan-50 placeholder:text-cyan-300 focus:border-cyan-500 focus:ring-cyan-700",
+      "bg-cyan-800 border-cyan-700 text-cyan-50 placeholder:text-cyan-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-300",
   },
 
   forest: {
@@ -91,7 +91,7 @@ export const APPEARANCE_THEMES: Record<
     controlClass: "bg-emerald-900 border-emerald-700 text-emerald-100",
     controlHoverClass: "hover:bg-emerald-800",
     inputClass:
-      "bg-emerald-800 border-emerald-700 text-emerald-50 placeholder:text-emerald-300 focus:border-emerald-500 focus:ring-emerald-700",
+      "bg-emerald-800 border-emerald-700 text-emerald-50 placeholder:text-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-300",
   },
 
   sunset: {
@@ -120,7 +120,7 @@ export const APPEARANCE_THEMES: Record<
     controlClass: "bg-orange-900 border-orange-700 text-orange-100",
     controlHoverClass: "hover:bg-orange-800",
     inputClass:
-      "bg-orange-800 border-orange-700 text-orange-50 placeholder:text-orange-300 focus:border-orange-500 focus:ring-orange-700",
+      "bg-orange-800 border-orange-700 text-orange-50 placeholder:text-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-300",
   },
 
   violet: {
@@ -149,6 +149,6 @@ export const APPEARANCE_THEMES: Record<
     controlClass: "bg-violet-900 border-violet-700 text-violet-100",
     controlHoverClass: "hover:bg-violet-800",
     inputClass:
-      "bg-violet-800 border-violet-700 text-violet-50 placeholder:text-violet-300 focus:border-violet-500 focus:ring-violet-700",
+      "bg-violet-800 border-violet-700 text-violet-50 placeholder:text-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-300",
   },
 };
