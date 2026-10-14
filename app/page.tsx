@@ -889,7 +889,7 @@ export default function Home() {
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings
-            .pointerMatchSliceColor} accentClass={actionAccentClass} accentHoverClass={actionHoverClass}/>
+            .pointerMatchSliceColor} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
           </div>
           {mode === "quiz" &&
             !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>

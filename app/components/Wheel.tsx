@@ -7,7 +7,10 @@ import {
   useState,
 } from "react";
 
-import type { WheelEntry } from "../lib/wheel-types";
+import type {
+  AppearanceThemeConfig,
+  WheelEntry,
+} from "../lib/wheel-types";
 
 export type { WheelEntry } from "../lib/wheel-types";
 
@@ -24,6 +27,7 @@ type WheelProps = {
   onWheelSizeChange?: (size: number) => void;
   accentClass: string;
   accentHoverClass: string;
+  theme?: AppearanceThemeConfig;
 };
 
 const MIN_SIZE = 420;
@@ -343,6 +347,7 @@ export default function Wheel({
   onWheelSizeChange,
   accentClass,
   accentHoverClass,
+  theme,
 }: WheelProps) {
   const [
     internalWheelSize,
@@ -922,14 +927,28 @@ export default function Wheel({
 
         {visibleEntries.length === 0 ? (
           <div
-            className="absolute inset-[6%] flex items-center justify-center rounded-full border-2 border-dashed border-slate-500 bg-slate-900/95 p-4 text-center"
+            className={`absolute inset-[6%] flex items-center justify-center rounded-full border-2 border-dashed p-4 text-center ${
+              theme
+                ? `border-white/25 ${theme.subtleSurfaceClass}`
+                : "border-slate-500 bg-slate-900/95"
+            }`}
             role="status"
           >
             <div>
-              <p className="text-sm font-semibold text-slate-100">
+              <p
+                className={`text-sm font-semibold ${
+                  theme?.textPrimaryClass ??
+                  "text-slate-100"
+                }`}
+              >
                 No visible entries
               </p>
-              <p className="mt-1 text-xs text-slate-300">
+              <p
+                className={`mt-1 text-xs ${
+                  theme?.textSecondaryClass ??
+                  "text-slate-300"
+                }`}
+              >
                 Add entries or show hidden ones to spin the wheel.
               </p>
             </div>
