@@ -16,9 +16,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Updated the README with the current application experience, setup instructions, and project documentation.
 
-### Known Issues
+### Fixed
 
-- Quiz Mode final-question behavior requires further refinement and is planned for v2.1.
+- Quiz Mode now lets the final remaining question be spun, and shows it after that spin ends. The quiz completes after the last question has been asked instead of one question early.
+- Quiz Mode "Questions Remaining" and quiz completion count visible (not hidden) questions only.
+- The final quiz spin is now recorded in history.
+- A wheel with exactly one visible entry now draws as a filled circle. In Standard Mode, Spin stays disabled with fewer than two visible entries.
 
 ## [2.0.0] - 2026-10-02
 
