@@ -79,7 +79,7 @@ Completed spins can be recorded with:
 ### Clone the repository
 
 ```bash
-git clone [https://github.com/Franklindot04/spin-the-wheel.git](https://github.com/Franklindot04/spin-the-wheel.git)
+git clone https://github.com/Franklindot04/spin-the-wheel.git
 cd spin-the-wheel
 ```
 
