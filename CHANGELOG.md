@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- The header title is larger and bolder, and the edit icons beside the title and description are larger with a bigger tap target.
+
+### Fixed
+
+- The "No visible entries" overlay on the wheel now follows the selected theme.
+- The "..." menu of a hidden entry is no longer drawn translucent behind the rows below it.
+
 ## [2.0.2] - 2026-10-14
 
 ### Changed
