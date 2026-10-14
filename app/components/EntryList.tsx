@@ -358,7 +358,7 @@ export default function EntryList({
                         entries.length <=
                         2
                       }
-                      className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-red-400 transition hover:bg-red-950/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-30`}
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-red-200 transition hover:bg-red-950/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-30`}
                       aria-label={`Delete ${entry.label}`}
                       title="Delete entry"
                     >

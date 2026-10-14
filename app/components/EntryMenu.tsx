@@ -928,7 +928,7 @@ export default function EntryMenu({
                         spinning
                       }
                       aria-label="Remove image"
-                      className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-500 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-200 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Remove
                     </button>
@@ -1015,7 +1015,7 @@ export default function EntryMenu({
                         spinning
                       }
                       aria-label="Remove winner sound"
-                      className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-500 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-200 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Remove
                     </button>
