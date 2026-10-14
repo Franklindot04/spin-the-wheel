@@ -158,7 +158,7 @@ function getInitialPointerColor(
   enabled: boolean,
 ) {
   if (!enabled) {
-    return "#0f172a";
+    return "#ffffff";
   }
 
   const visibleEntries =
@@ -544,7 +544,7 @@ export default function Wheel({
             rotation,
           )?.entry.color ??
           "#0f172a"
-      : "#0f172a";
+      : "#ffffff";
 
   function handleSpin() {
     if (
@@ -586,7 +586,7 @@ export default function Wheel({
             );
           } else {
             setPointerColor(
-              "#0f172a",
+              "#ffffff",
             );
           }
         },
@@ -945,7 +945,11 @@ export default function Wheel({
           <path
             d="M 220 34 L 203 0 L 237 0 Z"
             fill={renderedPointerColor}
-            stroke="#ffffff"
+            stroke={
+              pointerMatchSliceColor
+                ? "#ffffff"
+                : "#0f172a"
+            }
             strokeWidth="2"
           />
         </svg>
