@@ -272,9 +272,13 @@ export default function Home() {
     }
     const allEntriesHidden = currentSetupEntries.length > 0 &&
         currentSetupEntries.every((entry) => entry.hidden);
+    const remainingVisibleQuizCount = remainingQuizEntries.filter((entry) => !entry.hidden).length;
+    const minSpinEntries = mode === "quiz"
+        ? 1
+        : 2;
     const wheelEntries = mode === "quiz" &&
         quizStarted
-        ? remainingQuizEntries.length > 0
+        ? remainingVisibleQuizCount > 0
             ? remainingQuizEntries
             : selectedEntry
                 ? [selectedEntry]
@@ -286,8 +290,8 @@ export default function Home() {
     const quizComplete = mode === "quiz" &&
         quizStarted &&
         !spinning &&
-        remainingQuizEntries.length <=
-            1 &&
+        remainingVisibleQuizCount ===
+            0 &&
         selectedEntry !== null;
     function addEntry() {
         const entries = mode === "standard"
@@ -454,14 +458,14 @@ export default function Home() {
     }
     function spinWheel() {
         if (spinning ||
-            wheelEntries.length < 2 ||
+            wheelEntries.length < minSpinEntries ||
             (mode === "quiz" &&
                 (!quizStarted ||
                     quizComplete))) {
             return;
         }
         const entriesForSpin = wheelEntries.filter((entry) => !entry.hidden);
-        if (entriesForSpin.length < 2) {
+        if (entriesForSpin.length < minSpinEntries) {
             return;
         }
         /*
@@ -687,7 +691,7 @@ export default function Home() {
         ? standardEntries.filter((entry) => !entry.hidden).length >= 2
         : quizStarted &&
             !quizComplete &&
-            remainingQuizEntries.filter((entry) => !entry.hidden).length >= 2;
+            remainingVisibleQuizCount >= minSpinEntries;
     const theme = APPEARANCE_THEMES[activeWheel.settings
         .appearanceTheme];
     const appearanceTheme = activeWheel.settings.appearanceTheme;
@@ -831,7 +835,7 @@ export default function Home() {
           <div className={mode === "quiz"
             ? "flex min-h-0 items-center justify-center sm:min-h-[560px]"
             : "flex min-h-0 items-center justify-center sm:min-h-[620px]"}>
-            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} canSpin={spinAllowed} spinDuration={activeWheel
+            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} canSpin={spinAllowed} minSpinEntries={minSpinEntries} spinDuration={activeWheel
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings
@@ -881,8 +885,8 @@ export default function Home() {
                 : "Show Answer"}
                 </button>
                 {!quizComplete && (<button type="button" onClick={nextSpin} disabled={spinning ||
-                    remainingQuizEntries.length <
-                        2} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
+                    remainingVisibleQuizCount <
+                        1} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                     Give it another spin 😉
                   </button>)}
               </div>
@@ -1069,7 +1073,7 @@ export default function Home() {
                     Questions Remaining
                   </p>
                   <p className={`mt-1 text-2xl font-bold ${theme.textPrimaryClass}`}>
-                    {remainingQuizEntries.length}
+                    {remainingVisibleQuizCount}
                   </p>
                 </div>)}
               <button type="button" onClick={backToQuizSetup} disabled={spinning} className={`mt-6 w-full rounded-lg border px-4 py-3 text-sm font-medium transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-50`}>

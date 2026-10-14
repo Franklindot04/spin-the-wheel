@@ -17,6 +17,7 @@ type WheelProps = {
   rotation: number;
   onSpin: () => void;
   canSpin?: boolean;
+  minSpinEntries?: number;
   spinDuration?: number;
   pointerMatchSliceColor?: boolean;
   wheelSize?: number;
@@ -79,6 +80,33 @@ function describeArc(
       radius,
       startAngle,
     );
+
+  if (
+    endAngle - startAngle >= 360
+  ) {
+    return [
+      "M",
+      cx - radius,
+      cy,
+      "A",
+      radius,
+      radius,
+      0,
+      1,
+      0,
+      cx + radius,
+      cy,
+      "A",
+      radius,
+      radius,
+      0,
+      1,
+      0,
+      cx - radius,
+      cy,
+      "Z",
+    ].join(" ");
+  }
 
   const largeArcFlag =
     endAngle - startAngle <= 180
@@ -308,6 +336,7 @@ export default function Wheel({
   rotation,
   onSpin,
   canSpin = true,
+  minSpinEntries = 2,
   spinDuration = 4.5,
   pointerMatchSliceColor = true,
   wheelSize,
@@ -914,7 +943,8 @@ export default function Wheel({
         disabled={
           !canSpin ||
           spinning ||
-          visibleEntries.length < 2
+          visibleEntries.length <
+            minSpinEntries
         }
         className={`mt-6 min-w-32 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
       >
