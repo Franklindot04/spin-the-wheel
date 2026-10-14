@@ -11,12 +11,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Quiz Mode now completes only when no unasked questions are left. When every remaining question is hidden, the quiz shows a message instead of "Quiz Complete".
 - Start Quiz now requires at least two visible questions, in addition to a question and answer on every question.
 - While a quiz is running, Add and Duplicate are disabled, and entry changes are ignored while the wheel is spinning.
+- Entries may carry an optional `hiddenByHideAll` marker in saved data and exports. Older saved data and export files load as before.
 
 ### Fixed
 
 - Hiding, un-hiding, editing or deleting a question during a running quiz now updates the wheel immediately, and Back to Setup no longer changes what the wheel shows.
 - Editing, hiding or deleting questions while the final question is displayed no longer empties the wheel, and the displayed question stays in sync with edits.
 - A quiz can no longer be started with all questions hidden.
+- The "Hide all entries" toggle now remembers which entries it hid. Showing all entries again restores only those, and entries you hid individually stay hidden. If no entry was hidden by the toggle, all entries are shown.
 
 ## [2.0.1] - 2026-10-14
 
