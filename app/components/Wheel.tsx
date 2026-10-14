@@ -671,7 +671,7 @@ export default function Wheel({
                 MIN_SIZE ||
               spinning
             }
-            className={`flex h-9 w-9 items-center justify-center transition disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`flex h-9 w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
               theme?.controlHoverClass ??
               "text-slate-700 hover:bg-slate-100"
             }`}
@@ -703,7 +703,7 @@ export default function Wheel({
                 MAX_SIZE ||
               spinning
             }
-            className={`flex h-9 w-9 items-center justify-center transition disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`flex h-9 w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
               theme?.controlHoverClass ??
               "text-slate-700 hover:bg-slate-100"
             }`}
@@ -724,7 +724,7 @@ export default function Wheel({
               )
             }
             disabled={spinning}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
               theme
                 ? `${theme.controlClass} ${theme.controlHoverClass}`
                 : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
@@ -751,7 +751,7 @@ export default function Wheel({
               toggleFullscreen
             }
             disabled={spinning}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
               theme
                 ? `${theme.controlClass} ${theme.controlHoverClass}`
                 : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
