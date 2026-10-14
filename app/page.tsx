@@ -236,9 +236,12 @@ export default function Home() {
                 closeSettings();
             }
         }
+        const previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
         window.addEventListener("keydown", handleKeyDown);
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
+            document.body.style.overflow = previousBodyOverflow;
         };
     }, [settingsOpen]);
     const currentSetupEntries = mode === "standard"
@@ -825,7 +828,7 @@ export default function Home() {
               <h1 className={`truncate text-2xl font-extrabold tracking-tight ${headerTextClass}`} style={{ color: headerTextColor }}>
                 {wheelTitle.trim() || DEFAULT_WHEEL_TITLE}
               </h1>
-              <button type="button" onClick={editWheelTitle} disabled={spinning} aria-label="Edit wheel title" title="Edit title" className={`shrink-0 rounded-md p-1.5 transition ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
+              <button type="button" onClick={editWheelTitle} disabled={spinning} aria-label="Edit wheel title" title="Edit title" className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 20h9"/>
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4Z"/>
@@ -836,7 +839,7 @@ export default function Home() {
               <p className={`truncate text-sm font-medium ${headerMutedClass}`} style={{ color: headerMutedColor }}>
                 {wheelDescription.trim() || DEFAULT_WHEEL_DESCRIPTION}
               </p>
-              <button type="button" onClick={editWheelDescription} disabled={spinning} aria-label="Edit wheel description" title="Edit description" className={`shrink-0 rounded-md p-1.5 transition ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
+              <button type="button" onClick={editWheelDescription} disabled={spinning} aria-label="Edit wheel description" title="Edit description" className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 20h9"/>
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4Z"/>
@@ -975,7 +978,7 @@ export default function Home() {
             </div>)}
         </div>
         <div className="min-w-0">
-          <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => setHistoryOpen(false)} className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition ${!historyOpen
             ? `${actionAccentClass} text-white shadow-sm`
             : `${theme.borderClass} ${theme.surfaceClass} ${theme.textMutedClass} ${theme.controlHoverClass}`}`} aria-label="Show entries" title="Entries">
@@ -992,7 +995,7 @@ export default function Home() {
               </span>
             </button>
             <button type="button" onClick={toggleAllEntriesHidden} disabled={spinning ||
-            currentSetupEntries.length === 0} className={`shrink-0 rounded-lg border p-2 transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label={allEntriesHidden
+            currentSetupEntries.length === 0} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label={allEntriesHidden
             ? "Show all entries"
             : "Hide all entries"} title={allEntriesHidden
             ? "Show all entries"
@@ -1009,14 +1012,14 @@ export default function Home() {
                   </>)}
               </svg>
             </button>
-            <button type="button" onClick={exportData} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Export data" title="Export data">
+            <button type="button" onClick={exportData} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Export data" title="Export data">
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 3v12"/>
                 <path d="m7 10 5 5 5-5"/>
                 <path d="M5 21h14"/>
               </svg>
             </button>
-            <button type="button" onClick={() => importInputRef.current?.click()} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title="Import data">
+            <button type="button" onClick={() => importInputRef.current?.click()} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title="Import data">
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 21V9"/>
                 <path d="m7 14 5-5 5 5"/>
@@ -1165,8 +1168,10 @@ export default function Home() {
                     closeSettings();
                 }
             }}>
-          <div className={`max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl shadow-2xl ${theme.surfaceClass}`}>
-            <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={resetWheelToDefaults} accentClass={actionAccentClass}/>
+          <div className={`flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl shadow-2xl ${theme.surfaceClass}`}>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={resetWheelToDefaults} accentClass={actionAccentClass}/>
+            </div>
             <div className={`border-t px-5 py-4 ${theme.borderClass} ${theme.surfaceClass}`}>
               <button type="button" onClick={closeSettings} className={`w-full rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
                 Done

@@ -642,7 +642,10 @@ export default function Wheel({
       }
       className={
         fullscreen
-          ? "flex min-h-screen w-full flex-col items-center justify-center bg-white p-8"
+          ? `flex min-h-screen w-full flex-col items-center justify-center p-8 ${
+              theme?.pageClass ??
+              "bg-white"
+            }`
           : "flex w-full flex-col items-center"
       }
     >
@@ -650,7 +653,12 @@ export default function Wheel({
         className="mb-4 flex w-full max-w-[760px] items-center justify-end gap-3 sm:justify-between"
         aria-label="Wheel controls"
       >
-        <div className="hidden items-center overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm sm:flex">
+        <div
+          className={`hidden items-center overflow-hidden rounded-xl border shadow-sm sm:flex ${
+            theme?.controlClass ??
+            "border-slate-300 bg-white"
+          }`}
+        >
           <button
             type="button"
             onClick={() =>
@@ -663,7 +671,10 @@ export default function Wheel({
                 MIN_SIZE ||
               spinning
             }
-            className="flex h-9 w-9 items-center justify-center text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className={`flex h-9 w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+              theme?.controlHoverClass ??
+              "text-slate-700 hover:bg-slate-100"
+            }`}
             aria-label="Decrease wheel size"
             title="Decrease wheel size"
           >
@@ -671,7 +682,10 @@ export default function Wheel({
           </button>
 
           <div
-            className="flex h-9 min-w-16 items-center justify-center border-x border-slate-200 px-2 text-xs font-bold tabular-nums text-slate-800"
+            className={`flex h-9 min-w-16 items-center justify-center border-x px-2 text-xs font-bold tabular-nums ${
+              theme?.borderClass ??
+              "border-slate-200 text-slate-800"
+            }`}
             aria-live="polite"
           >
             {safeSize}
@@ -689,7 +703,10 @@ export default function Wheel({
                 MAX_SIZE ||
               spinning
             }
-            className="flex h-9 w-9 items-center justify-center text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className={`flex h-9 w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+              theme?.controlHoverClass ??
+              "text-slate-700 hover:bg-slate-100"
+            }`}
             aria-label="Increase wheel size"
             title="Increase wheel size"
           >
@@ -707,7 +724,11 @@ export default function Wheel({
               )
             }
             disabled={spinning}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+              theme
+                ? `${theme.controlClass} ${theme.controlHoverClass}`
+                : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+            }`}
             aria-label={
               muted
                 ? "Unmute wheel"
@@ -730,7 +751,11 @@ export default function Wheel({
               toggleFullscreen
             }
             disabled={spinning}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+              theme
+                ? `${theme.controlClass} ${theme.controlHoverClass}`
+                : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+            }`}
             aria-label={
               fullscreen
                 ? "Exit fullscreen"

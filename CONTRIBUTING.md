@@ -18,14 +18,14 @@ Please read this guide before opening an issue or pull request.
 Fork the repository on GitHub, then clone your fork:
 
 ```bash
-git clone [https://github.com/YOUR-USERNAME/spin-the-wheel.git](https://github.com/YOUR-USERNAME/spin-the-wheel.git)
+git clone https://github.com/YOUR-USERNAME/spin-the-wheel.git
 cd spin-the-wheel
 ```
 
 Add the original repository as an upstream remote:
 
 ```bash
-git remote add upstream [https://github.com/Franklindot04/spin-the-wheel.git](https://github.com/Franklindot04/spin-the-wheel.git)
+git remote add upstream https://github.com/Franklindot04/spin-the-wheel.git
 ```
 
 ### 2. Install dependencies
