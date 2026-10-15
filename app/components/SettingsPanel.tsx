@@ -152,7 +152,7 @@ function NumberField({
         {label}
       </span>
 
-      <div className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white">
+      <div className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white transition focus-within:border-slate-500 focus-within:ring-2 focus-within:ring-slate-200">
         <input
           type="number"
           min={min}
