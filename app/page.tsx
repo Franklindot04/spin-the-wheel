@@ -377,6 +377,10 @@ export default function Home() {
         }
         else {
             setQuizEntries(updated);
+            if (shouldHide) {
+                setSelectedEntry(null);
+                setShowAnswer(false);
+            }
         }
     }
     const allEntriesHidden = currentSetupEntries.length > 0 &&
