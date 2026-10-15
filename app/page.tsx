@@ -396,7 +396,10 @@ export default function Home() {
     const wheelEntries = mode === "quiz" &&
         quizStarted
         ? remainingVisibleQuizCount > 0
-            ? remainingQuizEntries
+            ? displayedQuizEntry
+                ? quizEntries.filter((entry) => !askedQuizIds.includes(entry.id) ||
+                    entry.id === displayedQuizEntry.id)
+                : remainingQuizEntries
             : displayedQuizEntry
                 ? [
                     {
@@ -609,14 +612,17 @@ export default function Home() {
         }
     }
     function spinWheel() {
+        const spinPool = mode === "quiz"
+            ? remainingQuizEntries
+            : wheelEntries;
         if (spinning ||
-            wheelEntries.length < minSpinEntries ||
+            spinPool.length < minSpinEntries ||
             (mode === "quiz" &&
                 (!quizStarted ||
                     quizComplete))) {
             return;
         }
-        const entriesForSpin = wheelEntries.filter((entry) => !entry.hidden);
+        const entriesForSpin = spinPool.filter((entry) => !entry.hidden);
         if (entriesForSpin.length < minSpinEntries) {
             return;
         }
