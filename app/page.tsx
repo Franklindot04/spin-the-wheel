@@ -584,6 +584,7 @@ export default function Home() {
             id: crypto.randomUUID(),
             entryId: entry.id,
             label: entry.label,
+            emoji: entry.emoji,
             mode: historyMode,
             question: entry.question,
             timestamp: Date.now(),

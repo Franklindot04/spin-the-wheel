@@ -3,6 +3,7 @@ import type {
   AppearanceTheme,
   AutoGenerateType,
   ConfettiEffect,
+  SpinHistoryItem,
   SpinSpeed,
   Wheel,
   WheelEntry,
@@ -11,6 +12,7 @@ import type {
 } from "./wheel-types";
 
 import { APPEARANCE_THEMES } from "./appearance-themes";
+import { normalizeEmoji } from "./entry-emoji";
 import { getEntryWeight } from "./wheel-utils";
 
 export const COLORS = [
@@ -185,7 +187,23 @@ export function normalizeEntry(
 
     answer:
       entry.answer ?? "",
+
+    emoji:
+      normalizeEmoji(entry.emoji),
   };
+}
+
+function normalizeHistory(
+  history: SpinHistoryItem[] | undefined,
+): SpinHistoryItem[] {
+  if (!Array.isArray(history)) {
+    return [];
+  }
+
+  return history.map((item) => ({
+    ...item,
+    emoji: normalizeEmoji(item?.emoji),
+  }));
 }
 
 function normalizeSpinDuration(
@@ -465,10 +483,14 @@ export function normalizeWheel(
     ).map(normalizeEntry),
 
     standardHistory:
-      wheel.standardHistory ?? [],
+      normalizeHistory(
+        wheel.standardHistory,
+      ),
 
     quizHistory:
-      wheel.quizHistory ?? [],
+      normalizeHistory(
+        wheel.quizHistory,
+      ),
 
     settings:
       normalizedSettings,
