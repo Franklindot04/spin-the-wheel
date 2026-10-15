@@ -27,6 +27,8 @@ export default function Home() {
     const [historyOpen, setHistoryOpen,] = useState(false);
     const [resetConfirmOpen, setResetConfirmOpen,] = useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
+    const settingsButtonRef = useRef<HTMLButtonElement>(null);
+    const settingsDialogRef = useRef<HTMLDivElement>(null);
     const [importError, setImportError,] = useState("");
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
     const hasLoadedStorage = useRef(false);
@@ -230,18 +232,50 @@ export default function Home() {
         if (!settingsOpen) {
             return;
         }
+        const settingsButton = settingsButtonRef.current;
+        const dialog = settingsDialogRef.current;
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key ===
                 "Escape") {
                 closeSettings();
+                return;
+            }
+            if (event.key !==
+                "Tab" ||
+                !dialog) {
+                return;
+            }
+            // Keep keyboard focus inside the dialog.
+            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])")).filter((element) => element.getClientRects().length > 0);
+            if (focusable.length === 0) {
+                event.preventDefault();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            if (event.shiftKey &&
+                (active === first ||
+                    active === dialog ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                last.focus();
+            }
+            else if (!event.shiftKey &&
+                (active === last ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                first.focus();
             }
         }
         const previousBodyOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
         window.addEventListener("keydown", handleKeyDown);
+        dialog?.focus();
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
             document.body.style.overflow = previousBodyOverflow;
+            settingsButton?.focus();
         };
     }, [settingsOpen]);
     const currentSetupEntries = mode === "standard"
@@ -863,7 +897,7 @@ export default function Home() {
             <button type="button" onClick={renameActiveWheel} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
               Rename
             </button>
-            <button type="button" onClick={() => setSettingsOpen(true)} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
+            <button ref={settingsButtonRef} type="button" onClick={() => setSettingsOpen(true)} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
               Settings
             </button>
           </div>
@@ -1162,18 +1196,19 @@ export default function Home() {
             : "entries"}
         </span>
       </footer>
-      {settingsOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-label="Settings" onMouseDown={(event) => {
+      {settingsOpen && (<div ref={settingsDialogRef} tabIndex={-1} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 outline-none" role="dialog" aria-modal="true" aria-label="Settings" onMouseDown={(event) => {
                 if (event.target ===
                     event.currentTarget) {
+                    event.preventDefault();
                     closeSettings();
                 }
             }}>
-          <div className={`flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl shadow-2xl ${theme.surfaceClass}`}>
+          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl">
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={resetWheelToDefaults} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
             </div>
-            <div className={`border-t px-5 py-4 ${theme.borderClass} ${theme.surfaceClass}`}>
-              <button type="button" onClick={closeSettings} className={`w-full rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+            <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
+              <button type="button" onClick={closeSettings} className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
                 Done
               </button>
             </div>
