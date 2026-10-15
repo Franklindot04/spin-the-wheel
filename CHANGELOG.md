@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- The wheel size is saved per wheel and the stepper shows the size that actually fits.
+- Wheel labels are drawn outward from the centre, use the largest font that fits, and are hidden from 40 visible entries (the full name stays in each slice's tooltip).
+- The Sunset accent colour is deeper so white text on it reaches 4.5:1.
+- The pointer is a pale shade of the theme colour when no entries are visible.
+- A loading state shows until saved wheels are read, so the default wheel no longer flashes.
+
+### Fixed
+
+- Settings number inputs show keyboard focus.
+- The "Image attached" and "Audio attached" labels are readable in every theme.
+- A single visible entry's label stays upright after spins.
+
+### Removed
+
+- The mute button, which did not play any sound.
+- Unused Geist font imports and variables.
+
 ## [2.0.4] - 2026-10-15
 
 ### Changed
