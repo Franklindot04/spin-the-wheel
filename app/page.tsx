@@ -10,7 +10,7 @@ import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, } from "./lib/wheel-defaults";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
-import { formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
+import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 export default function Home() {
     const [appData, setAppData] = useState<AppData>(createInitialAppData);
     const [mode, setMode] = useState<Mode>("standard");
@@ -453,7 +453,9 @@ export default function Home() {
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
-        if (entries.length <= 2) {
+        const target = entries.find((entry) => entry.id === id);
+        if (!target ||
+            !canDeleteEntry(entries, target)) {
             return;
         }
         if (mode === "standard") {

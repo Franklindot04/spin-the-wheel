@@ -28,6 +28,19 @@ export function formatHistoryTime(
   });
 }
 
+export function canDeleteEntry(
+  entries: WheelEntry[],
+  entry: WheelEntry,
+): boolean {
+  return (
+    entries.length > 2 &&
+    (entry.hidden === true ||
+      entries.filter(
+        (item) => !item.hidden,
+      ).length > 2)
+  );
+}
+
 export function getEntryWeight(
   entry: WheelEntry,
 ): number {
