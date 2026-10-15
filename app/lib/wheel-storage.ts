@@ -9,7 +9,6 @@ import {
   createDefaultWheelSettings,
   normalizeEntry,
   normalizeWheel,
-  normalizeWheelSettings,
 } from "./wheel-defaults";
 import { APPEARANCE_THEMES } from "./appearance-themes";
 
@@ -174,22 +173,4 @@ export function parseImportedData(
   }
 
   return imported;
-}
-
-export function normalizeImportedWheelSettings(
-  appData: AppData,
-): AppData {
-  return {
-    ...appData,
-
-    wheels: appData.wheels.map(
-      (wheel) => ({
-        ...wheel,
-        settings:
-          normalizeWheelSettings(
-            wheel.settings,
-          ),
-      }),
-    ),
-  };
 }

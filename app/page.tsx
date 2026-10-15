@@ -8,7 +8,7 @@ import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
-import { COLORS, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, } from "./lib/wheel-defaults";
+import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, } from "./lib/wheel-defaults";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import { formatHistoryTime, resolveStateValue, } from "./lib/wheel-utils";
 export default function Home() {
@@ -367,20 +367,9 @@ export default function Home() {
             ? standardEntries
             : quizEntries;
         const nextNumber = entries.length + 1;
-        const newEntry: WheelEntry = {
-            id: crypto.randomUUID(),
-            label: mode === "quiz"
-                ? `Question ${nextNumber}`
-                : `Option ${nextNumber}`,
-            color: COLORS[entries.length %
-                COLORS.length],
-            question: "",
-            answer: "",
-            textColor: "#0f172a",
-            fontFamily: "Arial, Helvetica, sans-serif",
-            weight: 1,
-            hidden: false,
-        };
+        const newEntry: WheelEntry = createEntry(crypto.randomUUID(), mode === "quiz"
+            ? `Question ${nextNumber}`
+            : `Option ${nextNumber}`, entries.length);
         if (mode === "standard") {
             setStandardEntries((current) => [
                 ...current,
