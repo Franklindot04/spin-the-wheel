@@ -590,12 +590,12 @@ export default function SettingsPanel({
 
             <div>
               <SectionTitle
-                title="Wheel size"
-                description="Choose how many entries your wheel should contain by default."
+                title="Entry limit"
+                description="The most entries a list can hold. Lowering it never removes existing entries; it only stops you adding more."
               />
 
               <NumberField
-                label="Number of entries"
+                label="Maximum entries"
                 value={
                   settings.numberOfEntries
                 }

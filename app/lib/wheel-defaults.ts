@@ -441,9 +441,6 @@ export function normalizeWheel(
       wheel.settings,
     );
 
-  const maxEntries =
-    normalizedSettings.maxEntries;
-
   return {
     ...wheel,
 
@@ -461,15 +458,11 @@ export function normalizeWheel(
 
     standardEntries: (
       wheel.standardEntries ?? []
-    )
-      .slice(0, maxEntries)
-      .map(normalizeEntry),
+    ).map(normalizeEntry),
 
     quizEntries: (
       wheel.quizEntries ?? []
-    )
-      .slice(0, maxEntries)
-      .map(normalizeEntry),
+    ).map(normalizeEntry),
 
     standardHistory:
       wheel.standardHistory ?? [],

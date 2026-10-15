@@ -17,6 +17,7 @@ type EntryMenuProps = {
   open: boolean;
   spinning: boolean;
   duplicateDisabled?: boolean;
+  duplicateDisabledTitle?: string;
   deleteDisabled?: boolean;
   onToggle: () => void;
   onClose: () => void;
@@ -374,6 +375,7 @@ export default function EntryMenu({
   open,
   spinning,
   duplicateDisabled = false,
+  duplicateDisabledTitle,
   deleteDisabled = false,
   onToggle,
   onClose,
@@ -1071,7 +1073,8 @@ export default function EntryMenu({
               }
               title={
                 duplicateDisabled
-                  ? "Back to Setup to duplicate questions"
+                  ? duplicateDisabledTitle ??
+                    "Back to Setup to duplicate questions"
                   : undefined
               }
               aria-label={`Duplicate entry ${entry.label}`.trim()}

@@ -21,6 +21,7 @@ type EntryListProps = {
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   additionsDisabled?: boolean;
+  maxEntries?: number;
   accentClass: string;
   accentHoverClass: string;
   theme: AppearanceThemeConfig;
@@ -80,6 +81,7 @@ export default function EntryList({
   onDelete,
   onDuplicate,
   additionsDisabled = false,
+  maxEntries,
   accentClass,
   accentHoverClass,
   theme,
@@ -88,6 +90,16 @@ export default function EntryList({
     openMenuId,
     setOpenMenuId,
   ] = useState<string | null>(null);
+
+  const atLimit =
+    maxEntries !== undefined &&
+    entries.length >= maxEntries;
+
+  const limitMessage = `Maximum ${maxEntries} ${
+    mode === "quiz"
+      ? "questions"
+      : "entries"
+  }`;
 
   function toggleHidden(
     entry: WheelEntry,
@@ -164,17 +176,24 @@ export default function EntryList({
             {mode === "quiz"
               ? "questions"
               : "entries"}
+            {atLimit &&
+              ` · ${limitMessage}`}
           </p>
         </div>
 
         <button
           type="button"
           onClick={onAdd}
-          disabled={additionsDisabled}
+          disabled={
+            additionsDisabled ||
+            atLimit
+          }
           title={
             additionsDisabled
               ? "Back to Setup to add questions"
-              : undefined
+              : atLimit
+                ? limitMessage
+                : undefined
           }
           className={`rounded-lg px-3 py-2 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-current focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
         >
@@ -303,7 +322,13 @@ export default function EntryList({
                       }
                       spinning={false}
                       duplicateDisabled={
+                        additionsDisabled ||
+                        atLimit
+                      }
+                      duplicateDisabledTitle={
                         additionsDisabled
+                          ? undefined
+                          : limitMessage
                       }
                       deleteDisabled={
                         !canDeleteEntry(

@@ -366,6 +366,9 @@ export default function Home() {
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
+        if (entries.length >= activeWheel.settings.maxEntries) {
+            return;
+        }
         const nextNumber = entries.length + 1;
         const newEntry: WheelEntry = createEntry(crypto.randomUUID(), mode === "quiz"
             ? `Question ${nextNumber}`
@@ -420,7 +423,8 @@ export default function Home() {
             ? standardEntries
             : quizEntries;
         const source = entries.find((entry) => entry.id === id);
-        if (!source) {
+        if (!source ||
+            entries.length >= activeWheel.settings.maxEntries) {
             return;
         }
         const duplicate: WheelEntry = {
@@ -1056,7 +1060,7 @@ export default function Home() {
           </div>
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
-                quizStarted} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+                quizStarted} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button type="button" onClick={resetWheelToDefaults} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries
