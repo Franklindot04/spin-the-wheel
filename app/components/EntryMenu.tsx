@@ -953,7 +953,7 @@ export default function EntryMenu({
                     className={`h-10 w-10 rounded-md object-cover ring-1 ${theme.borderClass}`}
                   />
 
-                  <span className="text-[10px] font-medium text-emerald-600">
+                  <span className="text-[10px] font-medium text-emerald-200">
                     Image attached
                   </span>
                 </div>
@@ -1043,7 +1043,7 @@ export default function EntryMenu({
                     className="h-8 min-w-0 flex-1"
                   />
 
-                  <span className="shrink-0 text-[10px] font-medium text-emerald-600">
+                  <span className="shrink-0 text-[10px] font-medium text-emerald-200">
                     Audio attached
                   </span>
                 </div>

@@ -152,7 +152,7 @@ function NumberField({
         {label}
       </span>
 
-      <div className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white">
+      <div className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white transition focus-within:border-slate-500 focus-within:ring-2 focus-within:ring-slate-200">
         <input
           type="number"
           min={min}
@@ -372,12 +372,6 @@ export default function SettingsPanel({
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] =
     useState<SettingsTab>("main");
-
-  // Sunset's accent is too light for white text on the selected card.
-  const selectedCardClass =
-    settings.pageTheme === "orange"
-      ? "bg-orange-700"
-      : accentClass;
 
   function updateSettings(
     changes: Partial<WheelSettings>,
@@ -781,7 +775,7 @@ export default function SettingsPanel({
                         }
                         className={`rounded-xl border p-4 text-left transition ${
                           selected
-                            ? `border-transparent ${selectedCardClass} text-white`
+                            ? `border-transparent ${accentClass} text-white`
                             : "border-slate-200 bg-white text-slate-900 hover:border-slate-400"
                         }`}
                       >

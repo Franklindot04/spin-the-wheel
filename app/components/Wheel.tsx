@@ -40,6 +40,10 @@ const CENTER = VIEWBOX_SIZE / 2;
 const RADIUS = 205;
 const LABEL_MAX_WIDTH = 130;
 const LABEL_CHAR_WIDTH = 0.6;
+const LABEL_RADIUS = 132;
+const LABEL_MAX_FONT_SIZE = 15;
+const LABEL_MIN_FONT_SIZE = 9;
+const HIDE_LABELS_AT = 40;
 
 function polarToCartesian(
   cx: number,
@@ -137,6 +141,61 @@ function describeArc(
   ].join(" ");
 }
 
+function getLabelLayout(
+  label: string,
+  angle: number,
+) {
+  for (
+    let fontSize =
+      LABEL_MAX_FONT_SIZE;
+    fontSize >=
+    LABEL_MIN_FONT_SIZE;
+    fontSize--
+  ) {
+    const maxChars = Math.floor(
+      LABEL_MAX_WIDTH /
+        (fontSize *
+          LABEL_CHAR_WIDTH),
+    );
+
+    const fits =
+      label.length <= maxChars;
+
+    if (
+      !fits &&
+      fontSize >
+        LABEL_MIN_FONT_SIZE
+    ) {
+      continue;
+    }
+
+    const text = fits
+      ? label
+      : `${label.slice(
+          0,
+          maxChars - 1,
+        )}…`;
+
+    const width =
+      text.length *
+      fontSize *
+      LABEL_CHAR_WIDTH;
+
+    const room =
+      (LABEL_RADIUS - width / 2) *
+      ((angle * Math.PI) / 180);
+
+    if (
+      fontSize * 0.8 + 2 <=
+      room
+    ) {
+      return { text, fontSize };
+    }
+  }
+
+  return null;
+}
+
 function clampSize(value: number) {
   return Math.min(
     MAX_SIZE,
@@ -144,10 +203,13 @@ function clampSize(value: number) {
   );
 }
 
+const DEFAULT_POINTER_FALLBACK = "#0f172a";
+
 function getInitialPointerColor(
   entries: WheelEntry[],
   rotation: number,
   enabled: boolean,
+  fallback: string,
 ) {
   if (!enabled) {
     return "#ffffff";
@@ -161,7 +223,7 @@ function getInitialPointerColor(
   if (
     visibleEntries.length === 0
   ) {
-    return "#0f172a";
+    return fallback;
   }
 
   const totalWeight =
@@ -194,7 +256,7 @@ function getInitialPointerColor(
     ) {
       return (
         entry.color ??
-        "#0f172a"
+        fallback
       );
     }
 
@@ -203,49 +265,7 @@ function getInitialPointerColor(
 
   return (
     visibleEntries[0]?.color ??
-    "#0f172a"
-  );
-}
-
-function SpeakerIcon({
-  muted,
-}: {
-  muted: boolean;
-}) {
-  if (muted) {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className="h-4 w-4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-        <path d="m19 9-6 6" />
-        <path d="m13 9 6 6" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
-    </svg>
+    fallback
   );
 }
 
@@ -350,9 +370,6 @@ export default function Wheel({
     ),
   );
 
-  const [muted, setMuted] =
-    useState(false);
-
   const [
     fullscreen,
     setFullscreen,
@@ -369,10 +386,23 @@ export default function Wheel({
   const rotationRef =
     useRef(rotation);
 
+  const [
+    availableWidth,
+    setAvailableWidth,
+  ] = useState<number | null>(null);
+
   const safeSize = clampSize(
     wheelSize ??
       internalWheelSize,
   );
+
+  const renderedSize =
+    availableWidth === null
+      ? safeSize
+      : Math.min(
+          safeSize,
+          availableWidth,
+        );
 
   const visibleEntries =
     useMemo(
@@ -448,6 +478,10 @@ export default function Wheel({
     ],
   );
 
+  const pointerFallbackColor =
+    theme?.pointerFallbackHex ??
+    DEFAULT_POINTER_FALLBACK;
+
   const [
     pointerColor,
     setPointerColor,
@@ -456,6 +490,7 @@ export default function Wheel({
       entries,
       rotation,
       pointerMatchSliceColor,
+      pointerFallbackColor,
     ),
   );
 
@@ -472,6 +507,37 @@ export default function Wheel({
     rotationRef.current =
       rotation;
   }, [rotation]);
+
+  useEffect(() => {
+    const container =
+      wheelContainerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const observer =
+      new ResizeObserver(
+        (observed) => {
+          const width =
+            observed[0]
+              ?.contentRect
+              .width;
+
+          if (width) {
+            setAvailableWidth(
+              Math.floor(width),
+            );
+          }
+        },
+      );
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     function handleFullscreenChange() {
@@ -535,7 +601,7 @@ export default function Wheel({
         : getSliceAtRotation(
             rotation,
           )?.entry.color ??
-          "#0f172a"
+          pointerFallbackColor
       : "#ffffff";
 
   function handleSpin() {
@@ -574,7 +640,7 @@ export default function Wheel({
             setPointerColor(
               finalSlice?.entry
                 .color ??
-                "#0f172a",
+                pointerFallbackColor,
             );
           } else {
             setPointerColor(
@@ -613,7 +679,7 @@ export default function Wheel({
   ) {
     const nextSize =
       clampSize(
-        safeSize +
+        renderedSize +
           direction *
             SIZE_STEP,
       );
@@ -659,7 +725,7 @@ export default function Wheel({
               )
             }
             disabled={
-              safeSize <=
+              renderedSize <=
                 MIN_SIZE ||
               spinning
             }
@@ -680,7 +746,7 @@ export default function Wheel({
             }`}
             aria-live="polite"
           >
-            {safeSize}
+            {renderedSize}
           </div>
 
           <button
@@ -691,8 +757,12 @@ export default function Wheel({
               )
             }
             disabled={
-              safeSize >=
+              renderedSize >=
                 MAX_SIZE ||
+              (availableWidth !==
+                null &&
+                renderedSize >=
+                  availableWidth) ||
               spinning
             }
             className={`flex h-9 w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
@@ -707,36 +777,6 @@ export default function Wheel({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              setMuted(
-                (current) =>
-                  !current,
-              )
-            }
-            disabled={spinning}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
-              theme
-                ? `${theme.controlClass} ${theme.controlHoverClass}`
-                : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
-            }`}
-            aria-label={
-              muted
-                ? "Unmute wheel"
-                : "Mute wheel"
-            }
-            title={
-              muted
-                ? "Unmute"
-                : "Mute"
-            }
-          >
-            <SpeakerIcon
-              muted={muted}
-            />
-          </button>
-
           <button
             type="button"
             onClick={
@@ -772,7 +812,7 @@ export default function Wheel({
         className="relative flex items-center justify-center"
         style={{
           width: "100%",
-          maxWidth: safeSize,
+          maxWidth: renderedSize,
           aspectRatio: "1 / 1",
         }}
       >
@@ -806,51 +846,34 @@ export default function Wheel({
                   polarToCartesian(
                     CENTER,
                     CENTER,
-                    132,
+                    LABEL_RADIUS,
                     mid,
                   );
 
                 let labelRotation =
-                  mid;
+                  mid - 90;
 
                 if (
-                  labelRotation >
-                    90 &&
-                  labelRotation <
-                    270
+                  mid >= 180 &&
+                  mid < 360
                 ) {
                   labelRotation +=
                     180;
                 }
 
-                const fontSize =
-                  angle < 14
-                    ? 9
-                    : angle < 22
-                      ? 11
-                      : angle < 35
-                        ? 13
-                        : 15;
+                if (angle >= 360) {
+                  labelRotation =
+                    -rotation;
+                }
 
-                const maxLabelChars =
-                  Math.min(
-                    28,
-                    Math.floor(
-                      LABEL_MAX_WIDTH /
-                        (fontSize *
-                          LABEL_CHAR_WIDTH),
-                    ),
-                  );
-
-                const label =
-                  entry.label.length >
-                  maxLabelChars
-                    ? `${entry.label.slice(
-                        0,
-                        maxLabelChars -
-                          1,
-                      )}…`
-                    : entry.label;
+                const labelLayout =
+                  visibleEntries.length >=
+                  HIDE_LABELS_AT
+                    ? null
+                    : getLabelLayout(
+                        entry.label,
+                        angle,
+                      );
 
                 return (
                   <g
@@ -858,6 +881,10 @@ export default function Wheel({
                       entry.id
                     }
                   >
+                    <title>
+                      {entry.label}
+                    </title>
+
                     <path
                       d={describeArc(
                         CENTER,
@@ -894,31 +921,35 @@ export default function Wheel({
                       />
                     ) : null}
 
-                    <text
-                      x={
-                        labelPoint.x
-                      }
-                      y={
-                        labelPoint.y
-                      }
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      transform={`rotate(${labelRotation} ${labelPoint.x} ${labelPoint.y})`}
-                      fill={
-                        entry.textColor ??
-                        "#0f172a"
-                      }
-                      fontFamily={
-                        entry.fontFamily ??
-                        "Arial, Helvetica, sans-serif"
-                      }
-                      fontSize={
-                        fontSize
-                      }
-                      fontWeight="700"
-                    >
-                      {label}
-                    </text>
+                    {labelLayout ? (
+                      <text
+                        x={
+                          labelPoint.x
+                        }
+                        y={
+                          labelPoint.y
+                        }
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        transform={`rotate(${labelRotation} ${labelPoint.x} ${labelPoint.y})`}
+                        fill={
+                          entry.textColor ??
+                          "#0f172a"
+                        }
+                        fontFamily={
+                          entry.fontFamily ??
+                          "Arial, Helvetica, sans-serif"
+                        }
+                        fontSize={
+                          labelLayout.fontSize
+                        }
+                        fontWeight="700"
+                      >
+                        {
+                          labelLayout.text
+                        }
+                      </text>
+                    ) : null}
                   </g>
                 );
               },

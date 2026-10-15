@@ -21,6 +21,7 @@ export const APPEARANCE_THEMES: Record<
     accentHoverClass: "hover:bg-slate-800",
     accentHex: "#0f172a",
     accentHoverHex: "#1e293b",
+    pointerFallbackHex: "#f8fafc",
 
     surfaceClass: "bg-slate-900",
     subtleSurfaceClass: "bg-slate-800",
@@ -50,6 +51,7 @@ export const APPEARANCE_THEMES: Record<
     accentHoverClass: "hover:bg-cyan-800",
     accentHex: "#0e7490",
     accentHoverHex: "#155e75",
+    pointerFallbackHex: "#ecfeff",
 
     surfaceClass: "bg-cyan-900",
     subtleSurfaceClass: "bg-cyan-800",
@@ -79,6 +81,7 @@ export const APPEARANCE_THEMES: Record<
     accentHoverClass: "hover:bg-emerald-800",
     accentHex: "#047857",
     accentHoverHex: "#065f46",
+    pointerFallbackHex: "#ecfdf5",
 
     surfaceClass: "bg-emerald-900",
     subtleSurfaceClass: "bg-emerald-800",
@@ -104,10 +107,11 @@ export const APPEARANCE_THEMES: Record<
     headerClass: "bg-orange-50",
     headerBorderClass: "border-orange-200",
 
-    accentClass: "bg-orange-600",
-    accentHoverClass: "hover:bg-orange-700",
-    accentHex: "#ea580c",
-    accentHoverHex: "#c2410c",
+    accentClass: "bg-orange-700",
+    accentHoverClass: "hover:bg-orange-800",
+    accentHex: "#c2410c",
+    accentHoverHex: "#9a3412",
+    pointerFallbackHex: "#fff7ed",
 
     surfaceClass: "bg-orange-900",
     subtleSurfaceClass: "bg-orange-800",
@@ -137,6 +141,7 @@ export const APPEARANCE_THEMES: Record<
     accentHoverClass: "hover:bg-violet-800",
     accentHex: "#6d28d9",
     accentHoverHex: "#5b21b6",
+    pointerFallbackHex: "#f5f3ff",
 
     surfaceClass: "bg-violet-900",
     subtleSurfaceClass: "bg-violet-800",
