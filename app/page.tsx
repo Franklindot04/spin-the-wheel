@@ -29,6 +29,7 @@ export default function Home() {
     const importInputRef = useRef<HTMLInputElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
     const settingsDialogRef = useRef<HTMLDivElement>(null);
+    const resetDialogRef = useRef<HTMLDivElement>(null);
     const [importError, setImportError,] = useState("");
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
     const hasLoadedStorage = useRef(false);
@@ -278,6 +279,53 @@ export default function Home() {
             settingsButton?.focus();
         };
     }, [settingsOpen]);
+    useEffect(() => {
+        if (!resetConfirmOpen) {
+            return;
+        }
+        const settingsButton = settingsButtonRef.current;
+        const dialog = resetDialogRef.current;
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key ===
+                "Escape") {
+                setResetConfirmOpen(false);
+                return;
+            }
+            if (event.key !==
+                "Tab" ||
+                !dialog) {
+                return;
+            }
+            // Keep keyboard focus inside the dialog.
+            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
+            if (focusable.length === 0) {
+                event.preventDefault();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            if (event.shiftKey &&
+                (active === first ||
+                    active === dialog ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                last.focus();
+            }
+            else if (!event.shiftKey &&
+                (active === last ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        dialog?.focus();
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            settingsButton?.focus();
+        };
+    }, [resetConfirmOpen]);
     const currentSetupEntries = mode === "standard"
         ? standardEntries
         : quizEntries;
@@ -711,6 +759,32 @@ export default function Home() {
         setRotation(0);
         setResetConfirmOpen(false);
     }
+    function resetCurrentEntries() {
+        if (spinning) {
+            return;
+        }
+        if (!window.confirm(`Reset the ${mode === "quiz" ? "quiz questions" : "entries"} to the defaults?`)) {
+            return;
+        }
+        if (mode === "standard") {
+            setStandardEntries(createInitialEntries());
+        }
+        else {
+            setQuizEntries(createInitialQuizEntries());
+        }
+        setAskedQuizIds([]);
+        setQuizStarted(false);
+        setSelectedEntry(null);
+        setShowAnswer(false);
+        setRotation(0);
+    }
+    function openRestoreDefaults() {
+        if (spinning) {
+            return;
+        }
+        setSettingsOpen(false);
+        setResetConfirmOpen(true);
+    }
     function exportData() {
         const blob = new Blob([
             serializeAppData(appData),
@@ -1062,7 +1136,7 @@ export default function Home() {
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
                 quizStarted} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
-                <button type="button" onClick={resetWheelToDefaults} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
+                <button type="button" onClick={resetCurrentEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries
                 </button>
               </div>
@@ -1201,7 +1275,7 @@ export default function Home() {
             }}>
           <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl">
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={resetWheelToDefaults} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
+              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
             </div>
             <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
               <button type="button" onClick={closeSettings} className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
@@ -1232,7 +1306,7 @@ export default function Home() {
           </div>
         </div>)}
       {resetConfirmOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
-          <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl ${theme.surfaceClass}`}>
+          <div ref={resetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Restore defaults" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
             <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
               Restore defaults?
             </h2>
