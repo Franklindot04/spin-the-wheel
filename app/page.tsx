@@ -8,7 +8,7 @@ import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
-import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, } from "./lib/wheel-defaults";
+import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 export default function Home() {
@@ -33,6 +33,14 @@ export default function Home() {
     const [importError, setImportError,] = useState("");
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
     const hasLoadedStorage = useRef(false);
+    const spinTimerRef = useRef<number | null>(null);
+    useEffect(() => {
+        return () => {
+            if (spinTimerRef.current !== null) {
+                window.clearTimeout(spinTimerRef.current);
+            }
+        };
+    }, []);
     function updateActiveWheel(changes: Partial<Wheel>) {
         setAppData((current) => ({
             ...current,
@@ -409,6 +417,9 @@ export default function Home() {
         remainingQuizEntries.length > 0 &&
         remainingVisibleQuizCount === 0;
     function addEntry() {
+        if (spinning) {
+            return;
+        }
         if (mode === "quiz" &&
             quizStarted) {
             return;
@@ -439,8 +450,7 @@ export default function Home() {
         setShowAnswer(false);
     }
     function updateEntry(id: string, changes: Partial<WheelEntry>) {
-        if (mode === "quiz" &&
-            spinning) {
+        if (spinning) {
             return;
         }
         if (mode === "standard") {
@@ -465,6 +475,9 @@ export default function Home() {
         }
     }
     function duplicateEntry(id: string) {
+        if (spinning) {
+            return;
+        }
         if (mode === "quiz" &&
             quizStarted) {
             return;
@@ -500,8 +513,7 @@ export default function Home() {
         setShowAnswer(false);
     }
     function deleteEntry(id: string) {
-        if (mode === "quiz" &&
-            spinning) {
+        if (spinning) {
             return;
         }
         const entries = mode === "standard"
@@ -646,9 +658,9 @@ export default function Home() {
         const spinSpeed = activeWheel.settings
             .spinSpeed ??
             DEFAULT_SPIN_SPEED;
-        const spinDuration = activeWheel.settings
+        const spinDuration = Math.min(MAX_SPIN_DURATION, Math.max(MIN_SPIN_DURATION, activeWheel.settings
             .spinDuration ??
-            DEFAULT_SPIN_DURATION;
+            DEFAULT_SPIN_DURATION));
         /*
          * Normalize the current rotation
          * so repeated spins stay aligned.
@@ -690,7 +702,8 @@ export default function Home() {
          * than trusting the originally selected
          * candidate.
          */
-        window.setTimeout(() => {
+        spinTimerRef.current = window.setTimeout(() => {
+            spinTimerRef.current = null;
             const finalRotation = ((targetRotation %
                 360) +
                 360) % 360;
@@ -1136,7 +1149,7 @@ export default function Home() {
           </div>
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
-                quizStarted} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+                quizStarted} disabled={spinning} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button type="button" onClick={resetCurrentEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries

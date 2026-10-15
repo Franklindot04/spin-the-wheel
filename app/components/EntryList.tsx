@@ -21,6 +21,7 @@ type EntryListProps = {
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   additionsDisabled?: boolean;
+  disabled?: boolean;
   maxEntries?: number;
   accentClass: string;
   accentHoverClass: string;
@@ -81,6 +82,7 @@ export default function EntryList({
   onDelete,
   onDuplicate,
   additionsDisabled = false,
+  disabled = false,
   maxEntries,
   accentClass,
   accentHoverClass,
@@ -185,6 +187,7 @@ export default function EntryList({
           type="button"
           onClick={onAdd}
           disabled={
+            disabled ||
             additionsDisabled ||
             atLimit
           }
@@ -252,7 +255,10 @@ export default function EntryList({
                           },
                         )
                       }
-                      className={`w-full rounded-lg border px-3 py-2 text-sm font-medium outline-none transition ${theme.inputClass} ${
+                      disabled={
+                        disabled
+                      }
+                      className={`w-full rounded-lg border px-3 py-2 text-sm font-medium outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass} ${
                         entry.hidden
                           ? theme.textMutedClass
                           : theme.textPrimaryClass
@@ -299,12 +305,15 @@ export default function EntryList({
                       aria-pressed={
                         !entry.hidden
                       }
+                      disabled={
+                        disabled
+                      }
                       title={
                         entry.hidden
                           ? "Show entry"
                           : "Hide entry"
                       }
-                      className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${theme.textMutedClass} ${theme.controlHoverClass}`}
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.textMutedClass} ${theme.controlHoverClass}`}
                     >
                       <EyeIcon
                         hidden={
@@ -320,7 +329,7 @@ export default function EntryList({
                         openMenuId ===
                         entry.id
                       }
-                      spinning={false}
+                      spinning={disabled}
                       duplicateDisabled={
                         additionsDisabled ||
                         atLimit
@@ -378,6 +387,7 @@ export default function EntryList({
                         )
                       }
                       disabled={
+                        disabled ||
                         !canDeleteEntry(
                           entries,
                           entry,
@@ -413,6 +423,7 @@ export default function EntryList({
                         )
                       }
                       disabled={
+                        disabled ||
                         weight <= 1
                       }
                       aria-label="Decrease slice weight"
@@ -435,8 +446,11 @@ export default function EntryList({
                           1,
                         )
                       }
+                      disabled={
+                        disabled
+                      }
                       aria-label="Increase slice weight"
-                      className={`flex h-7 w-8 items-center justify-center text-sm font-bold transition ${theme.textSecondaryClass} ${theme.controlHoverClass}`}
+                      className={`flex h-7 w-8 items-center justify-center text-sm font-bold transition ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-35`}
                     >
                       +
                     </button>
@@ -468,7 +482,10 @@ export default function EntryList({
                       }
                       placeholder="Question"
                       rows={3}
-                      className={`w-full resize-y rounded-lg border px-3 py-2 text-sm outline-none transition ${theme.inputClass}`}
+                      disabled={
+                        disabled
+                      }
+                      className={`w-full resize-y rounded-lg border px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass}`}
                     />
 
                     <div className="flex justify-end px-1">
@@ -505,7 +522,10 @@ export default function EntryList({
                       }
                       placeholder="Answer"
                       rows={3}
-                      className={`w-full resize-y rounded-lg border px-3 py-2 text-sm outline-none transition ${theme.inputClass}`}
+                      disabled={
+                        disabled
+                      }
+                      className={`w-full resize-y rounded-lg border px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass}`}
                     />
 
                     <div className="flex justify-end px-1">
