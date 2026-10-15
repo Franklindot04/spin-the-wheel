@@ -327,10 +327,23 @@ export default function Wheel({
   const rotationRef =
     useRef(rotation);
 
+  const [
+    availableWidth,
+    setAvailableWidth,
+  ] = useState<number | null>(null);
+
   const safeSize = clampSize(
     wheelSize ??
       internalWheelSize,
   );
+
+  const renderedSize =
+    availableWidth === null
+      ? safeSize
+      : Math.min(
+          safeSize,
+          availableWidth,
+        );
 
   const visibleEntries =
     useMemo(
@@ -435,6 +448,37 @@ export default function Wheel({
     rotationRef.current =
       rotation;
   }, [rotation]);
+
+  useEffect(() => {
+    const container =
+      wheelContainerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const observer =
+      new ResizeObserver(
+        (observed) => {
+          const width =
+            observed[0]
+              ?.contentRect
+              .width;
+
+          if (width) {
+            setAvailableWidth(
+              Math.floor(width),
+            );
+          }
+        },
+      );
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     function handleFullscreenChange() {
@@ -576,7 +620,7 @@ export default function Wheel({
   ) {
     const nextSize =
       clampSize(
-        safeSize +
+        renderedSize +
           direction *
             SIZE_STEP,
       );
@@ -622,7 +666,7 @@ export default function Wheel({
               )
             }
             disabled={
-              safeSize <=
+              renderedSize <=
                 MIN_SIZE ||
               spinning
             }
@@ -643,7 +687,7 @@ export default function Wheel({
             }`}
             aria-live="polite"
           >
-            {safeSize}
+            {renderedSize}
           </div>
 
           <button
@@ -654,8 +698,12 @@ export default function Wheel({
               )
             }
             disabled={
-              safeSize >=
+              renderedSize >=
                 MAX_SIZE ||
+              (availableWidth !==
+                null &&
+                renderedSize >=
+                  availableWidth) ||
               spinning
             }
             className={`flex h-9 w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
@@ -705,7 +753,7 @@ export default function Wheel({
         className="relative flex items-center justify-center"
         style={{
           width: "100%",
-          maxWidth: safeSize,
+          maxWidth: renderedSize,
           aspectRatio: "1 / 1",
         }}
       >
