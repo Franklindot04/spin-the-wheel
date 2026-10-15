@@ -40,6 +40,10 @@ const CENTER = VIEWBOX_SIZE / 2;
 const RADIUS = 205;
 const LABEL_MAX_WIDTH = 130;
 const LABEL_CHAR_WIDTH = 0.6;
+const LABEL_RADIUS = 132;
+const LABEL_MAX_FONT_SIZE = 15;
+const LABEL_MIN_FONT_SIZE = 9;
+const HIDE_LABELS_AT = 40;
 
 function polarToCartesian(
   cx: number,
@@ -135,6 +139,61 @@ function describeArc(
     end.y,
     "Z",
   ].join(" ");
+}
+
+function getLabelLayout(
+  label: string,
+  angle: number,
+) {
+  for (
+    let fontSize =
+      LABEL_MAX_FONT_SIZE;
+    fontSize >=
+    LABEL_MIN_FONT_SIZE;
+    fontSize--
+  ) {
+    const maxChars = Math.floor(
+      LABEL_MAX_WIDTH /
+        (fontSize *
+          LABEL_CHAR_WIDTH),
+    );
+
+    const fits =
+      label.length <= maxChars;
+
+    if (
+      !fits &&
+      fontSize >
+        LABEL_MIN_FONT_SIZE
+    ) {
+      continue;
+    }
+
+    const text = fits
+      ? label
+      : `${label.slice(
+          0,
+          maxChars - 1,
+        )}…`;
+
+    const width =
+      text.length *
+      fontSize *
+      LABEL_CHAR_WIDTH;
+
+    const room =
+      (LABEL_RADIUS - width / 2) *
+      ((angle * Math.PI) / 180);
+
+    if (
+      fontSize * 0.8 + 2 <=
+      room
+    ) {
+      return { text, fontSize };
+    }
+  }
+
+  return null;
 }
 
 function clampSize(value: number) {
@@ -787,51 +846,34 @@ export default function Wheel({
                   polarToCartesian(
                     CENTER,
                     CENTER,
-                    132,
+                    LABEL_RADIUS,
                     mid,
                   );
 
                 let labelRotation =
-                  mid;
+                  mid - 90;
 
                 if (
-                  labelRotation >
-                    90 &&
-                  labelRotation <
-                    270
+                  mid >= 180 &&
+                  mid < 360
                 ) {
                   labelRotation +=
                     180;
                 }
 
-                const fontSize =
-                  angle < 14
-                    ? 9
-                    : angle < 22
-                      ? 11
-                      : angle < 35
-                        ? 13
-                        : 15;
+                if (angle >= 360) {
+                  labelRotation =
+                    -rotation;
+                }
 
-                const maxLabelChars =
-                  Math.min(
-                    28,
-                    Math.floor(
-                      LABEL_MAX_WIDTH /
-                        (fontSize *
-                          LABEL_CHAR_WIDTH),
-                    ),
-                  );
-
-                const label =
-                  entry.label.length >
-                  maxLabelChars
-                    ? `${entry.label.slice(
-                        0,
-                        maxLabelChars -
-                          1,
-                      )}…`
-                    : entry.label;
+                const labelLayout =
+                  visibleEntries.length >=
+                  HIDE_LABELS_AT
+                    ? null
+                    : getLabelLayout(
+                        entry.label,
+                        angle,
+                      );
 
                 return (
                   <g
@@ -839,6 +881,10 @@ export default function Wheel({
                       entry.id
                     }
                   >
+                    <title>
+                      {entry.label}
+                    </title>
+
                     <path
                       d={describeArc(
                         CENTER,
@@ -875,31 +921,35 @@ export default function Wheel({
                       />
                     ) : null}
 
-                    <text
-                      x={
-                        labelPoint.x
-                      }
-                      y={
-                        labelPoint.y
-                      }
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      transform={`rotate(${labelRotation} ${labelPoint.x} ${labelPoint.y})`}
-                      fill={
-                        entry.textColor ??
-                        "#0f172a"
-                      }
-                      fontFamily={
-                        entry.fontFamily ??
-                        "Arial, Helvetica, sans-serif"
-                      }
-                      fontSize={
-                        fontSize
-                      }
-                      fontWeight="700"
-                    >
-                      {label}
-                    </text>
+                    {labelLayout ? (
+                      <text
+                        x={
+                          labelPoint.x
+                        }
+                        y={
+                          labelPoint.y
+                        }
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        transform={`rotate(${labelRotation} ${labelPoint.x} ${labelPoint.y})`}
+                        fill={
+                          entry.textColor ??
+                          "#0f172a"
+                        }
+                        fontFamily={
+                          entry.fontFamily ??
+                          "Arial, Helvetica, sans-serif"
+                        }
+                        fontSize={
+                          labelLayout.fontSize
+                        }
+                        fontWeight="700"
+                      >
+                        {
+                          labelLayout.text
+                        }
+                      </text>
+                    ) : null}
                   </g>
                 );
               },
