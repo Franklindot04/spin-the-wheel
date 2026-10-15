@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.0.4] - 2026-10-15
+
 ### Changed
 
 - "Reset Entries" now asks for confirmation and resets only the entries of the current mode (Standard or Quiz). "Restore defaults" in Settings now opens a confirmation dialog before resetting everything.
@@ -117,7 +119,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.3...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.4...HEAD
+[2.0.4]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.0...v2.0.1
