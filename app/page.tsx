@@ -55,6 +55,7 @@ export default function Home() {
             ...current,
             activeWheelId: id,
         }));
+        setMode("standard");
         setRotation(0);
         setSelectedEntry(null);
         setShowAnswer(false);
@@ -139,6 +140,7 @@ export default function Home() {
                 activeWheelId: remaining[0].id,
             };
         });
+        setMode("standard");
         setRotation(0);
         setSelectedEntry(null);
         setShowAnswer(false);
