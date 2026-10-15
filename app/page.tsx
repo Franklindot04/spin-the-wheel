@@ -427,6 +427,8 @@ export default function Home() {
             ...source,
             id: crypto.randomUUID(),
             label: `${source.label} Copy`,
+            hidden: false,
+            hiddenByHideAll: undefined,
         };
         const nextEntries = entries.flatMap((entry) => entry.id === id
             ? [
