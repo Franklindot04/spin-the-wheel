@@ -478,7 +478,8 @@ export default function Home() {
         }
         const isTextEdit = Object.keys(changes).every((key) => key === "label" ||
             key === "question" ||
-            key === "answer");
+            key === "answer" ||
+            key === "emoji");
         if (mode === "standard" &&
             !isTextEdit) {
             setSelectedEntry(null);
