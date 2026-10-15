@@ -27,6 +27,9 @@ export type AppearanceThemeConfig = {
   accentHex: string;
   accentHoverHex: string;
 
+  // Pointer fill when no entries are visible
+  pointerFallbackHex: string;
+
   // Surfaces
   surfaceClass: string;
   subtleSurfaceClass: string;

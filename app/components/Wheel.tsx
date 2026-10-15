@@ -144,10 +144,13 @@ function clampSize(value: number) {
   );
 }
 
+const DEFAULT_POINTER_FALLBACK = "#0f172a";
+
 function getInitialPointerColor(
   entries: WheelEntry[],
   rotation: number,
   enabled: boolean,
+  fallback: string,
 ) {
   if (!enabled) {
     return "#ffffff";
@@ -161,7 +164,7 @@ function getInitialPointerColor(
   if (
     visibleEntries.length === 0
   ) {
-    return "#0f172a";
+    return fallback;
   }
 
   const totalWeight =
@@ -194,7 +197,7 @@ function getInitialPointerColor(
     ) {
       return (
         entry.color ??
-        "#0f172a"
+        fallback
       );
     }
 
@@ -203,7 +206,7 @@ function getInitialPointerColor(
 
   return (
     visibleEntries[0]?.color ??
-    "#0f172a"
+    fallback
   );
 }
 
@@ -448,6 +451,10 @@ export default function Wheel({
     ],
   );
 
+  const pointerFallbackColor =
+    theme?.pointerFallbackHex ??
+    DEFAULT_POINTER_FALLBACK;
+
   const [
     pointerColor,
     setPointerColor,
@@ -456,6 +463,7 @@ export default function Wheel({
       entries,
       rotation,
       pointerMatchSliceColor,
+      pointerFallbackColor,
     ),
   );
 
@@ -535,7 +543,7 @@ export default function Wheel({
         : getSliceAtRotation(
             rotation,
           )?.entry.color ??
-          "#0f172a"
+          pointerFallbackColor
       : "#ffffff";
 
   function handleSpin() {
@@ -574,7 +582,7 @@ export default function Wheel({
             setPointerColor(
               finalSlice?.entry
                 .color ??
-                "#0f172a",
+                pointerFallbackColor,
             );
           } else {
             setPointerColor(
