@@ -210,48 +210,6 @@ function getInitialPointerColor(
   );
 }
 
-function SpeakerIcon({
-  muted,
-}: {
-  muted: boolean;
-}) {
-  if (muted) {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className="h-4 w-4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-        <path d="m19 9-6 6" />
-        <path d="m13 9 6 6" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
-    </svg>
-  );
-}
-
 function FullscreenIcon({
   active,
 }: {
@@ -352,9 +310,6 @@ export default function Wheel({
       wheelSize ?? DEFAULT_SIZE,
     ),
   );
-
-  const [muted, setMuted] =
-    useState(false);
 
   const [
     fullscreen,
@@ -715,36 +670,6 @@ export default function Wheel({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              setMuted(
-                (current) =>
-                  !current,
-              )
-            }
-            disabled={spinning}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
-              theme
-                ? `${theme.controlClass} ${theme.controlHoverClass}`
-                : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
-            }`}
-            aria-label={
-              muted
-                ? "Unmute wheel"
-                : "Mute wheel"
-            }
-            title={
-              muted
-                ? "Unmute"
-                : "Mute"
-            }
-          >
-            <SpeakerIcon
-              muted={muted}
-            />
-          </button>
-
           <button
             type="button"
             onClick={
