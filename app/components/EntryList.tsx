@@ -305,6 +305,12 @@ export default function EntryList({
                       duplicateDisabled={
                         additionsDisabled
                       }
+                      deleteDisabled={
+                        !canDeleteEntry(
+                          entries,
+                          entry,
+                        )
+                      }
                       onToggle={() =>
                         setOpenMenuId(
                           (

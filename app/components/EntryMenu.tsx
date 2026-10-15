@@ -17,6 +17,7 @@ type EntryMenuProps = {
   open: boolean;
   spinning: boolean;
   duplicateDisabled?: boolean;
+  deleteDisabled?: boolean;
   onToggle: () => void;
   onClose: () => void;
   onUpdate: (
@@ -373,6 +374,7 @@ export default function EntryMenu({
   open,
   spinning,
   duplicateDisabled = false,
+  deleteDisabled = false,
   onToggle,
   onClose,
   onUpdate,
@@ -1085,7 +1087,15 @@ export default function EntryMenu({
             <button
               type="button"
               onClick={handleDelete}
-              disabled={spinning}
+              disabled={
+                spinning ||
+                deleteDisabled
+              }
+              title={
+                deleteDisabled
+                  ? "Keep at least 2 visible entries"
+                  : undefined
+              }
               aria-label={`Delete entry ${entry.label}`.trim()}
               className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-medium text-red-300 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
             >
