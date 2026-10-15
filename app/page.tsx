@@ -469,7 +469,11 @@ export default function Home() {
                 }
                 : entry));
         }
-        if (mode === "standard") {
+        const isTextEdit = Object.keys(changes).every((key) => key === "label" ||
+            key === "question" ||
+            key === "answer");
+        if (mode === "standard" &&
+            !isTextEdit) {
             setSelectedEntry(null);
             setShowAnswer(false);
         }
