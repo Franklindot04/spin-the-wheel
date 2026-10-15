@@ -104,10 +104,10 @@ export const APPEARANCE_THEMES: Record<
     headerClass: "bg-orange-50",
     headerBorderClass: "border-orange-200",
 
-    accentClass: "bg-orange-600",
-    accentHoverClass: "hover:bg-orange-700",
-    accentHex: "#ea580c",
-    accentHoverHex: "#c2410c",
+    accentClass: "bg-orange-700",
+    accentHoverClass: "hover:bg-orange-800",
+    accentHex: "#c2410c",
+    accentHoverHex: "#9a3412",
 
     surfaceClass: "bg-orange-900",
     subtleSurfaceClass: "bg-orange-800",

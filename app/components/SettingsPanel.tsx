@@ -373,12 +373,6 @@ export default function SettingsPanel({
   const [activeTab, setActiveTab] =
     useState<SettingsTab>("main");
 
-  // Sunset's accent is too light for white text on the selected card.
-  const selectedCardClass =
-    settings.pageTheme === "orange"
-      ? "bg-orange-700"
-      : accentClass;
-
   function updateSettings(
     changes: Partial<WheelSettings>,
   ) {
@@ -781,7 +775,7 @@ export default function SettingsPanel({
                         }
                         className={`rounded-xl border p-4 text-left transition ${
                           selected
-                            ? `border-transparent ${selectedCardClass} text-white`
+                            ? `border-transparent ${accentClass} text-white`
                             : "border-slate-200 bg-white text-slate-900 hover:border-slate-400"
                         }`}
                       >
