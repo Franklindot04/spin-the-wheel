@@ -10,6 +10,7 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
+import { getEntryWeight } from "../lib/wheel-utils";
 
 type EntryMenuProps = {
   entry: WheelEntry;
@@ -67,15 +68,6 @@ const FONT_OPTIONS = [
       "'Courier New', Courier, monospace",
   },
 ];
-
-function normalizedWeight(
-  entry: WheelEntry,
-): number {
-  return Math.max(
-    1,
-    Math.floor(entry.weight ?? 1),
-  );
-}
 
 function formatFileSize(
   bytes: number,
@@ -455,7 +447,7 @@ export default function EntryMenu({
   }, [open, onClose]);
 
   const weight =
-    normalizedWeight(entry);
+    getEntryWeight(entry);
 
   function updateWeight(
     direction: -1 | 1,

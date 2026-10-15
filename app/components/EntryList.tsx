@@ -7,6 +7,7 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
+import { getEntryWeight } from "../lib/wheel-utils";
 import EntryMenu from "./EntryMenu";
 
 type EntryListProps = {
@@ -24,15 +25,6 @@ type EntryListProps = {
   accentHoverClass: string;
   theme: AppearanceThemeConfig;
 };
-
-function normalizedWeight(
-  entry: WheelEntry,
-): number {
-  return Math.max(
-    1,
-    Math.floor(entry.weight ?? 1),
-  );
-}
 
 function EyeIcon({
   hidden,
@@ -111,7 +103,7 @@ export default function EntryList({
     direction: -1 | 1,
   ) {
     const currentWeight =
-      normalizedWeight(entry);
+      getEntryWeight(entry);
 
     const nextWeight = Math.max(
       1,
@@ -194,7 +186,7 @@ export default function EntryList({
         {entries.map(
           (entry, index) => {
             const weight =
-              normalizedWeight(
+              getEntryWeight(
                 entry,
               );
 

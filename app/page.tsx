@@ -10,7 +10,7 @@ import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, } from "./lib/wheel-defaults";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
-import { formatHistoryTime, resolveStateValue, } from "./lib/wheel-utils";
+import { formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 export default function Home() {
     const [appData, setAppData] = useState<AppData>(createInitialAppData);
     const [mode, setMode] = useState<Mode>("standard");
@@ -547,9 +547,8 @@ export default function Home() {
          * slices, so winner selection uses
          * the same weights.
          */
-        const getWeight = (entry: WheelEntry) => Math.max(1, Math.floor(entry.weight ?? 1));
         const totalWeight = entriesForSpin.reduce((sum, entry) => sum +
-            getWeight(entry), 0);
+            getEntryWeight(entry), 0);
         /*
          * Select a candidate using the
          * weighted probability distribution.
@@ -561,7 +560,7 @@ export default function Home() {
         for (let index = 0; index <
             entriesForSpin.length; index += 1) {
             accumulatedWeight +=
-                getWeight(entriesForSpin[index]);
+                getEntryWeight(entriesForSpin[index]);
             if (randomValue <
                 accumulatedWeight) {
                 selectedIndex =
@@ -576,12 +575,12 @@ export default function Home() {
         let selectedStart = 0;
         for (let index = 0; index < selectedIndex; index += 1) {
             selectedStart +=
-                (getWeight(entriesForSpin[index]) /
+                (getEntryWeight(entriesForSpin[index]) /
                     totalWeight) *
                     360;
         }
         const selected = entriesForSpin[selectedIndex];
-        const selectedAngle = (getWeight(selected) /
+        const selectedAngle = (getEntryWeight(selected) /
             totalWeight) *
             360;
         const selectedCenter = selectedStart +
@@ -649,7 +648,7 @@ export default function Home() {
             let finalStart = 0;
             let finalEntry = entriesForSpin[0];
             for (const entry of entriesForSpin) {
-                const angle = (getWeight(entry) /
+                const angle = (getEntryWeight(entry) /
                     totalWeight) * 360;
                 const finalEnd = finalStart +
                     angle;

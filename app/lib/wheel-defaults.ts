@@ -11,6 +11,7 @@ import type {
 } from "./wheel-types";
 
 import { APPEARANCE_THEMES } from "./appearance-themes";
+import { getEntryWeight } from "./wheel-utils";
 
 export const COLORS = [
   "#bfdbfe",
@@ -174,10 +175,7 @@ export function normalizeEntry(
       entry.fontFamily ||
       DEFAULT_FONT_FAMILY,
 
-    weight: Math.max(
-      1,
-      Math.floor(entry.weight ?? 1),
-    ),
+    weight: getEntryWeight(entry),
 
     hidden:
       entry.hidden ?? false,
