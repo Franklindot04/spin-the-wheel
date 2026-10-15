@@ -11,6 +11,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - The header title is larger and bolder, and the edit icons beside the title and description are larger with a bigger tap target.
 - The entry name input has its own line on small screens, so longer names fit.
 - Fullscreen and the wheel controls (size, mute, fullscreen) follow the selected theme.
+- The Settings dialog footer is light to match the panel, and keyboard focus stays inside the dialog while it is open and returns to the Settings button when it closes.
+-  Settings switches, the volume slider and the selected cards follow the theme accent colour.
 
 ### Fixed
 
@@ -22,6 +24,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - The entry menu's Duplicate and Delete buttons include the entry name in their accessible labels.
 - Icon buttons (wheel size, mute, fullscreen, header edit icons, and the sidebar eye, export and import) show a visible focus ring when reached by keyboard.
 - Clone and remote commands in the README and contributing guide are plain URLs that can be copied.
+- Entry inputs show a visible focus ring in every theme.
+- The wheel pointer is white with a dark outline when "Pointer matches slice colour" is off, so it stays visible on dark themes.
+- The red delete and remove text on entry rows and in the entry menu passes contrast in every theme.
 
 ## [2.0.2] - 2026-10-14
 

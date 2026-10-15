@@ -52,6 +52,7 @@ type SettingsPanelProps = {
   ) => void;
   onRestoreDefaults: () => void;
   accentClass?: string;
+  accentHex?: string;
 };
 
 type ToggleProps = {
@@ -59,6 +60,7 @@ type ToggleProps = {
   onChange: (checked: boolean) => void;
   label: string;
   description?: string;
+  accentClass: string;
 };
 
 function Toggle({
@@ -66,6 +68,7 @@ function Toggle({
   onChange,
   label,
   description,
+  accentClass,
 }: ToggleProps) {
   return (
     <div className="flex items-center justify-between gap-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
@@ -88,8 +91,8 @@ function Toggle({
         onClick={() => onChange(!checked)}
         className={`relative h-6 w-11 shrink-0 rounded-full transition ${
           checked
-            ? "bg-slate-900"
-            : "bg-slate-300"
+            ? accentClass
+            : "bg-slate-500"
         }`}
       >
         <span
@@ -365,9 +368,16 @@ export default function SettingsPanel({
   onSettingsChange,
   onRestoreDefaults,
   accentClass = "bg-slate-900",
+  accentHex = "#0f172a",
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] =
     useState<SettingsTab>("main");
+
+  // Sunset's accent is too light for white text on the selected card.
+  const selectedCardClass =
+    settings.pageTheme === "orange"
+      ? "bg-orange-700"
+      : accentClass;
 
   function updateSettings(
     changes: Partial<WheelSettings>,
@@ -479,6 +489,7 @@ export default function SettingsPanel({
                   })
                 }
                 label="Pointer matches slice color"
+                accentClass={accentClass}
                 description="Change the pointer color to match the slice currently under it."
               />
 
@@ -492,6 +503,7 @@ export default function SettingsPanel({
                   })
                 }
                 label="Confetti effect"
+                accentClass={accentClass}
                 description="Celebrate the winning result when the wheel stops."
               />
             </div>
@@ -536,6 +548,7 @@ export default function SettingsPanel({
                     })
                   }
                   label="Enable auto-generation"
+                  accentClass={accentClass}
                 />
 
                 {settings.autoGenerateEnabled ? (
@@ -616,6 +629,7 @@ export default function SettingsPanel({
                   })
                 }
                 label="Enable sound"
+                accentClass={accentClass}
               />
             </div>
 
@@ -702,7 +716,11 @@ export default function SettingsPanel({
                       ),
                     })
                   }
-                  className="w-full accent-slate-900"
+                  className="w-full"
+                  style={{
+                    accentColor:
+                      accentHex,
+                  }}
                 />
 
                 <div className="mt-2 flex justify-between text-xs font-semibold text-slate-500">
@@ -735,6 +753,7 @@ export default function SettingsPanel({
                   })
                 }
                 label="Enable confetti"
+                accentClass={accentClass}
               />
             </div>
 
@@ -762,7 +781,7 @@ export default function SettingsPanel({
                         }
                         className={`rounded-xl border p-4 text-left transition ${
                           selected
-                            ? "border-slate-900 bg-slate-900 text-white"
+                            ? `border-transparent ${selectedCardClass} text-white`
                             : "border-slate-200 bg-white text-slate-900 hover:border-slate-400"
                         }`}
                       >
@@ -783,7 +802,7 @@ export default function SettingsPanel({
                         <p
                           className={`mt-2 text-xs leading-5 ${
                             selected
-                              ? "text-slate-300"
+                              ? "text-white"
                               : "text-slate-500"
                           }`}
                         >
@@ -825,9 +844,17 @@ export default function SettingsPanel({
                         }
                         className={`overflow-hidden rounded-xl border text-left transition ${
                           selected
-                            ? "border-slate-950 ring-2 ring-slate-950 ring-offset-2"
+                            ? "border-current ring-2 ring-current ring-offset-2"
                             : "border-slate-200 hover:border-slate-400"
                         }`}
+                        style={
+                          selected
+                            ? {
+                                color:
+                                  accentHex,
+                              }
+                            : undefined
+                        }
                       >
                         <div
                           className={`h-16 ${theme.previewClass}`}
