@@ -32,6 +32,7 @@ export default function Home() {
     const resetDialogRef = useRef<HTMLDivElement>(null);
     const [importError, setImportError,] = useState("");
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
+    const [storageLoaded, setStorageLoaded,] = useState(false);
     const hasLoadedStorage = useRef(false);
     const spinTimerRef = useRef<number | null>(null);
     useEffect(() => {
@@ -213,15 +214,14 @@ export default function Home() {
                 // Ignore invalid or unavailable local storage.
             }
             finally {
-                hasLoadedStorage.current =
-                    true;
+                setStorageLoaded(true);
             }
         };
-        const timer = window.setTimeout(loadStoredData, 0);
-        return () => {
-            window.clearTimeout(timer);
-        };
+        loadStoredData();
     }, []);
+    useEffect(() => {
+        hasLoadedStorage.current = storageLoaded;
+    }, [storageLoaded]);
     useEffect(() => {
         if (!hasLoadedStorage.current) {
             return;
@@ -950,6 +950,18 @@ export default function Home() {
     const actionHoverClass = appearanceTheme === "classic"
         ? "hover:bg-slate-600"
         : theme.accentHoverClass;
+    if (!storageLoaded) {
+        return (<main key="loading-shell" className="min-h-screen bg-slate-950" aria-busy="true">
+        <header className="border-b border-slate-200 bg-slate-50">
+          <div className="mx-auto h-[101px] max-w-7xl px-4 sm:px-6"/>
+        </header>
+        <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+          <div className="min-h-[560px] rounded-2xl border border-slate-700 bg-slate-900 shadow-sm" role="status">
+            <span className="sr-only">Loading saved wheels…</span>
+          </div>
+        </section>
+      </main>);
+    }
     return (<main className={`min-h-screen transition-colors ${theme.pageClass} ${theme.textPrimaryClass}`} style={{
             "--wheel-accent": theme.accentHex,
             "--wheel-accent-hover": theme.accentHoverHex,
