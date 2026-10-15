@@ -6,6 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- "Reset Entries" now asks for confirmation and resets only the entries of the current mode (Standard or Quiz). "Restore defaults" in Settings now opens a confirmation dialog before resetting everything.
+- The Settings entry-limit field is labelled "Maximum entries". Lowering it never removes existing entries; it only stops new ones being added.
+
+### Fixed
+
+- Entries beyond the limit are no longer cut when the page loads or a file is imported. Add and Duplicate stop at the limit instead.
+- Duplicating a hidden entry creates a visible copy.
+- Delete is disabled, in the row and in the entry menu, when it would leave fewer than two visible entries.
+
+### Removed
+
+- Unused components (`PersonalisePanel`, `WheelToolbar`, `WheelManager`, `HistoryPanel`) and an unused settings helper.
+
 ## [2.0.3] - 2026-10-15
 
 ### Changed

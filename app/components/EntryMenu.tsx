@@ -10,12 +10,15 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
+import { getEntryWeight } from "../lib/wheel-utils";
 
 type EntryMenuProps = {
   entry: WheelEntry;
   open: boolean;
   spinning: boolean;
   duplicateDisabled?: boolean;
+  duplicateDisabledTitle?: string;
+  deleteDisabled?: boolean;
   onToggle: () => void;
   onClose: () => void;
   onUpdate: (
@@ -67,15 +70,6 @@ const FONT_OPTIONS = [
       "'Courier New', Courier, monospace",
   },
 ];
-
-function normalizedWeight(
-  entry: WheelEntry,
-): number {
-  return Math.max(
-    1,
-    Math.floor(entry.weight ?? 1),
-  );
-}
 
 function formatFileSize(
   bytes: number,
@@ -381,6 +375,8 @@ export default function EntryMenu({
   open,
   spinning,
   duplicateDisabled = false,
+  duplicateDisabledTitle,
+  deleteDisabled = false,
   onToggle,
   onClose,
   onUpdate,
@@ -455,7 +451,7 @@ export default function EntryMenu({
   }, [open, onClose]);
 
   const weight =
-    normalizedWeight(entry);
+    getEntryWeight(entry);
 
   function updateWeight(
     direction: -1 | 1,
@@ -1077,7 +1073,8 @@ export default function EntryMenu({
               }
               title={
                 duplicateDisabled
-                  ? "Back to Setup to duplicate questions"
+                  ? duplicateDisabledTitle ??
+                    "Back to Setup to duplicate questions"
                   : undefined
               }
               aria-label={`Duplicate entry ${entry.label}`.trim()}
@@ -1093,7 +1090,15 @@ export default function EntryMenu({
             <button
               type="button"
               onClick={handleDelete}
-              disabled={spinning}
+              disabled={
+                spinning ||
+                deleteDisabled
+              }
+              title={
+                deleteDisabled
+                  ? "Keep at least 2 visible entries"
+                  : undefined
+              }
               aria-label={`Delete entry ${entry.label}`.trim()}
               className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-medium text-red-300 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
             >

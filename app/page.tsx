@@ -8,9 +8,9 @@ import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
-import { COLORS, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, } from "./lib/wheel-defaults";
+import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, } from "./lib/wheel-defaults";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
-import { formatHistoryTime, resolveStateValue, } from "./lib/wheel-utils";
+import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 export default function Home() {
     const [appData, setAppData] = useState<AppData>(createInitialAppData);
     const [mode, setMode] = useState<Mode>("standard");
@@ -29,6 +29,7 @@ export default function Home() {
     const importInputRef = useRef<HTMLInputElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
     const settingsDialogRef = useRef<HTMLDivElement>(null);
+    const resetDialogRef = useRef<HTMLDivElement>(null);
     const [importError, setImportError,] = useState("");
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
     const hasLoadedStorage = useRef(false);
@@ -278,6 +279,53 @@ export default function Home() {
             settingsButton?.focus();
         };
     }, [settingsOpen]);
+    useEffect(() => {
+        if (!resetConfirmOpen) {
+            return;
+        }
+        const settingsButton = settingsButtonRef.current;
+        const dialog = resetDialogRef.current;
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key ===
+                "Escape") {
+                setResetConfirmOpen(false);
+                return;
+            }
+            if (event.key !==
+                "Tab" ||
+                !dialog) {
+                return;
+            }
+            // Keep keyboard focus inside the dialog.
+            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
+            if (focusable.length === 0) {
+                event.preventDefault();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            if (event.shiftKey &&
+                (active === first ||
+                    active === dialog ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                last.focus();
+            }
+            else if (!event.shiftKey &&
+                (active === last ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        dialog?.focus();
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            settingsButton?.focus();
+        };
+    }, [resetConfirmOpen]);
     const currentSetupEntries = mode === "standard"
         ? standardEntries
         : quizEntries;
@@ -366,21 +414,13 @@ export default function Home() {
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
+        if (entries.length >= activeWheel.settings.maxEntries) {
+            return;
+        }
         const nextNumber = entries.length + 1;
-        const newEntry: WheelEntry = {
-            id: crypto.randomUUID(),
-            label: mode === "quiz"
-                ? `Question ${nextNumber}`
-                : `Option ${nextNumber}`,
-            color: COLORS[entries.length %
-                COLORS.length],
-            question: "",
-            answer: "",
-            textColor: "#0f172a",
-            fontFamily: "Arial, Helvetica, sans-serif",
-            weight: 1,
-            hidden: false,
-        };
+        const newEntry: WheelEntry = createEntry(crypto.randomUUID(), mode === "quiz"
+            ? `Question ${nextNumber}`
+            : `Option ${nextNumber}`, entries.length);
         if (mode === "standard") {
             setStandardEntries((current) => [
                 ...current,
@@ -431,13 +471,16 @@ export default function Home() {
             ? standardEntries
             : quizEntries;
         const source = entries.find((entry) => entry.id === id);
-        if (!source) {
+        if (!source ||
+            entries.length >= activeWheel.settings.maxEntries) {
             return;
         }
         const duplicate: WheelEntry = {
             ...source,
             id: crypto.randomUUID(),
             label: `${source.label} Copy`,
+            hidden: false,
+            hiddenByHideAll: undefined,
         };
         const nextEntries = entries.flatMap((entry) => entry.id === id
             ? [
@@ -462,7 +505,9 @@ export default function Home() {
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
-        if (entries.length <= 2) {
+        const target = entries.find((entry) => entry.id === id);
+        if (!target ||
+            !canDeleteEntry(entries, target)) {
             return;
         }
         if (mode === "standard") {
@@ -558,9 +603,8 @@ export default function Home() {
          * slices, so winner selection uses
          * the same weights.
          */
-        const getWeight = (entry: WheelEntry) => Math.max(1, Math.floor(entry.weight ?? 1));
         const totalWeight = entriesForSpin.reduce((sum, entry) => sum +
-            getWeight(entry), 0);
+            getEntryWeight(entry), 0);
         /*
          * Select a candidate using the
          * weighted probability distribution.
@@ -572,7 +616,7 @@ export default function Home() {
         for (let index = 0; index <
             entriesForSpin.length; index += 1) {
             accumulatedWeight +=
-                getWeight(entriesForSpin[index]);
+                getEntryWeight(entriesForSpin[index]);
             if (randomValue <
                 accumulatedWeight) {
                 selectedIndex =
@@ -587,12 +631,12 @@ export default function Home() {
         let selectedStart = 0;
         for (let index = 0; index < selectedIndex; index += 1) {
             selectedStart +=
-                (getWeight(entriesForSpin[index]) /
+                (getEntryWeight(entriesForSpin[index]) /
                     totalWeight) *
                     360;
         }
         const selected = entriesForSpin[selectedIndex];
-        const selectedAngle = (getWeight(selected) /
+        const selectedAngle = (getEntryWeight(selected) /
             totalWeight) *
             360;
         const selectedCenter = selectedStart +
@@ -660,7 +704,7 @@ export default function Home() {
             let finalStart = 0;
             let finalEntry = entriesForSpin[0];
             for (const entry of entriesForSpin) {
-                const angle = (getWeight(entry) /
+                const angle = (getEntryWeight(entry) /
                     totalWeight) * 360;
                 const finalEnd = finalStart +
                     angle;
@@ -714,6 +758,32 @@ export default function Home() {
         setShowAnswer(false);
         setRotation(0);
         setResetConfirmOpen(false);
+    }
+    function resetCurrentEntries() {
+        if (spinning) {
+            return;
+        }
+        if (!window.confirm(`Reset the ${mode === "quiz" ? "quiz questions" : "entries"} to the defaults?`)) {
+            return;
+        }
+        if (mode === "standard") {
+            setStandardEntries(createInitialEntries());
+        }
+        else {
+            setQuizEntries(createInitialQuizEntries());
+        }
+        setAskedQuizIds([]);
+        setQuizStarted(false);
+        setSelectedEntry(null);
+        setShowAnswer(false);
+        setRotation(0);
+    }
+    function openRestoreDefaults() {
+        if (spinning) {
+            return;
+        }
+        setSettingsOpen(false);
+        setResetConfirmOpen(true);
     }
     function exportData() {
         const blob = new Blob([
@@ -1064,9 +1134,9 @@ export default function Home() {
           </div>
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
-                quizStarted} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+                quizStarted} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
-                <button type="button" onClick={resetWheelToDefaults} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
+                <button type="button" onClick={resetCurrentEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries
                 </button>
               </div>
@@ -1205,7 +1275,7 @@ export default function Home() {
             }}>
           <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl">
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={resetWheelToDefaults} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
+              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
             </div>
             <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
               <button type="button" onClick={closeSettings} className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
@@ -1236,7 +1306,7 @@ export default function Home() {
           </div>
         </div>)}
       {resetConfirmOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
-          <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl ${theme.surfaceClass}`}>
+          <div ref={resetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Restore defaults" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
             <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
               Restore defaults?
             </h2>

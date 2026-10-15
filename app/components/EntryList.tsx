@@ -7,6 +7,7 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
+import { canDeleteEntry, getEntryWeight } from "../lib/wheel-utils";
 import EntryMenu from "./EntryMenu";
 
 type EntryListProps = {
@@ -20,19 +21,11 @@ type EntryListProps = {
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   additionsDisabled?: boolean;
+  maxEntries?: number;
   accentClass: string;
   accentHoverClass: string;
   theme: AppearanceThemeConfig;
 };
-
-function normalizedWeight(
-  entry: WheelEntry,
-): number {
-  return Math.max(
-    1,
-    Math.floor(entry.weight ?? 1),
-  );
-}
 
 function EyeIcon({
   hidden,
@@ -88,6 +81,7 @@ export default function EntryList({
   onDelete,
   onDuplicate,
   additionsDisabled = false,
+  maxEntries,
   accentClass,
   accentHoverClass,
   theme,
@@ -96,6 +90,16 @@ export default function EntryList({
     openMenuId,
     setOpenMenuId,
   ] = useState<string | null>(null);
+
+  const atLimit =
+    maxEntries !== undefined &&
+    entries.length >= maxEntries;
+
+  const limitMessage = `Maximum ${maxEntries} ${
+    mode === "quiz"
+      ? "questions"
+      : "entries"
+  }`;
 
   function toggleHidden(
     entry: WheelEntry,
@@ -111,7 +115,7 @@ export default function EntryList({
     direction: -1 | 1,
   ) {
     const currentWeight =
-      normalizedWeight(entry);
+      getEntryWeight(entry);
 
     const nextWeight = Math.max(
       1,
@@ -172,17 +176,24 @@ export default function EntryList({
             {mode === "quiz"
               ? "questions"
               : "entries"}
+            {atLimit &&
+              ` · ${limitMessage}`}
           </p>
         </div>
 
         <button
           type="button"
           onClick={onAdd}
-          disabled={additionsDisabled}
+          disabled={
+            additionsDisabled ||
+            atLimit
+          }
           title={
             additionsDisabled
               ? "Back to Setup to add questions"
-              : undefined
+              : atLimit
+                ? limitMessage
+                : undefined
           }
           className={`rounded-lg px-3 py-2 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-current focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
         >
@@ -194,7 +205,7 @@ export default function EntryList({
         {entries.map(
           (entry, index) => {
             const weight =
-              normalizedWeight(
+              getEntryWeight(
                 entry,
               );
 
@@ -311,7 +322,19 @@ export default function EntryList({
                       }
                       spinning={false}
                       duplicateDisabled={
+                        additionsDisabled ||
+                        atLimit
+                      }
+                      duplicateDisabledTitle={
                         additionsDisabled
+                          ? undefined
+                          : limitMessage
+                      }
+                      deleteDisabled={
+                        !canDeleteEntry(
+                          entries,
+                          entry,
+                        )
                       }
                       onToggle={() =>
                         setOpenMenuId(
@@ -355,8 +378,10 @@ export default function EntryList({
                         )
                       }
                       disabled={
-                        entries.length <=
-                        2
+                        !canDeleteEntry(
+                          entries,
+                          entry,
+                        )
                       }
                       className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-red-200 transition hover:bg-red-950/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-30`}
                       aria-label={`Delete ${entry.label}`}

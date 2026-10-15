@@ -11,6 +11,7 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
+import { getEntryWeight } from "../lib/wheel-utils";
 
 export type { WheelEntry } from "../lib/wheel-types";
 
@@ -136,15 +137,6 @@ function describeArc(
   ].join(" ");
 }
 
-function normalizedWeight(
-  entry: WheelEntry,
-) {
-  return Math.max(
-    1,
-    Math.floor(entry.weight ?? 1),
-  );
-}
-
 function clampSize(value: number) {
   return Math.min(
     MAX_SIZE,
@@ -175,7 +167,7 @@ function getInitialPointerColor(
   const totalWeight =
     visibleEntries.reduce(
       (sum, entry) =>
-        sum + normalizedWeight(entry),
+        sum + getEntryWeight(entry),
       0,
     );
 
@@ -189,7 +181,7 @@ function getInitialPointerColor(
 
   for (const entry of visibleEntries) {
     const angle =
-      (normalizedWeight(entry) /
+      (getEntryWeight(entry) /
         totalWeight) *
       360;
 
@@ -398,7 +390,7 @@ export default function Wheel({
         visibleEntries.reduce(
           (sum, entry) =>
             sum +
-            normalizedWeight(
+            getEntryWeight(
               entry,
             ),
           0,
@@ -429,7 +421,7 @@ export default function Wheel({
 
           const angle =
             totalWeight > 0
-              ? (normalizedWeight(
+              ? (getEntryWeight(
                   entry,
                 ) /
                   totalWeight) *
