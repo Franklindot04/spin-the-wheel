@@ -6,13 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-10-15
+
 ### Changed
 
 - The header title is larger and bolder, and the edit icons beside the title and description are larger with a bigger tap target.
 - The entry name input has its own line on small screens, so longer names fit.
 - Fullscreen and the wheel controls (size, mute, fullscreen) follow the selected theme.
 - The Settings dialog footer is light to match the panel, and keyboard focus stays inside the dialog while it is open and returns to the Settings button when it closes.
--  Settings switches, the volume slider and the selected cards follow the theme accent colour.
+- Settings switches, the volume slider and the selected cards follow the theme accent colour.
 
 ### Fixed
 
@@ -94,7 +96,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v1.0.0...v2.0.0
