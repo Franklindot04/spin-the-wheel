@@ -10,12 +10,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - "Reset Entries" now asks for confirmation and resets only the entries of the current mode (Standard or Quiz). "Restore defaults" in Settings now opens a confirmation dialog before resetting everything.
 - The Settings entry-limit field is labelled "Maximum entries". Lowering it never removes existing entries; it only stops new ones being added.
+- Entry controls in the sidebar are dimmed and blocked while the wheel is spinning, in both Standard Mode and Quiz Mode.
+- In Quiz Mode, the wheel keeps showing the winning question until the next spin, so the slice under the pointer always matches the card.
 
 ### Fixed
 
 - Entries beyond the limit are no longer cut when the page loads or a file is imported. Add and Duplicate stop at the limit instead.
 - Duplicating a hidden entry creates a visible copy.
 - Delete is disabled, in the row and in the entry menu, when it would leave fewer than two visible entries.
+- Switching to another wheel or deleting one now returns to Standard Mode.
+- The spin result timer is clamped to the same 1 to 30 seconds as the animation, and cleared when the page unmounts.
+- Typing in an entry name no longer clears the displayed result in Standard Mode.
+- Hiding all questions in Quiz Mode clears the displayed card, as in Standard Mode.
 
 ### Removed
 
