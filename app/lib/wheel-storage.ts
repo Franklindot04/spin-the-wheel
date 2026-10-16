@@ -7,9 +7,10 @@ import {
   DEFAULT_WHEEL_DESCRIPTION,
   DEFAULT_WHEEL_TITLE,
   createDefaultWheelSettings,
-  normalizeEntry,
+  normalizeEntries,
   normalizeWheel,
 } from "./wheel-defaults";
+import type { RepairReport } from "./wheel-defaults";
 import { APPEARANCE_THEMES } from "./appearance-themes";
 
 export const STORAGE_KEY =
@@ -17,6 +18,9 @@ export const STORAGE_KEY =
 
 export const LEGACY_STORAGE_KEY =
   "spin-the-wheel:v1";
+
+export const UNREADABLE_BACKUP_KEY =
+  "spin-the-wheel:v2:unreadable";
 
 export const MAX_IMPORT_FILE_SIZE =
   10 * 1024 * 1024;
@@ -73,11 +77,25 @@ export function isAppData(
 
 export function migrateStoredData(
   value: unknown,
+  report?: RepairReport,
 ): AppData | null {
   if (isAppData(value)) {
-    const wheels = value.wheels.map(
-      normalizeWheel,
-    );
+    const wheels: Wheel[] = [];
+
+    for (const item of value.wheels) {
+      const wheel = normalizeWheel(
+        item,
+        report,
+      );
+
+      if (wheel) {
+        wheels.push(wheel);
+      }
+    }
+
+    if (wheels.length === 0) {
+      return null;
+    }
 
     const activeWheelId =
       wheels.some(
@@ -113,13 +131,15 @@ export function migrateStoredData(
         DEFAULT_WHEEL_DESCRIPTION,
 
       standardEntries:
-        value.standardEntries.map(
-          normalizeEntry,
+        normalizeEntries(
+          value.standardEntries,
+          report,
         ),
 
       quizEntries:
-        value.quizEntries.map(
-          normalizeEntry,
+        normalizeEntries(
+          value.quizEntries,
+          report,
         ),
 
       standardHistory:
@@ -140,14 +160,181 @@ export function migrateStoredData(
       },
     };
 
+    const normalized = normalizeWheel(
+      wheel,
+      report,
+    );
+
+    if (!normalized) {
+      return null;
+    }
+
     return {
       version: 2,
-      wheels: [normalizeWheel(wheel)],
-      activeWheelId: wheel.id,
+      wheels: [normalized],
+      activeWheelId: normalized.id,
     };
   }
 
   return null;
+}
+
+export type StoredDataNotice = {
+  kind:
+    | "defaults"
+    | "repaired"
+    | "legacy"
+    | "kept";
+  raw: string;
+  memoryOnly: boolean;
+};
+
+export type StoredDataLoad = {
+  data: AppData | null;
+  notice: StoredDataNotice | null;
+};
+
+function keepUnreadableCopy(
+  raw: string,
+): {
+  raw: string;
+  memoryOnly: boolean;
+} {
+  try {
+    const existing =
+      window.localStorage.getItem(
+        UNREADABLE_BACKUP_KEY,
+      );
+
+    if (existing !== null) {
+      return {
+        raw: existing,
+        memoryOnly: false,
+      };
+    }
+  } catch {
+    // Fall through and try to write the copy.
+  }
+
+  try {
+    window.localStorage.setItem(
+      UNREADABLE_BACKUP_KEY,
+      raw,
+    );
+
+    return { raw, memoryOnly: false };
+  } catch {
+    return { raw, memoryOnly: true };
+  }
+}
+
+function findKeptCopy(): StoredDataNotice | null {
+  try {
+    const existing =
+      window.localStorage.getItem(
+        UNREADABLE_BACKUP_KEY,
+      );
+
+    return existing === null
+      ? null
+      : {
+          kind: "kept",
+          raw: existing,
+          memoryOnly: false,
+        };
+  } catch {
+    return null;
+  }
+}
+
+function loadLegacyData(): AppData | null {
+  try {
+    const savedV1 =
+      window.localStorage.getItem(
+        LEGACY_STORAGE_KEY,
+      );
+
+    if (!savedV1) {
+      return null;
+    }
+
+    return migrateStoredData(
+      JSON.parse(savedV1),
+    );
+  } catch {
+    return null;
+  }
+}
+
+export function loadStoredAppData(): StoredDataLoad {
+  try {
+    const savedV2 =
+      window.localStorage.getItem(
+        STORAGE_KEY,
+      );
+
+    if (savedV2) {
+      let data: AppData | null = null;
+      let failed = false;
+      const report: RepairReport = {
+        repaired: false,
+      };
+
+      try {
+        data = migrateStoredData(
+          JSON.parse(savedV2),
+          report,
+        );
+      } catch {
+        failed = true;
+      }
+
+      if (data && !report.repaired) {
+        return {
+          data,
+          notice: findKeptCopy(),
+        };
+      }
+
+      // Keep the stored string before anything can overwrite it.
+      const copy =
+        keepUnreadableCopy(savedV2);
+
+      if (data) {
+        return {
+          data,
+          notice: {
+            kind: "repaired",
+            ...copy,
+          },
+        };
+      }
+
+      const legacy = failed
+        ? null
+        : loadLegacyData();
+
+      return {
+        data: legacy,
+        notice: {
+          kind: legacy
+            ? "legacy"
+            : "defaults",
+          ...copy,
+        },
+      };
+    }
+
+    const legacy = loadLegacyData();
+
+    return {
+      data: legacy,
+      notice: findKeptCopy(),
+    };
+  } catch {
+    // Ignore unavailable local storage.
+    return { data: null, notice: null };
+  }
 }
 
 export function serializeAppData(

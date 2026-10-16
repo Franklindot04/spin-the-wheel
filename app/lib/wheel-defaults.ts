@@ -163,9 +163,93 @@ export function createInitialQuizEntries(): WheelEntry[] {
   return createInitialEntries("quiz");
 }
 
+export type RepairReport = {
+  repaired: boolean;
+};
+
+function isRecord(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  );
+}
+
+function normalizeId(
+  value: unknown,
+  report?: RepairReport,
+): string {
+  if (
+    typeof value === "string" &&
+    value !== ""
+  ) {
+    return value;
+  }
+
+  if (report) {
+    report.repaired = true;
+  }
+
+  return crypto.randomUUID();
+}
+
+function normalizeText(
+  value: unknown,
+  fallback: string,
+  report?: RepairReport,
+): string {
+  if (typeof value !== "string") {
+    if (report) {
+      report.repaired = true;
+    }
+
+    return fallback;
+  }
+
+  return value.trim() || fallback;
+}
+
 export function normalizeEntry(
-  entry: WheelEntry,
-): WheelEntry {
+  value: unknown,
+  report?: RepairReport,
+): WheelEntry | null {
+  if (!isRecord(value)) {
+    if (report) {
+      report.repaired = true;
+    }
+
+    return null;
+  }
+
+  let label: string;
+
+  if (typeof value.label === "string") {
+    label = value.label;
+  } else if (
+    typeof value.label === "number" &&
+    Number.isFinite(value.label)
+  ) {
+    label = String(value.label);
+
+    if (report) {
+      report.repaired = true;
+    }
+  } else {
+    if (report) {
+      report.repaired = true;
+    }
+
+    return null;
+  }
+
+  const entry = {
+    ...value,
+    id: normalizeId(value.id, report),
+    label,
+  } as WheelEntry;
+
   return {
     ...entry,
 
@@ -194,6 +278,32 @@ export function normalizeEntry(
     emoji:
       normalizeEmoji(entry.emoji),
   };
+}
+
+export function normalizeEntries(
+  value: unknown,
+  report?: RepairReport,
+): WheelEntry[] {
+  if (!Array.isArray(value)) {
+    if (report) {
+      report.repaired = true;
+    }
+
+    return [];
+  }
+
+  const entries: WheelEntry[] = [];
+
+  for (const item of value) {
+    const entry =
+      normalizeEntry(item, report);
+
+    if (entry) {
+      entries.push(entry);
+    }
+  }
+
+  return entries;
 }
 
 export function normalizeHistory(
@@ -521,45 +631,68 @@ export function normalizeWheelSettings(
 }
 
 export function normalizeWheel(
-  wheel: Wheel,
-): Wheel {
+  value: unknown,
+  report?: RepairReport,
+): Wheel | null {
+  if (!isRecord(value)) {
+    if (report) {
+      report.repaired = true;
+    }
+
+    return null;
+  }
+
   const normalizedSettings =
     normalizeWheelSettings(
-      wheel.settings,
+      value.settings as
+        | Partial<WheelSettings>
+        | undefined,
     );
 
   return {
-    ...wheel,
+    ...value,
 
-    name:
-      wheel.name?.trim() ||
+    id: normalizeId(value.id, report),
+
+    name: normalizeText(
+      value.name,
       "Wheel",
+      report,
+    ),
 
-    title:
-      wheel.title?.trim() ||
+    title: normalizeText(
+      value.title,
       DEFAULT_WHEEL_TITLE,
+      report,
+    ),
 
-    description:
-      wheel.description?.trim() ||
+    description: normalizeText(
+      value.description,
       DEFAULT_WHEEL_DESCRIPTION,
+      report,
+    ),
 
-    standardEntries: (
-      wheel.standardEntries ?? []
-    ).map(normalizeEntry),
+    standardEntries:
+      normalizeEntries(
+        value.standardEntries,
+        report,
+      ),
 
-    quizEntries: (
-      wheel.quizEntries ?? []
-    ).map(normalizeEntry),
+    quizEntries:
+      normalizeEntries(
+        value.quizEntries,
+        report,
+      ),
 
     standardHistory:
       normalizeHistory(
-        wheel.standardHistory,
+        value.standardHistory,
         "standard",
       ),
 
     quizHistory:
       normalizeHistory(
-        wheel.quizHistory,
+        value.quizHistory,
         "quiz",
       ),
 

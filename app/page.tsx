@@ -9,7 +9,8 @@ import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
-import { ImportError, LEGACY_STORAGE_KEY, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
+import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
+import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partial<Wheel>): AppData {
     return {
@@ -44,12 +45,17 @@ export default function Home() {
     const [settingsOpen, setSettingsOpen,] = useState(false);
     const [historyOpen, setHistoryOpen,] = useState(false);
     const [resetConfirmOpen, setResetConfirmOpen,] = useState(false);
+    const [entriesResetOpen, setEntriesResetOpen,] = useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
     const settingsDialogRef = useRef<HTMLDivElement>(null);
     const resetDialogRef = useRef<HTMLDivElement>(null);
+    const entriesResetDialogRef = useRef<HTMLDivElement>(null);
+    const entriesResetButtonRef = useRef<HTMLButtonElement>(null);
     const [importError, setImportError,] = useState("");
     const [saveFailed, setSaveFailed,] = useState(false);
+    const [storedDataNotice, setStoredDataNotice,] = useState<StoredDataNotice | null>(null);
+    const [v2StillUnreadable, setV2StillUnreadable,] = useState(false);
     const importAlertRef = useRef<HTMLDivElement>(null);
     const saveAlertRef = useRef<HTMLDivElement>(null);
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
@@ -213,23 +219,13 @@ export default function Home() {
     useEffect(() => {
         const loadStoredData = () => {
             try {
-                const savedV2 = window.localStorage.getItem(STORAGE_KEY);
-                if (savedV2) {
-                    const parsed: unknown = JSON.parse(savedV2);
-                    const migrated = migrateStoredData(parsed);
-                    if (migrated) {
-                        setAppData(migrated);
-                        return;
-                    }
+                const loaded = loadStoredAppData();
+                if (loaded.data) {
+                    setAppData(loaded.data);
                 }
-                const savedV1 = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-                if (savedV1) {
-                    const parsed: unknown = JSON.parse(savedV1);
-                    const migrated = migrateStoredData(parsed);
-                    if (migrated) {
-                        setAppData(migrated);
-                    }
-                }
+                setStoredDataNotice(loaded.notice);
+                // Only an unreadable v2 stays unreadable until it is rewritten.
+                setV2StillUnreadable(loaded.notice?.kind === "defaults");
             }
             catch {
                 // Ignore invalid or unavailable local storage.
@@ -256,7 +252,12 @@ export default function Home() {
             failed = true;
         }
         // Report the result after the effect so the notice follows the latest write.
-        queueMicrotask(() => setSaveFailed(failed));
+        queueMicrotask(() => {
+            setSaveFailed(failed);
+            if (!failed) {
+                setV2StillUnreadable(false);
+            }
+        });
     }, [appData]);
     useEffect(() => {
         if (importError) {
@@ -374,6 +375,53 @@ export default function Home() {
             settingsButton?.focus();
         };
     }, [resetConfirmOpen]);
+    useEffect(() => {
+        if (!entriesResetOpen) {
+            return;
+        }
+        const resetButton = entriesResetButtonRef.current;
+        const dialog = entriesResetDialogRef.current;
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key ===
+                "Escape") {
+                setEntriesResetOpen(false);
+                return;
+            }
+            if (event.key !==
+                "Tab" ||
+                !dialog) {
+                return;
+            }
+            // Keep keyboard focus inside the dialog.
+            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
+            if (focusable.length === 0) {
+                event.preventDefault();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            if (event.shiftKey &&
+                (active === first ||
+                    active === dialog ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                last.focus();
+            }
+            else if (!event.shiftKey &&
+                (active === last ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        dialog?.focus();
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            resetButton?.focus();
+        };
+    }, [entriesResetOpen]);
     const currentSetupEntries = mode === "standard"
         ? standardEntries
         : quizEntries;
@@ -846,11 +894,14 @@ export default function Home() {
         setRotation(0);
         setResetConfirmOpen(false);
     }
-    function resetCurrentEntries() {
+    function openResetEntries() {
         if (spinning) {
             return;
         }
-        if (!window.confirm(`Reset the ${mode === "quiz" ? "quiz questions" : "entries"} to the defaults?`)) {
+        setEntriesResetOpen(true);
+    }
+    function resetCurrentEntries() {
+        if (spinning) {
             return;
         }
         if (mode === "standard") {
@@ -864,6 +915,7 @@ export default function Home() {
         setSelectedEntry(null);
         setShowAnswer(false);
         setRotation(0);
+        setEntriesResetOpen(false);
     }
     function openRestoreDefaults() {
         if (spinning) {
@@ -897,6 +949,34 @@ export default function Home() {
         link.click();
         link.remove();
         URL.revokeObjectURL(url);
+    }
+    function exportRawData() {
+        if (!storedDataNotice) {
+            return;
+        }
+        const blob = new Blob([
+            storedDataNotice.raw,
+        ], {
+            type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download =
+            "spin-the-wheel-unreadable.json";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    }
+    function deleteUnreadableCopy() {
+        try {
+            window.localStorage.removeItem(UNREADABLE_BACKUP_KEY);
+        }
+        catch {
+            // The copy stays; it is offered again the next time the app loads.
+        }
+        setStoredDataNotice(null);
     }
     function handleImportFile(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
@@ -1079,6 +1159,31 @@ export default function Home() {
         </div>
       </header>
       <div className="mx-auto max-w-7xl space-y-3 px-4 empty:hidden pt-4 sm:px-6">
+        {storedDataNotice && (<div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-start sm:justify-between">
+            <p className="min-w-0 break-words">
+              {storedDataNotice.kind === "defaults"
+                ? "Your saved data could not be read, so the app started with defaults. A copy was kept."
+                : storedDataNotice.kind === "repaired"
+                    ? "Some of your saved data was repaired when it loaded. A copy of the original was kept."
+                    : storedDataNotice.kind === "legacy"
+                        ? "Your saved data could not be read, so the app loaded an older saved copy instead. A copy was kept."
+                        : "A copy of saved data that could not be read earlier is still kept."}
+              {storedDataNotice.memoryOnly
+                ? " The copy lasts only until the page is closed."
+                : ""}
+            </p>
+            <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
+              <button type="button" onClick={exportRawData} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+                Export raw data
+              </button>
+              <button type="button" onClick={deleteUnreadableCopy} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+                Delete copy
+              </button>
+            </div>
+          </div>)}
+        {!storedDataNotice && v2StillUnreadable && (<div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="min-w-0 break-words">The saved data is still unreadable. It will be replaced when you make a change or import a file.</p>
+          </div>)}
         {saveFailed && (<div ref={saveAlertRef} role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <p className="min-w-0 break-words">Your changes could not be saved because browser storage is full. Export your data to keep a copy.</p>
             <button type="button" onClick={exportData} className="shrink-0 rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
@@ -1265,7 +1370,7 @@ export default function Home() {
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
                 quizStarted} textLocked={quizTextLocked} disabled={spinning} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
-                <button type="button" onClick={resetCurrentEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
+                <button ref={entriesResetButtonRef} type="button" onClick={openResetEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries
                 </button>
               </div>
@@ -1441,11 +1546,41 @@ export default function Home() {
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
               This will restore the default entries, quiz questions, settings, title, description, and history. Your wheel name and other wheels are kept.
             </p>
-            <div className="mt-5 flex gap-3">
+            <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
+              Export your data first if you want to keep a copy.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button type="button" onClick={exportData} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                Export all wheels
+              </button>
               <button type="button" onClick={resetWheelToDefaults} disabled={spinning} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                 Restore
               </button>
               <button type="button" onClick={cancelRestoreDefaults} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>)}
+      {entriesResetOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
+          <div ref={entriesResetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Reset entries" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
+            <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
+              Reset entries?
+            </h2>
+            <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
+              Reset the {mode === "quiz" ? "quiz questions" : "entries"} to the defaults?
+            </p>
+            <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
+              Export your data first if you want to keep a copy.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button type="button" onClick={exportData} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                Export all wheels
+              </button>
+              <button type="button" onClick={resetCurrentEntries} disabled={spinning} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
+                Reset
+              </button>
+              <button type="button" onClick={() => setEntriesResetOpen(false)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
                 Cancel
               </button>
             </div>
