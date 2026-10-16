@@ -9,7 +9,8 @@ import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
-import { ImportError, LEGACY_STORAGE_KEY, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
+import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
+import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partial<Wheel>): AppData {
     return {
@@ -53,6 +54,7 @@ export default function Home() {
     const entriesResetButtonRef = useRef<HTMLButtonElement>(null);
     const [importError, setImportError,] = useState("");
     const [saveFailed, setSaveFailed,] = useState(false);
+    const [storedDataNotice, setStoredDataNotice,] = useState<StoredDataNotice | null>(null);
     const importAlertRef = useRef<HTMLDivElement>(null);
     const saveAlertRef = useRef<HTMLDivElement>(null);
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
@@ -216,23 +218,11 @@ export default function Home() {
     useEffect(() => {
         const loadStoredData = () => {
             try {
-                const savedV2 = window.localStorage.getItem(STORAGE_KEY);
-                if (savedV2) {
-                    const parsed: unknown = JSON.parse(savedV2);
-                    const migrated = migrateStoredData(parsed);
-                    if (migrated) {
-                        setAppData(migrated);
-                        return;
-                    }
+                const loaded = loadStoredAppData();
+                if (loaded.data) {
+                    setAppData(loaded.data);
                 }
-                const savedV1 = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-                if (savedV1) {
-                    const parsed: unknown = JSON.parse(savedV1);
-                    const migrated = migrateStoredData(parsed);
-                    if (migrated) {
-                        setAppData(migrated);
-                    }
-                }
+                setStoredDataNotice(loaded.notice);
             }
             catch {
                 // Ignore invalid or unavailable local storage.
@@ -952,6 +942,34 @@ export default function Home() {
         link.remove();
         URL.revokeObjectURL(url);
     }
+    function exportRawData() {
+        if (!storedDataNotice) {
+            return;
+        }
+        const blob = new Blob([
+            storedDataNotice.raw,
+        ], {
+            type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download =
+            "spin-the-wheel-unreadable.json";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    }
+    function deleteUnreadableCopy() {
+        try {
+            window.localStorage.removeItem(UNREADABLE_BACKUP_KEY);
+        }
+        catch {
+            // The copy stays; it is offered again the next time the app loads.
+        }
+        setStoredDataNotice(null);
+    }
     function handleImportFile(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
         event.target.value = "";
@@ -1133,6 +1151,28 @@ export default function Home() {
         </div>
       </header>
       <div className="mx-auto max-w-7xl space-y-3 px-4 empty:hidden pt-4 sm:px-6">
+        {storedDataNotice && (<div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-start sm:justify-between">
+            <p className="min-w-0 break-words">
+              {storedDataNotice.kind === "defaults"
+                ? "Your saved data could not be read, so the app started with defaults. A copy was kept."
+                : storedDataNotice.kind === "repaired"
+                    ? "Some of your saved data was repaired when it loaded. A copy of the original was kept."
+                    : storedDataNotice.kind === "legacy"
+                        ? "Your saved data could not be read, so the app loaded an older saved copy instead. A copy was kept."
+                        : "A copy of saved data that could not be read earlier is still kept."}
+              {storedDataNotice.memoryOnly
+                ? " The copy lasts only until the page is closed."
+                : ""}
+            </p>
+            <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
+              <button type="button" onClick={exportRawData} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+                Export raw data
+              </button>
+              <button type="button" onClick={deleteUnreadableCopy} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+                Delete copy
+              </button>
+            </div>
+          </div>)}
         {saveFailed && (<div ref={saveAlertRef} role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <p className="min-w-0 break-words">Your changes could not be saved because browser storage is full. Export your data to keep a copy.</p>
             <button type="button" onClick={exportData} className="shrink-0 rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
