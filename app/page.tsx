@@ -435,6 +435,16 @@ export default function Home() {
         quizStarted &&
         remainingQuizEntries.length > 0 &&
         remainingVisibleQuizCount === 0;
+    const wheelEmptyTitle = quizComplete
+        ? "Quiz complete"
+        : remainingQuizEntriesHidden
+            ? "All remaining questions are hidden"
+            : undefined;
+    const wheelEmptyMessage = quizComplete
+        ? "Every question has been asked. Back to Setup to run it again."
+        : remainingQuizEntriesHidden
+            ? "Show one to keep going, or go back to setup."
+            : undefined;
     function addEntry() {
         if (spinning) {
             return;
@@ -1047,7 +1057,7 @@ export default function Home() {
           <div className={mode === "quiz"
             ? "flex min-h-0 items-center justify-center sm:min-h-[560px]"
             : "flex min-h-0 items-center justify-center sm:min-h-[620px]"}>
-            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} canSpin={spinAllowed} minSpinEntries={minSpinEntries} spinDuration={activeWheel
+            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings
