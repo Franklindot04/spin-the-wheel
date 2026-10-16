@@ -55,6 +55,7 @@ export default function Home() {
     const [importError, setImportError,] = useState("");
     const [saveFailed, setSaveFailed,] = useState(false);
     const [storedDataNotice, setStoredDataNotice,] = useState<StoredDataNotice | null>(null);
+    const [v2StillUnreadable, setV2StillUnreadable,] = useState(false);
     const importAlertRef = useRef<HTMLDivElement>(null);
     const saveAlertRef = useRef<HTMLDivElement>(null);
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
@@ -223,6 +224,8 @@ export default function Home() {
                     setAppData(loaded.data);
                 }
                 setStoredDataNotice(loaded.notice);
+                // Only an unreadable v2 stays unreadable until it is rewritten.
+                setV2StillUnreadable(loaded.notice?.kind === "defaults");
             }
             catch {
                 // Ignore invalid or unavailable local storage.
@@ -249,7 +252,12 @@ export default function Home() {
             failed = true;
         }
         // Report the result after the effect so the notice follows the latest write.
-        queueMicrotask(() => setSaveFailed(failed));
+        queueMicrotask(() => {
+            setSaveFailed(failed);
+            if (!failed) {
+                setV2StillUnreadable(false);
+            }
+        });
     }, [appData]);
     useEffect(() => {
         if (importError) {
@@ -1172,6 +1180,9 @@ export default function Home() {
                 Delete copy
               </button>
             </div>
+          </div>)}
+        {!storedDataNotice && v2StillUnreadable && (<div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="min-w-0 break-words">The saved data is still unreadable. It will be replaced when you make a change or import a file.</p>
           </div>)}
         {saveFailed && (<div ref={saveAlertRef} role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <p className="min-w-0 break-words">Your changes could not be saved because browser storage is full. Export your data to keep a copy.</p>
