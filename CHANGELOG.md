@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- Slice images are drawn at the outer end of the slice and shrink or disappear before they would cover a label or an emoji.
+
+### Fixed
+
+- Clear History is disabled while the wheel is spinning.
+- Entry and history updates made in quick succession, or while an image is still loading, no longer overwrite each other.
+- The label of a single visible entry now turns smoothly with the wheel at the start of a spin.
+
 ## [2.1.0] - 2026-10-16
 
 ### Added
