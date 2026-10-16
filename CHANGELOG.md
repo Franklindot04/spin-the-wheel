@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- An optional emoji for each entry. Pick it from the entry menu, which has a skin-tone row for people and hand emoji. It is shown on the wheel slice, in the result, the quiz card, the history and the entry list.
+- Entries and history items may carry an optional `emoji` field. Older files load unchanged, and a new export still opens in v2.0.5, which ignores the field.
+
+### Changed
+
+- From 40 visible entries the wheel shows emoji-only slices instead of hiding every label. Entries without an emoji still show no label there, and the full name stays in each slice's tooltip.
+- Labels are truncated before the emoji. When a label cannot fit its slice, the slice shows the emoji alone.
+
 ## [2.0.5] - 2026-10-15
 
 ### Changed
