@@ -33,6 +33,7 @@ type EntryMenuProps = {
   entry: WheelEntry;
   open: boolean;
   spinning: boolean;
+  textLocked?: boolean;
   duplicateDisabled?: boolean;
   duplicateDisabledTitle?: string;
   deleteDisabled?: boolean;
@@ -415,11 +416,13 @@ function MenuRow({
 function EmojiPicker({
   entry,
   disabled,
+  locked,
   onUpdate,
   theme,
 }: {
   entry: WheelEntry;
   disabled: boolean;
+  locked: boolean;
   onUpdate: (
     id: string,
     changes: Partial<WheelEntry>,
@@ -536,7 +539,16 @@ function EmojiPicker({
         </svg>
       </button>
 
-      {expanded && (
+      {expanded && locked && (
+        <p
+          id={panelId}
+          className={`mt-2 text-[11px] leading-4 ${theme.textMutedClass}`}
+        >
+          Locked while the quiz runs. Back to Setup to change it.
+        </p>
+      )}
+
+      {expanded && !locked && (
       <div id={panelId}>
       <label className="relative mt-2 inline-block">
         <input
@@ -684,6 +696,7 @@ export default function EntryMenu({
   entry,
   open,
   spinning,
+  textLocked = false,
   duplicateDisabled = false,
   duplicateDisabledTitle,
   deleteDisabled = false,
@@ -1188,6 +1201,7 @@ export default function EntryMenu({
             <EmojiPicker
               entry={entry}
               disabled={spinning}
+              locked={textLocked}
               onUpdate={onUpdate}
               theme={theme}
             />

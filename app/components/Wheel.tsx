@@ -23,6 +23,8 @@ type WheelProps = {
   onSpin: () => void;
   canSpin?: boolean;
   minSpinEntries?: number;
+  emptyTitle?: string;
+  emptyMessage?: string;
   spinDuration?: number;
   pointerMatchSliceColor?: boolean;
   wheelSize?: number;
@@ -552,6 +554,8 @@ export default function Wheel({
   onSpin,
   canSpin = true,
   minSpinEntries = 2,
+  emptyTitle = "No visible entries",
+  emptyMessage = "Add entries or show hidden ones to spin the wheel.",
   spinDuration = 4.5,
   pointerMatchSliceColor = true,
   wheelSize,
@@ -1302,7 +1306,7 @@ export default function Wheel({
                   "text-slate-100"
                 }`}
               >
-                No visible entries
+                {emptyTitle}
               </p>
               <p
                 className={`mt-1 text-xs ${
@@ -1310,7 +1314,7 @@ export default function Wheel({
                   "text-slate-300"
                 }`}
               >
-                Add entries or show hidden ones to spin the wheel.
+                {emptyMessage}
               </p>
             </div>
           </div>

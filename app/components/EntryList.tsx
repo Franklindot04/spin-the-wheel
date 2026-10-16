@@ -21,6 +21,7 @@ type EntryListProps = {
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   additionsDisabled?: boolean;
+  textLocked?: boolean;
   disabled?: boolean;
   maxEntries?: number;
   accentClass: string;
@@ -82,6 +83,7 @@ export default function EntryList({
   onDelete,
   onDuplicate,
   additionsDisabled = false,
+  textLocked = false,
   disabled = false,
   maxEntries,
   accentClass,
@@ -102,6 +104,10 @@ export default function EntryList({
       ? "questions"
       : "entries"
   }`;
+
+  const lockedClass = textLocked
+    ? "border-dashed cursor-default"
+    : "";
 
   function toggleHidden(
     entry: WheelEntry,
@@ -204,6 +210,14 @@ export default function EntryList({
         </button>
       </div>
 
+      {textLocked && (
+        <p
+          className={`mt-3 text-xs leading-5 ${theme.textMutedClass}`}
+        >
+          Names, questions and answers are locked while the quiz runs. Back to Setup to edit.
+        </p>
+      )}
+
       <div className="mt-5 space-y-3">
         {entries.map(
           (entry, index) => {
@@ -267,7 +281,14 @@ export default function EntryList({
                       disabled={
                         disabled
                       }
-                      className={`w-full rounded-lg border px-3 py-2 text-sm font-medium outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass} ${
+                      readOnly={
+                        textLocked
+                      }
+                      aria-readonly={
+                        textLocked ||
+                        undefined
+                      }
+                      className={`w-full rounded-lg border px-3 py-2 text-sm font-medium outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass} ${lockedClass} ${
                         entry.hidden
                           ? theme.textMutedClass
                           : theme.textPrimaryClass
@@ -339,6 +360,9 @@ export default function EntryList({
                         entry.id
                       }
                       spinning={disabled}
+                      textLocked={
+                        textLocked
+                      }
                       duplicateDisabled={
                         additionsDisabled ||
                         atLimit
@@ -494,7 +518,14 @@ export default function EntryList({
                       disabled={
                         disabled
                       }
-                      className={`w-full resize-y rounded-lg border px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass}`}
+                      readOnly={
+                        textLocked
+                      }
+                      aria-readonly={
+                        textLocked ||
+                        undefined
+                      }
+                      className={`w-full resize-y rounded-lg border px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass} ${lockedClass}`}
                     />
 
                     <div className="flex justify-end px-1">
@@ -534,7 +565,14 @@ export default function EntryList({
                       disabled={
                         disabled
                       }
-                      className={`w-full resize-y rounded-lg border px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass}`}
+                      readOnly={
+                        textLocked
+                      }
+                      aria-readonly={
+                        textLocked ||
+                        undefined
+                      }
+                      className={`w-full resize-y rounded-lg border px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass} ${lockedClass}`}
                     />
 
                     <div className="flex justify-end px-1">

@@ -23,6 +23,12 @@ function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partia
             : wheel),
     };
 }
+const QUIZ_LOCKED_TEXT_KEYS: string[] = [
+    "label",
+    "question",
+    "answer",
+    "emoji",
+];
 export default function Home() {
     const [appData, setAppData] = useState<AppData>(createInitialAppData);
     const [mode, setMode] = useState<Mode>("standard");
@@ -435,6 +441,18 @@ export default function Home() {
         quizStarted &&
         remainingQuizEntries.length > 0 &&
         remainingVisibleQuizCount === 0;
+    const quizTextLocked = mode === "quiz" &&
+        quizStarted;
+    const wheelEmptyTitle = quizComplete
+        ? "Quiz complete"
+        : remainingQuizEntriesHidden
+            ? "All remaining questions are hidden"
+            : undefined;
+    const wheelEmptyMessage = quizComplete
+        ? "Every question has been asked. Back to Setup to run it again."
+        : remainingQuizEntriesHidden
+            ? "Show one to keep going, or go back to setup."
+            : undefined;
     function addEntry() {
         if (spinning) {
             return;
@@ -471,6 +489,12 @@ export default function Home() {
     function updateEntry(id: string, changes: Partial<WheelEntry>) {
         if (spinning) {
             return;
+        }
+        if (quizTextLocked) {
+            changes = Object.fromEntries(Object.entries(changes).filter(([key]) => !QUIZ_LOCKED_TEXT_KEYS.includes(key))) as Partial<WheelEntry>;
+            if (Object.keys(changes).length === 0) {
+                return;
+            }
         }
         if (mode === "standard") {
             setStandardEntries((current) => current.map((entry) => entry.id === id
@@ -1047,7 +1071,7 @@ export default function Home() {
           <div className={mode === "quiz"
             ? "flex min-h-0 items-center justify-center sm:min-h-[560px]"
             : "flex min-h-0 items-center justify-center sm:min-h-[620px]"}>
-            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} canSpin={spinAllowed} minSpinEntries={minSpinEntries} spinDuration={activeWheel
+            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings
@@ -1196,7 +1220,7 @@ export default function Home() {
           </div>
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
-                quizStarted} disabled={spinning} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+                quizStarted} textLocked={quizTextLocked} disabled={spinning} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button type="button" onClick={resetCurrentEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries
