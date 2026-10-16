@@ -11,12 +11,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Slice images are drawn at the outer end of the slice and shrink or disappear before they would cover a label or an emoji.
 - While a quiz is running, entry names, questions, answers and emoji are read-only, so the displayed question and the history cannot drift apart. Edit them in setup.
 - The empty-wheel message in a quiz now says whether the remaining questions are hidden or the quiz is complete.
+- Spin history keeps the newest 500 spins per mode for each wheel. Older ones are removed the next time the app loads or a spin is recorded.
+- Import errors are shown in a banner with the reason, and files over 10 MB are rejected before they are read.
+- A message appears when changes cannot be saved because browser storage is full, with a button to export your data.
+- The Restore defaults confirmation says that the wheel name and other wheels are kept, and Cancel returns to Settings.
 
 ### Fixed
 
 - Clear History is disabled while the wheel is spinning.
 - Entry and history updates made in quick succession, or while an image is still loading, no longer overwrite each other.
 - The label of a single visible entry now turns smoothly with the wheel at the start of a spin.
+- A history item with bad data no longer crashes the History panel. Malformed history items are removed when data loads or is imported.
 
 ## [2.1.0] - 2026-10-16
 
