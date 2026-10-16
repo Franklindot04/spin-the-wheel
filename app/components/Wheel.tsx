@@ -910,6 +910,10 @@ export default function Wheel({
       );
   }
 
+  const wheelTransition = spinning
+    ? `transform ${safeSpinDuration}s cubic-bezier(0.12, 0.7, 0.2, 1)`
+    : "none";
+
   async function toggleFullscreen() {
     if (
       !wheelContainerRef.current
@@ -1082,9 +1086,8 @@ export default function Wheel({
             style={{
               transform: `rotate(${rotation}deg)`,
               transformOrigin: `${CENTER}px ${CENTER}px`,
-              transition: spinning
-                ? `transform ${safeSpinDuration}s cubic-bezier(0.12, 0.7, 0.2, 1)`
-                : "none",
+              transition:
+                wheelTransition,
             }}
           >
             {slices.map(
@@ -1217,7 +1220,27 @@ export default function Wheel({
                         }
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        transform={`rotate(${labelRotation} ${labelPoint.x} ${labelPoint.y})`}
+                        transform={
+                          angle >= 360
+                            ? undefined
+                            : `rotate(${labelRotation} ${labelPoint.x} ${labelPoint.y})`
+                        }
+                        style={
+                          angle >= 360
+                            ? {
+                                /*
+                                 * A single slice keeps its label
+                                 * upright. The counter-rotation
+                                 * uses the wheel's own transition
+                                 * so both turn together.
+                                 */
+                                transform: `rotate(${labelRotation}deg)`,
+                                transformOrigin: `${labelPoint.x}px ${labelPoint.y}px`,
+                                transition:
+                                  wheelTransition,
+                              }
+                            : undefined
+                        }
                         fill={
                           entry.textColor ??
                           "#0f172a"
