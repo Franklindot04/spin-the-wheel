@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- The Restore defaults and Reset Entries confirmations include an "Export all wheels" button, so you can save a copy first.
+- If saved data cannot be read or had to be repaired, a copy of the original is kept in the browser and a banner offers to export or delete it. After you delete the copy, a note explains that the unreadable data stays until you make a change or import a file.
+
 ### Changed
 
 - Slice images are drawn at the outer end of the slice and shrink or disappear before they would cover a label or an emoji.
@@ -15,6 +20,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Import errors are shown in a banner with the reason, and files over 10 MB are rejected before they are read.
 - A message appears when changes cannot be saved because browser storage is full, with a button to export your data.
 - The Restore defaults confirmation says that the wheel name and other wheels are kept, and Cancel returns to Settings.
+- Reset Entries uses a dialog instead of a browser popup.
+- Importing a file with a bad item now repairs it instead of rejecting the whole file.
 
 ### Fixed
 
@@ -22,6 +29,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Entry and history updates made in quick succession, or while an image is still loading, no longer overwrite each other.
 - The label of a single visible entry now turns smoothly with the wheel at the start of a spin.
 - A history item with bad data no longer crashes the History panel. Malformed history items are removed when data loads or is imported.
+- Saved data with a bad item (a `null` entry, a wrong-typed name or label, a missing id) no longer resets the app to defaults or crashes the wheel.
 
 ## [2.1.0] - 2026-10-16
 
