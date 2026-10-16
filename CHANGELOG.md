@@ -11,6 +11,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Slice images are drawn at the outer end of the slice and shrink or disappear before they would cover a label or an emoji.
 - While a quiz is running, entry names, questions, answers and emoji are read-only, so the displayed question and the history cannot drift apart. Edit them in setup.
 - The empty-wheel message in a quiz now says whether the remaining questions are hidden or the quiz is complete.
+
 ### Fixed
 
 - Clear History is disabled while the wheel is spinning.
