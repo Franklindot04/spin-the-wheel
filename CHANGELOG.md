@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-16
+
 ### Added
 
 - An optional emoji for each entry. Pick it from the entry menu, which has a skin-tone row for people and hand emoji. It is shown on the wheel slice, in the result, the quiz card, the history and the entry list.
@@ -150,7 +152,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.5...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.5...v2.1.0
 [2.0.5]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.2...v2.0.3
