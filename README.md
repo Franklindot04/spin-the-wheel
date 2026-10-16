@@ -118,6 +118,10 @@ npm run start
 
 Wheel configurations and spin history are stored locally in the browser.
 
+Nothing is sent to a server or shared with anyone. Data stays in your browser on your device, so clearing your browser data removes it. Export your wheels regularly to keep a copy. Spin history keeps the newest 500 spins per mode for each wheel.
+
+If saved data cannot be read, the app keeps a copy of the original in your browser and offers to export it.
+
 The application also supports exporting and importing wheel data as JSON. This makes it possible to back up wheel configurations, restore them later, or move them between browsers and environments.
 
 ## Project Status
