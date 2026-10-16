@@ -3,6 +3,7 @@ import type {
   AppearanceTheme,
   AutoGenerateType,
   ConfettiEffect,
+  Mode,
   SpinHistoryItem,
   SpinSpeed,
   Wheel,
@@ -74,6 +75,8 @@ export const DEFAULT_WINNER_DISPLAY: WinnerDisplay =
   "banner";
 
 export const DEFAULT_MAX_ENTRIES = 50;
+
+export const MAX_HISTORY_ITEMS = 500;
 
 export const DEFAULT_SOUND_ENABLED =
   true;
@@ -193,17 +196,83 @@ export function normalizeEntry(
   };
 }
 
-function normalizeHistory(
-  history: SpinHistoryItem[] | undefined,
+export function normalizeHistory(
+  history: unknown,
+  fallbackMode: Mode,
 ): SpinHistoryItem[] {
   if (!Array.isArray(history)) {
     return [];
   }
 
-  return history.map((item) => ({
-    ...item,
-    emoji: normalizeEmoji(item?.emoji),
-  }));
+  const seenIds = new Set<string>();
+  const items: SpinHistoryItem[] = [];
+
+  for (const raw of history) {
+    if (
+      !raw ||
+      typeof raw !== "object" ||
+      Array.isArray(raw)
+    ) {
+      continue;
+    }
+
+    const item =
+      raw as Record<string, unknown>;
+
+    if (typeof item.label !== "string") {
+      continue;
+    }
+
+    const timestamp =
+      typeof item.timestamp === "string" &&
+      item.timestamp.trim() !== ""
+        ? Number(item.timestamp)
+        : item.timestamp;
+
+    if (
+      typeof timestamp !== "number" ||
+      !Number.isFinite(timestamp)
+    ) {
+      continue;
+    }
+
+    let id =
+      typeof item.id === "string" &&
+      item.id !== ""
+        ? item.id
+        : crypto.randomUUID();
+
+    while (seenIds.has(id)) {
+      id = crypto.randomUUID();
+    }
+
+    seenIds.add(id);
+
+    items.push({
+      id,
+      entryId:
+        typeof item.entryId === "string"
+          ? item.entryId
+          : "",
+      label: item.label,
+      emoji: normalizeEmoji(item.emoji),
+      mode:
+        item.mode === "standard" ||
+        item.mode === "quiz"
+          ? item.mode
+          : fallbackMode,
+      question:
+        typeof item.question === "string"
+          ? item.question
+          : undefined,
+      timestamp,
+    });
+  }
+
+  return items.slice(
+    0,
+    MAX_HISTORY_ITEMS,
+  );
 }
 
 function normalizeSpinDuration(
@@ -485,11 +554,13 @@ export function normalizeWheel(
     standardHistory:
       normalizeHistory(
         wheel.standardHistory,
+        "standard",
       ),
 
     quizHistory:
       normalizeHistory(
         wheel.quizHistory,
+        "quiz",
       ),
 
     settings:

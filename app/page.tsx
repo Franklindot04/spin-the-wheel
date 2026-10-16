@@ -8,7 +8,7 @@ import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
-import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
+import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
 import { ImportError, LEGACY_STORAGE_KEY, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partial<Wheel>): AppData {
@@ -49,6 +49,9 @@ export default function Home() {
     const settingsDialogRef = useRef<HTMLDivElement>(null);
     const resetDialogRef = useRef<HTMLDivElement>(null);
     const [importError, setImportError,] = useState("");
+    const [saveFailed, setSaveFailed,] = useState(false);
+    const importAlertRef = useRef<HTMLDivElement>(null);
+    const saveAlertRef = useRef<HTMLDivElement>(null);
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
     const [storageLoaded, setStorageLoaded,] = useState(false);
     const hasLoadedStorage = useRef(false);
@@ -244,13 +247,31 @@ export default function Home() {
         if (!hasLoadedStorage.current) {
             return;
         }
+        let failed = false;
         try {
             window.localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
         }
         catch {
-            // Ignore unavailable or full local storage.
+            // Keep the data in memory and tell the user it is not saved.
+            failed = true;
         }
+        // Report the result after the effect so the notice follows the latest write.
+        queueMicrotask(() => setSaveFailed(failed));
     }, [appData]);
+    useEffect(() => {
+        if (importError) {
+            importAlertRef.current?.scrollIntoView({
+                block: "nearest",
+            });
+        }
+    }, [importError]);
+    useEffect(() => {
+        if (saveFailed) {
+            saveAlertRef.current?.scrollIntoView({
+                block: "nearest",
+            });
+        }
+    }, [saveFailed]);
     function closeSettings() {
         setResetConfirmOpen(false);
         setPendingImport(null);
@@ -630,13 +651,13 @@ export default function Home() {
             setStandardHistory((current) => [
                 item,
                 ...current,
-            ]);
+            ].slice(0, MAX_HISTORY_ITEMS));
         }
         else {
             setQuizHistory((current) => [
                 item,
                 ...current,
-            ]);
+            ].slice(0, MAX_HISTORY_ITEMS));
         }
     }
     function clearHistory(historyMode: Mode) {
@@ -1058,7 +1079,13 @@ export default function Home() {
         </div>
       </header>
       <div className="mx-auto max-w-7xl space-y-3 px-4 empty:hidden pt-4 sm:px-6">
-        {importError && (<div role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        {saveFailed && (<div ref={saveAlertRef} role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <p className="min-w-0 break-words">Your changes could not be saved because browser storage is full. Export your data to keep a copy.</p>
+            <button type="button" onClick={exportData} className="shrink-0 rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+              Export
+            </button>
+          </div>)}
+        {importError && (<div ref={importAlertRef} role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <p className="min-w-0 break-words">{importError}</p>
             <button type="button" onClick={() => setImportError("")} aria-label="Dismiss import error" className="shrink-0 rounded font-semibold text-red-800 transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
               Dismiss
