@@ -13,9 +13,11 @@ import type {
 import { getEntryWeight } from "../lib/wheel-utils";
 import {
   EMOJI_GROUPS,
+  EMOJI_OPTIONS,
   EMOJI_TONES,
   applyEmojiTone,
   getEmojiTone,
+  stripEmojiTone,
 } from "../lib/entry-emoji";
 
 const TONE_SWATCH_COLORS = [
@@ -444,6 +446,34 @@ function EmojiPicker({
   const toneName = `emoji-tone-${entry.id}`;
   const panelId = `emoji-panel-${entry.id}`;
 
+  /*
+   * Spoken name of the saved emoji: the
+   * curated name (with its tone) when it
+   * is in the list, otherwise the emoji.
+   */
+  const currentOption = entry.emoji
+    ? EMOJI_OPTIONS.find(
+        (option) =>
+          option.emoji ===
+          stripEmojiTone(
+            entry.emoji ?? "",
+          ),
+      )
+    : undefined;
+
+  const currentTone = getEmojiTone(
+    entry.emoji,
+  );
+
+  const currentEmojiName =
+    currentOption
+      ? currentTone > 0
+        ? `${currentOption.name}, ${EMOJI_TONES[
+            currentTone
+          ].name.toLowerCase()} skin tone`
+        : currentOption.name
+      : entry.emoji;
+
   const cellClass = `relative flex h-9 w-full cursor-pointer items-center justify-center rounded-lg text-lg leading-none transition ${theme.subtleSurfaceClass} ${theme.textPrimaryClass} ${theme.controlHoverClass} peer-checked:ring-2 peer-checked:ring-current peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current peer-disabled:cursor-not-allowed peer-disabled:opacity-40`;
 
   return (
@@ -457,6 +487,11 @@ function EmojiPicker({
         }
         aria-expanded={expanded}
         aria-controls={panelId}
+        aria-label={`Emoji: ${
+          entry.emoji
+            ? currentEmojiName
+            : "none"
+        }`}
         className={`flex w-full items-center gap-3 rounded-lg text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${theme.textSecondaryClass}`}
       >
         <span className="shrink-0">
@@ -469,7 +504,8 @@ function EmojiPicker({
 
         {entry.emoji ? (
           <span
-            aria-label={`Current emoji ${entry.emoji}`}
+            role="img"
+            aria-label={currentEmojiName}
             className="text-base leading-none"
           >
             {entry.emoji}

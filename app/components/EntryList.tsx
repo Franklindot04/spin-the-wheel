@@ -235,6 +235,15 @@ export default function EntryList({
                     aria-hidden="true"
                   />
 
+                  {entry.emoji && (
+                    <span
+                      className={`mt-1.5 shrink-0 text-base leading-none ${hiddenContentClass}`}
+                      aria-hidden="true"
+                    >
+                      {entry.emoji}
+                    </span>
+                  )}
+
                   <div
                     className={`order-first min-w-full flex-1 sm:order-none sm:min-w-0 ${hiddenContentClass}`}
                   >

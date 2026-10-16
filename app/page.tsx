@@ -1068,6 +1068,7 @@ export default function Home() {
                 And the question is...
               </p>
               <p className={`mt-2 break-words text-xl font-bold ${theme.textPrimaryClass}`}>
+                {displayedQuizEntry.emoji && (<span aria-hidden="true">{displayedQuizEntry.emoji}{" "}</span>)}
                 {displayedQuizEntry.label}
               </p>
               <div className={`mt-4 rounded-xl p-5 text-left ${theme.subtleSurfaceClass}`}>
@@ -1125,6 +1126,7 @@ export default function Home() {
                 Result
               </p>
               <p className={`mt-2 break-words text-2xl font-bold ${theme.textPrimaryClass}`}>
+                {selectedEntry.emoji && (<span aria-hidden="true">{selectedEntry.emoji}{" "}</span>)}
                 {selectedEntry.label}
               </p>
             </div>)}
@@ -1235,6 +1237,7 @@ export default function Home() {
                         index}
                             </span>
                             <span className={`min-w-0 flex-1 truncate text-sm font-medium ${theme.textPrimaryClass}`}>
+                              {item.emoji && (<span aria-hidden="true">{item.emoji}{" "}</span>)}
                               {item.label}
                             </span>
                             <span className={`shrink-0 text-xs ${theme.textMutedClass}`}>
