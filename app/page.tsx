@@ -1137,7 +1137,7 @@ export default function Home() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:flex-nowrap">
-            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label="Select wheel" className={`max-w-[9rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none transition md:max-w-none ${theme.controlClass} ${headerHoverClass} focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50`}>
+            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label="Select wheel" style={{ "--tw-ring-color": headerTextColor } as CSSProperties} className={`max-w-[9rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none transition md:max-w-none ${theme.controlClass} ${spinning ? "" : theme.controlHoverClass} focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50`}>
               {appData.wheels.map((wheel) => (<option key={wheel.id} value={wheel.id}>
                     {wheel.name}
                   </option>))}
