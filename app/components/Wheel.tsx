@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -48,6 +49,13 @@ const EMOJI_ADVANCE = 1.6;
 const EMOJI_GLYPH_WIDTH = 1.3;
 const EMOJI_GLYPH_HEIGHT = 1.2;
 const EMOJI_MIN_FONT_SIZE = 9;
+const IMAGE_RADIUS = 175;
+const IMAGE_SIZE = 36;
+const IMAGE_MIN_SIZE = 12;
+const IMAGE_SHRINK_STEP = 0.5;
+const IMAGE_EDGE_GAP = 2;
+const IMAGE_RIM_GAP = 3;
+const IMAGE_LABEL_GAP = 3;
 
 function polarToCartesian(
   cx: number,
@@ -286,6 +294,107 @@ function getSliceLayout(
   );
 }
 
+function getLabelEnd(
+  layout: {
+    text: string;
+    fontSize: number;
+  } | null,
+  emoji: string | undefined,
+  measuredWidth: number | undefined,
+) {
+  /*
+   * Outer end of the drawn label, measured
+   * from the wheel center. The label is
+   * centered on LABEL_RADIUS. The measured
+   * width of the rendered text is used when
+   * known. Before that, the width uses the
+   * same estimate as the label layout.
+   */
+  if (!layout) {
+    return null;
+  }
+
+  if (measuredWidth !== undefined) {
+    return (
+      LABEL_RADIUS +
+      measuredWidth / 2
+    );
+  }
+
+  const width =
+    emoji &&
+    layout.text === emoji
+      ? layout.fontSize *
+        EMOJI_GLYPH_WIDTH
+      : emoji
+        ? EMOJI_ADVANCE *
+            layout.fontSize +
+          Math.max(
+            0,
+            layout.text.length -
+              emoji.length -
+              1,
+          ) *
+            layout.fontSize *
+            LABEL_CHAR_WIDTH
+        : layout.text.length *
+          layout.fontSize *
+          LABEL_CHAR_WIDTH;
+
+  return LABEL_RADIUS + width / 2;
+}
+
+function getImagePlacement(
+  angle: number,
+  labelEnd: number | null,
+) {
+  /*
+   * The label and its emoji always win.
+   * The image goes beyond the label, inside
+   * the rim and the slice edges. It shrinks
+   * until it fits and is skipped when it
+   * would be too small.
+   */
+  const sinHalf = Math.sin(
+    (Math.min(angle, 180) / 2 *
+      Math.PI) /
+      180,
+  );
+
+  for (
+    let radius = IMAGE_SIZE / 2;
+    radius * 2 >= IMAGE_MIN_SIZE;
+    radius -= IMAGE_SHRINK_STEP
+  ) {
+    const center = Math.max(
+      IMAGE_RADIUS,
+      labelEnd === null
+        ? 0
+        : labelEnd +
+            IMAGE_LABEL_GAP +
+            radius,
+    );
+
+    if (
+      center + radius >
+        RADIUS - IMAGE_RIM_GAP ||
+      radius >
+        center * sinHalf -
+          IMAGE_EDGE_GAP
+    ) {
+      continue;
+    }
+
+    return {
+      radius: center,
+      scale:
+        radius / (IMAGE_SIZE / 2),
+    };
+  }
+
+  return null;
+}
+
 function clampSize(value: number) {
   return Math.min(
     MAX_SIZE,
@@ -470,6 +579,13 @@ export default function Wheel({
       null,
     );
 
+  const [
+    labelWidths,
+    setLabelWidths,
+  ] = useState<
+    Record<string, number>
+  >({});
+
   const spinTimerRef =
     useRef<number | null>(null);
 
@@ -597,6 +713,56 @@ export default function Wheel({
     rotationRef.current =
       rotation;
   }, [rotation]);
+
+  useLayoutEffect(() => {
+    /*
+     * Measure the rendered labels so the
+     * image can be placed clear of them,
+     * whatever the font.
+     */
+    function measureLabels() {
+      const next: Record<
+        string,
+        number
+      > = {};
+
+      wheelContainerRef.current
+        ?.querySelectorAll<SVGTextElement>(
+          "text[data-entry-id]",
+        )
+        .forEach((node) => {
+          const id =
+            node.dataset.entryId;
+
+          if (id) {
+            next[id] =
+              node.getComputedTextLength();
+          }
+        });
+
+      setLabelWidths((current) => {
+        const keys =
+          Object.keys(next);
+
+        return keys.length ===
+          Object.keys(current)
+            .length &&
+          keys.every(
+            (key) =>
+              current[key] ===
+              next[key],
+          )
+          ? current
+          : next;
+      });
+    }
+
+    measureLabels();
+
+    document.fonts?.ready.then(
+      measureLabels,
+    );
+  }, [slices]);
 
   useEffect(() => {
     const container =
@@ -965,6 +1131,29 @@ export default function Wheel({
                       HIDE_LABELS_AT,
                   );
 
+                const imagePlacement =
+                  entry.image
+                    ? getImagePlacement(
+                        angle,
+                        getLabelEnd(
+                          labelLayout,
+                          entry.emoji,
+                          labelWidths[
+                            entry.id
+                          ],
+                        ),
+                      )
+                    : null;
+
+                const imagePoint =
+                  polarToCartesian(
+                    CENTER,
+                    CENTER,
+                    imagePlacement?.radius ??
+                      IMAGE_RADIUS,
+                    mid,
+                  );
+
                 return (
                   <g
                     key={
@@ -993,21 +1182,23 @@ export default function Wheel({
                       strokeWidth="3"
                     />
 
-                    {entry.image ? (
+                    {entry.image &&
+                    imagePlacement ? (
                       <image
                         href={
                           entry.image
                         }
                         x={
-                          labelPoint.x -
+                          imagePoint.x -
                           18
                         }
                         y={
-                          labelPoint.y -
+                          imagePoint.y -
                           18
                         }
                         width="36"
                         height="36"
+                        transform={`translate(${imagePoint.x} ${imagePoint.y}) scale(${imagePlacement.scale}) translate(${-imagePoint.x} ${-imagePoint.y})`}
                         preserveAspectRatio="xMidYMid slice"
                         clipPath="circle(18px at 18px 18px)"
                       />
@@ -1015,6 +1206,9 @@ export default function Wheel({
 
                     {labelLayout ? (
                       <text
+                        data-entry-id={
+                          entry.id
+                        }
                         x={
                           labelPoint.x
                         }
