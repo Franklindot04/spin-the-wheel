@@ -316,7 +316,7 @@ export default function Home() {
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key ===
                 "Escape") {
-                setResetConfirmOpen(false);
+                cancelRestoreDefaults();
                 return;
             }
             if (event.key !==
@@ -851,6 +851,10 @@ export default function Home() {
         }
         setSettingsOpen(false);
         setResetConfirmOpen(true);
+    }
+    function cancelRestoreDefaults() {
+        setResetConfirmOpen(false);
+        setSettingsOpen(true);
     }
     function exportData() {
         const blob = new Blob([
@@ -1399,13 +1403,13 @@ export default function Home() {
               Restore defaults?
             </h2>
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
-              This will restore the default entries, quiz questions, settings, title, description, and history.
+              This will restore the default entries, quiz questions, settings, title, description, and history. Your wheel name and other wheels are kept.
             </p>
             <div className="mt-5 flex gap-3">
               <button type="button" onClick={resetWheelToDefaults} disabled={spinning} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                 Restore
               </button>
-              <button type="button" onClick={() => setResetConfirmOpen(false)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+              <button type="button" onClick={cancelRestoreDefaults} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
                 Cancel
               </button>
             </div>
