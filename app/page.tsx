@@ -9,7 +9,7 @@ import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
-import { LEGACY_STORAGE_KEY, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
+import { ImportError, LEGACY_STORAGE_KEY, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partial<Wheel>): AppData {
     return {
@@ -253,7 +253,6 @@ export default function Home() {
     }, [appData]);
     function closeSettings() {
         setResetConfirmOpen(false);
-        setImportError("");
         setPendingImport(null);
         setSettingsOpen(false);
     }
@@ -885,17 +884,19 @@ export default function Home() {
             return;
         }
         setImportError("");
+        if (file.size > MAX_IMPORT_FILE_SIZE) {
+            setImportError(`This file is too large to import. The limit is ${MAX_IMPORT_FILE_SIZE / (1024 * 1024)} MB.`);
+            return;
+        }
         file
             .text()
             .then((content) => {
-            const imported = parseImportedData(content);
-            if (!imported) {
-                throw new Error("Invalid import.");
-            }
-            setPendingImport(imported);
+            setPendingImport(parseImportedData(content));
         })
-            .catch(() => {
-            setImportError("The selected file could not be imported. Choose a valid Spin the Wheel JSON export.");
+            .catch((error: unknown) => {
+            setImportError(error instanceof ImportError
+                ? error.message
+                : "The selected file could not be imported. Choose a valid Spin the Wheel JSON export.");
         });
     }
     function applyImportedData() {
@@ -1056,6 +1057,14 @@ export default function Home() {
           </div>
         </div>
       </header>
+      <div className="mx-auto max-w-7xl space-y-3 px-4 empty:hidden pt-4 sm:px-6">
+        {importError && (<div role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <p className="min-w-0 break-words">{importError}</p>
+            <button type="button" onClick={() => setImportError("")} aria-label="Dismiss import error" className="shrink-0 rounded font-semibold text-red-800 transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+              Dismiss
+            </button>
+          </div>)}
+      </div>
       <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
         <div className={`flex w-fit rounded-xl border p-1 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
           <button type="button" onClick={() => changeMode("standard")} disabled={spinning} className={`rounded-lg px-5 py-2 text-sm font-medium transition ${mode === "standard"
@@ -1213,7 +1222,10 @@ export default function Home() {
                 <path d="M5 21h14"/>
               </svg>
             </button>
-            <button type="button" onClick={() => importInputRef.current?.click()} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title="Import data">
+            <button type="button" onClick={() => {
+                setImportError("");
+                importInputRef.current?.click();
+            }} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title="Import data">
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 21V9"/>
                 <path d="m7 14 5-5 5 5"/>
@@ -1384,9 +1396,6 @@ export default function Home() {
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
               This will replace the current saved wheel data.
             </p>
-            {importError && (<p className="mt-3 rounded-lg bg-red-950/40 px-3 py-2 text-sm text-red-300">
-                {importError}
-              </p>)}
             <div className="mt-5 flex gap-3">
               <button type="button" onClick={applyImportedData} disabled={spinning} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                 Import
