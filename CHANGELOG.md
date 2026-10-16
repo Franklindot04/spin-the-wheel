@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-10-17
+
 ### Added
 
 - The Restore defaults and Reset Entries confirmations include an "Export all wheels" button, so you can save a copy first.
@@ -177,7 +179,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.5...v2.1.0
 [2.0.5]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.3...v2.0.4
