@@ -22,6 +22,8 @@ Built with **Next.js**, **React**, **TypeScript**, and **Tailwind CSS**.
 - Add, edit, duplicate, hide, and remove entries
 - Customize wheel titles and descriptions
 - Adjust slice weights for weighted selections
+- Give any entry an optional emoji from the entry menu, with a skin-tone row for people and hand emoji
+- From 40 entries the wheel shows emoji-only slices instead of hiding every label
 - Change wheel size and spin settings
 - Rename or delete wheels from the main interface
 

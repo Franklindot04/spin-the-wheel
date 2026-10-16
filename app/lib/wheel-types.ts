@@ -81,6 +81,8 @@ export type WheelEntry = {
 
   image?: string;
 
+  emoji?: string;
+
   sound?: string;
   winnerSound?: string;
 
@@ -97,6 +99,7 @@ export type SpinHistoryItem = {
   id: string;
   entryId: string;
   label: string;
+  emoji?: string;
   mode: Mode;
   question?: string;
   timestamp: number;

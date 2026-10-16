@@ -11,6 +11,23 @@ import type {
   WheelEntry,
 } from "../lib/wheel-types";
 import { getEntryWeight } from "../lib/wheel-utils";
+import {
+  EMOJI_GROUPS,
+  EMOJI_OPTIONS,
+  EMOJI_TONES,
+  applyEmojiTone,
+  getEmojiTone,
+  stripEmojiTone,
+} from "../lib/entry-emoji";
+
+const TONE_SWATCH_COLORS = [
+  "#facc15",
+  "#fcd9b6",
+  "#e9b98c",
+  "#c58c5f",
+  "#8d5a3b",
+  "#4a2f21",
+];
 
 type EntryMenuProps = {
   entry: WheelEntry;
@@ -134,11 +151,36 @@ function MenuIcon({
     | "text"
     | "font"
     | "weight"
+    | "emoji"
     | "image"
     | "sound"
     | "duplicate"
     | "delete";
 }) {
+  if (type === "emoji") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+        />
+        <path d="M8.5 14a4 4 0 0 0 7 0" />
+        <path d="M9 9.5h.01" />
+        <path d="M15 9.5h.01" />
+      </svg>
+    );
+  }
+
   if (type === "color") {
     return (
       <svg
@@ -366,6 +408,274 @@ function MenuRow({
       </span>
 
       {children}
+    </div>
+  );
+}
+
+function EmojiPicker({
+  entry,
+  disabled,
+  onUpdate,
+  theme,
+}: {
+  entry: WheelEntry;
+  disabled: boolean;
+  onUpdate: (
+    id: string,
+    changes: Partial<WheelEntry>,
+  ) => void;
+  theme: AppearanceThemeConfig;
+}) {
+  /*
+   * The tone is interface state only.
+   * It starts from the tone of the
+   * entry's current emoji.
+   */
+  const [tone, setTone] = useState(
+    () => getEmojiTone(entry.emoji),
+  );
+
+  /*
+   * Interface state only: collapsed each
+   * time the menu opens, never saved.
+   */
+  const [expanded, setExpanded] =
+    useState(false);
+
+  const groupName = `emoji-${entry.id}`;
+  const toneName = `emoji-tone-${entry.id}`;
+  const panelId = `emoji-panel-${entry.id}`;
+
+  /*
+   * Spoken name of the saved emoji: the
+   * curated name (with its tone) when it
+   * is in the list, otherwise the emoji.
+   */
+  const currentOption = entry.emoji
+    ? EMOJI_OPTIONS.find(
+        (option) =>
+          option.emoji ===
+          stripEmojiTone(
+            entry.emoji ?? "",
+          ),
+      )
+    : undefined;
+
+  const currentTone = getEmojiTone(
+    entry.emoji,
+  );
+
+  const currentEmojiName =
+    currentOption
+      ? currentTone > 0
+        ? `${currentOption.name}, ${EMOJI_TONES[
+            currentTone
+          ].name.toLowerCase()} skin tone`
+        : currentOption.name
+      : entry.emoji;
+
+  const cellClass = `relative flex h-9 w-full cursor-pointer items-center justify-center rounded-lg text-lg leading-none transition ${theme.subtleSurfaceClass} ${theme.textPrimaryClass} ${theme.controlHoverClass} peer-checked:ring-2 peer-checked:ring-current peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current peer-disabled:cursor-not-allowed peer-disabled:opacity-40`;
+
+  return (
+    <div className="px-3 py-2.5">
+      <button
+        type="button"
+        onClick={() =>
+          setExpanded(
+            (current) => !current,
+          )
+        }
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        aria-label={`Emoji: ${
+          entry.emoji
+            ? currentEmojiName
+            : "none"
+        }`}
+        className={`flex w-full items-center gap-3 rounded-lg text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${theme.textSecondaryClass}`}
+      >
+        <span className="shrink-0">
+          <MenuIcon type="emoji" />
+        </span>
+
+        <span className="min-w-0 flex-1 text-xs font-medium">
+          Emoji
+        </span>
+
+        {entry.emoji ? (
+          <span
+            role="img"
+            aria-label={currentEmojiName}
+            className="text-base leading-none"
+          >
+            {entry.emoji}
+          </span>
+        ) : (
+          <span
+            className={`text-[11px] font-medium ${theme.textMutedClass}`}
+          >
+            None
+          </span>
+        )}
+
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className={`h-4 w-4 shrink-0 transition-transform ${
+            expanded
+              ? "rotate-180"
+              : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+
+      {expanded && (
+      <div id={panelId}>
+      <label className="relative mt-2 inline-block">
+        <input
+          type="radio"
+          name={groupName}
+          value=""
+          checked={!entry.emoji}
+          onChange={() =>
+            onUpdate(entry.id, {
+              emoji: undefined,
+            })
+          }
+          disabled={disabled}
+          aria-label="No emoji"
+          className="peer sr-only"
+        />
+
+        <span
+          aria-hidden="true"
+          className={`flex cursor-pointer items-center rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${theme.subtleSurfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} peer-checked:ring-2 peer-checked:ring-current peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current peer-disabled:cursor-not-allowed peer-disabled:opacity-40`}
+        >
+          None
+        </span>
+      </label>
+
+      <div
+        role="group"
+        aria-label="Emoji skin tone"
+        className="mt-2 flex items-center gap-2"
+      >
+        <span
+          className={`mr-auto text-[10px] ${theme.textMutedClass}`}
+        >
+          Skin tone
+        </span>
+
+        {EMOJI_TONES.map(
+          (item, index) => (
+            <label
+              key={item.name}
+              className="relative"
+            >
+              <input
+                type="radio"
+                name={toneName}
+                value={index}
+                checked={tone === index}
+                onChange={() =>
+                  setTone(index)
+                }
+                disabled={disabled}
+                aria-label={`${item.name} skin tone`}
+                className="peer sr-only"
+              />
+
+              <span
+                aria-hidden="true"
+                className={`block h-6 w-6 cursor-pointer rounded-full border ${theme.borderClass} peer-checked:ring-2 peer-checked:ring-current peer-checked:ring-offset-1 peer-checked:ring-offset-transparent peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current peer-disabled:cursor-not-allowed peer-disabled:opacity-40`}
+                style={{
+                  backgroundColor:
+                    TONE_SWATCH_COLORS[
+                      index
+                    ],
+                }}
+              />
+            </label>
+          ),
+        )}
+      </div>
+
+      <div className="mt-2 space-y-1">
+        {EMOJI_GROUPS.map((group) => (
+          <div
+            key={group.label}
+            role="group"
+            aria-label={group.label}
+            className="grid grid-cols-6 gap-1"
+          >
+            {group.options.map(
+              (option) => {
+                const value =
+                  option.toneCapable
+                    ? applyEmojiTone(
+                        option.emoji,
+                        tone,
+                      )
+                    : option.emoji;
+
+                const name =
+                  option.toneCapable &&
+                  tone > 0
+                    ? `${option.name}, ${EMOJI_TONES[
+                        tone
+                      ].name.toLowerCase()} skin tone`
+                    : option.name;
+
+                return (
+                  <label
+                    key={option.emoji}
+                    className="relative block"
+                  >
+                    <input
+                      type="radio"
+                      name={groupName}
+                      value={value}
+                      checked={
+                        entry.emoji ===
+                        value
+                      }
+                      onChange={() =>
+                        onUpdate(
+                          entry.id,
+                          {
+                            emoji: value,
+                          },
+                        )
+                      }
+                      disabled={
+                        disabled
+                      }
+                      aria-label={name}
+                      className="peer sr-only"
+                    />
+
+                    <span
+                      aria-hidden="true"
+                      className={cellClass}
+                    >
+                      {value}
+                    </span>
+                  </label>
+                );
+              },
+            )}
+          </div>
+        ))}
+      </div>
+      </div>
+      )}
     </div>
   );
 }
@@ -870,6 +1180,17 @@ export default function EntryMenu({
                 </button>
               </div>
             </MenuRow>
+
+            <div
+              className={`my-1 border-t ${theme.borderClass}`}
+            />
+
+            <EmojiPicker
+              entry={entry}
+              disabled={spinning}
+              onUpdate={onUpdate}
+              theme={theme}
+            />
 
             <div
               className={`my-1 border-t ${theme.borderClass}`}
