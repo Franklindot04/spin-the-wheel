@@ -18,6 +18,9 @@ export const STORAGE_KEY =
 export const LEGACY_STORAGE_KEY =
   "spin-the-wheel:v1";
 
+export const MAX_IMPORT_FILE_SIZE =
+  10 * 1024 * 1024;
+
 export function isLegacyStoredData(
   value: unknown,
 ): value is LegacyStoredData {
@@ -157,17 +160,47 @@ export function serializeAppData(
   );
 }
 
+export class ImportError extends Error {}
+
 export function parseImportedData(
   content: string,
 ): AppData {
-  const parsed: unknown =
-    JSON.parse(content);
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new ImportError(
+      "This is not a JSON file. Choose a Spin the Wheel export.",
+    );
+  }
 
   const imported =
     migrateStoredData(parsed);
 
   if (!imported) {
-    throw new Error(
+    const version =
+      parsed &&
+      typeof parsed === "object"
+        ? (
+            parsed as {
+              version?: unknown;
+            }
+          ).version
+        : undefined;
+
+    if (
+      (typeof version === "number" ||
+        typeof version === "string") &&
+      version !== 1 &&
+      version !== 2
+    ) {
+      throw new ImportError(
+        `This export uses an unsupported version (${String(version).slice(0, 20)}). Only versions 1 and 2 can be imported.`,
+      );
+    }
+
+    throw new ImportError(
       "This file is not a valid Spin the Wheel export.",
     );
   }
