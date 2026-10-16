@@ -11,6 +11,18 @@ import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./l
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY, migrateStoredData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
+function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partial<Wheel>): AppData {
+    return {
+        ...current,
+        wheels: current.wheels.map((wheel) => wheel.id ===
+            current.activeWheelId
+            ? {
+                ...wheel,
+                ...changes(wheel),
+            }
+            : wheel),
+    };
+}
 export default function Home() {
     const [appData, setAppData] = useState<AppData>(createInitialAppData);
     const [mode, setMode] = useState<Mode>("standard");
@@ -159,15 +171,15 @@ export default function Home() {
     }
     const standardEntries = activeWheel.standardEntries;
     const setStandardEntries = (next: SetStateAction<WheelEntry[]>) => {
-        updateActiveWheel({
-            standardEntries: resolveStateValue(next, activeWheel.standardEntries),
-        });
+        setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
+            standardEntries: resolveStateValue(next, wheel.standardEntries),
+        })));
     };
     const quizEntries = activeWheel.quizEntries;
     const setQuizEntries = (next: SetStateAction<WheelEntry[]>) => {
-        updateActiveWheel({
-            quizEntries: resolveStateValue(next, activeWheel.quizEntries),
-        });
+        setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
+            quizEntries: resolveStateValue(next, wheel.quizEntries),
+        })));
     };
     const wheelTitle = activeWheel.title;
     const wheelDescription = activeWheel.description;
@@ -179,15 +191,15 @@ export default function Home() {
     const panelSettings = wheelSettingsToPanelSettings(activeWheel.settings);
     const standardHistory = activeWheel.standardHistory;
     const setStandardHistory = (next: SetStateAction<SpinHistoryItem[]>) => {
-        updateActiveWheel({
-            standardHistory: resolveStateValue(next, activeWheel.standardHistory),
-        });
+        setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
+            standardHistory: resolveStateValue(next, wheel.standardHistory),
+        })));
     };
     const quizHistory = activeWheel.quizHistory;
     const setQuizHistory = (next: SetStateAction<SpinHistoryItem[]>) => {
-        updateActiveWheel({
-            quizHistory: resolveStateValue(next, activeWheel.quizHistory),
-        });
+        setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
+            quizHistory: resolveStateValue(next, wheel.quizHistory),
+        })));
     };
     useEffect(() => {
         const loadStoredData = () => {
@@ -1250,10 +1262,11 @@ export default function Home() {
                         </div>))}
                   </div>)}
               </div>
-              <button type="button" onClick={() => clearHistory(mode)} disabled={(mode ===
-                "standard"
-                ? standardHistory
-                : quizHistory).length === 0} className="mt-4 w-full rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
+              <button type="button" onClick={() => clearHistory(mode)} disabled={spinning ||
+                (mode ===
+                    "standard"
+                    ? standardHistory
+                    : quizHistory).length === 0} className="mt-4 w-full rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
                 Clear History
               </button>
             </div>)}
