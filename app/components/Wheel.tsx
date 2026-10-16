@@ -44,6 +44,10 @@ const LABEL_RADIUS = 132;
 const LABEL_MAX_FONT_SIZE = 15;
 const LABEL_MIN_FONT_SIZE = 9;
 const HIDE_LABELS_AT = 40;
+const EMOJI_ADVANCE = 1.6;
+const EMOJI_GLYPH_WIDTH = 1.3;
+const EMOJI_GLYPH_HEIGHT = 1.2;
+const EMOJI_MIN_FONT_SIZE = 9;
 
 function polarToCartesian(
   cx: number,
@@ -144,7 +148,17 @@ function describeArc(
 function getLabelLayout(
   label: string,
   angle: number,
+  emoji?: string,
 ) {
+  /*
+   * The emoji and the gap after it are
+   * counted as a constant share of the
+   * font size, not by string length.
+   */
+  const emojiAdvance = emoji
+    ? EMOJI_ADVANCE
+    : 0;
+
   for (
     let fontSize =
       LABEL_MAX_FONT_SIZE;
@@ -153,7 +167,8 @@ function getLabelLayout(
     fontSize--
   ) {
     const maxChars = Math.floor(
-      LABEL_MAX_WIDTH /
+      (LABEL_MAX_WIDTH -
+        emojiAdvance * fontSize) /
         (fontSize *
           LABEL_CHAR_WIDTH),
     );
@@ -177,23 +192,98 @@ function getLabelLayout(
         )}…`;
 
     const width =
+      emojiAdvance * fontSize +
       text.length *
+        fontSize *
+        LABEL_CHAR_WIDTH;
+
+    const room =
+      (LABEL_RADIUS - width / 2) *
+      ((angle * Math.PI) / 180);
+
+    const needed = emoji
+      ? Math.max(
+          fontSize * 0.8 + 2,
+          fontSize *
+            EMOJI_GLYPH_HEIGHT,
+        )
+      : fontSize * 0.8 + 2;
+
+    if (needed <= room) {
+      return {
+        text: emoji
+          ? `${emoji} ${text}`
+          : text,
+        fontSize,
+      };
+    }
+  }
+
+  return null;
+}
+
+function getEmojiOnlyLayout(
+  emoji: string,
+  angle: number,
+) {
+  for (
+    let fontSize =
+      LABEL_MAX_FONT_SIZE;
+    fontSize >=
+    EMOJI_MIN_FONT_SIZE;
+    fontSize--
+  ) {
+    const width =
       fontSize *
-      LABEL_CHAR_WIDTH;
+      EMOJI_GLYPH_WIDTH;
 
     const room =
       (LABEL_RADIUS - width / 2) *
       ((angle * Math.PI) / 180);
 
     if (
-      fontSize * 0.8 + 2 <=
+      fontSize *
+        EMOJI_GLYPH_HEIGHT <=
       room
     ) {
-      return { text, fontSize };
+      return {
+        text: emoji,
+        fontSize,
+      };
     }
   }
 
   return null;
+}
+
+function getSliceLayout(
+  label: string,
+  angle: number,
+  emoji: string | undefined,
+  hideLabels: boolean,
+) {
+  if (hideLabels) {
+    return emoji
+      ? getEmojiOnlyLayout(
+          emoji,
+          angle,
+        )
+      : null;
+  }
+
+  return (
+    getLabelLayout(
+      label,
+      angle,
+      emoji,
+    ) ??
+    (emoji
+      ? getEmojiOnlyLayout(
+          emoji,
+          angle,
+        )
+      : null)
+  );
 }
 
 function clampSize(value: number) {
@@ -867,13 +957,13 @@ export default function Wheel({
                 }
 
                 const labelLayout =
-                  visibleEntries.length >=
-                  HIDE_LABELS_AT
-                    ? null
-                    : getLabelLayout(
-                        entry.label,
-                        angle,
-                      );
+                  getSliceLayout(
+                    entry.label,
+                    angle,
+                    entry.emoji,
+                    visibleEntries.length >=
+                      HIDE_LABELS_AT,
+                  );
 
                 return (
                   <g
@@ -882,7 +972,9 @@ export default function Wheel({
                     }
                   >
                     <title>
-                      {entry.label}
+                      {entry.emoji
+                        ? `${entry.emoji} ${entry.label}`
+                        : entry.label}
                     </title>
 
                     <path
