@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, } from "react";
 import type { ChangeEvent, CSSProperties, SetStateAction, } from "react";
 import EntryList from "./components/EntryList";
-import SettingsPanel, { type WheelSettings as PanelWheelSettings, } from "./components/SettingsPanel";
+import SettingsPanel, { type SettingsTab, type WheelSettings as PanelWheelSettings, } from "./components/SettingsPanel";
 import WheelComponent from "./components/Wheel";
 import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
@@ -43,6 +43,7 @@ export default function Home() {
     const [selectedEntry, setSelectedEntry,] = useState<WheelEntry | null>(null);
     const [showAnswer, setShowAnswer,] = useState(false);
     const [settingsOpen, setSettingsOpen,] = useState(false);
+    const [settingsTab, setSettingsTab,] = useState<SettingsTab>("main");
     const [historyOpen, setHistoryOpen,] = useState(false);
     const [resetConfirmOpen, setResetConfirmOpen,] = useState(false);
     const [entriesResetOpen, setEntriesResetOpen,] = useState(false);
@@ -278,6 +279,7 @@ export default function Home() {
         }
     }, [saveFailed]);
     function closeSettings() {
+        setSettingsTab("main");
         setResetConfirmOpen(false);
         setPendingImport(null);
         setSettingsOpen(false);
@@ -962,6 +964,7 @@ export default function Home() {
         setShowAnswer(false);
         setRotation(0);
         setResetConfirmOpen(false);
+        setSettingsTab("main");
     }
     function openResetEntries() {
         if (spinning) {
@@ -1096,6 +1099,7 @@ export default function Home() {
         setRotation(0);
         setPendingImport(null);
         setImportError("");
+        setSettingsTab("main");
         setSettingsOpen(false);
         setHistoryOpen(false);
     }
@@ -1606,7 +1610,7 @@ export default function Home() {
             }}>
           <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl">
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
+              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} activeTab={settingsTab} onActiveTabChange={setSettingsTab} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
             </div>
             <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
               <button type="button" onClick={closeSettings} className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
