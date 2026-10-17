@@ -37,6 +37,7 @@ type EntryMenuProps = {
   duplicateDisabled?: boolean;
   duplicateDisabledTitle?: string;
   deleteDisabled?: boolean;
+  deleteDisabledTitle?: string;
   onToggle: () => void;
   onClose: () => void;
   onUpdate: (
@@ -700,6 +701,7 @@ export default function EntryMenu({
   duplicateDisabled = false,
   duplicateDisabledTitle,
   deleteDisabled = false,
+  deleteDisabledTitle,
   onToggle,
   onClose,
   onUpdate,
@@ -1431,7 +1433,8 @@ export default function EntryMenu({
               }
               title={
                 deleteDisabled
-                  ? "Keep at least 2 visible entries"
+                  ? deleteDisabledTitle ??
+                    "Keep at least 2 visible entries"
                   : undefined
               }
               aria-label={`Delete entry ${entry.label}`.trim()}

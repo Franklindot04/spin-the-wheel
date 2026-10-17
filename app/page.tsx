@@ -689,6 +689,10 @@ export default function Home() {
         if (spinning) {
             return;
         }
+        if (mode === "quiz" &&
+            quizStarted) {
+            return;
+        }
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
@@ -1442,6 +1446,7 @@ export default function Home() {
           </div>
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
+                quizStarted} deletionsDisabled={mode === "quiz" &&
                 quizStarted} textLocked={quizTextLocked} disabled={spinning} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button ref={entriesResetButtonRef} type="button" onClick={openResetEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
