@@ -1284,6 +1284,7 @@ export default function EntryMenu({
                 <div
                   className={`mt-2 flex items-center gap-2 rounded-lg ${theme.subtleSurfaceClass} p-2`}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- entry images are data URLs, so next/image gives no benefit */}
                   <img
                     src={entry.image}
                     alt=""
