@@ -741,6 +741,13 @@ export default function Home() {
         setQuizStarted(false);
         setRotation(0);
     }
+    function dismissQuizCard() {
+        if (spinning) {
+            return;
+        }
+        setSelectedEntry(null);
+        setShowAnswer(false);
+    }
     function addHistoryItem(entry: WheelEntry, historyMode: Mode) {
         const item: SpinHistoryItem = {
             id: crypto.randomUUID(),
@@ -1338,6 +1345,15 @@ export default function Home() {
                         1} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                     Give it another spin 😉
                   </button>)}
+                {(quizComplete ||
+                    remainingQuizEntriesHidden) && (<>
+                    <button type="button" onClick={backToQuizSetup} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                      Back to Setup
+                    </button>
+                    <button type="button" onClick={dismissQuizCard} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                      Done
+                    </button>
+                  </>)}
               </div>
             </div>)}
           {mode === "quiz" &&
