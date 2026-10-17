@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-10-17
+
 ### Changed
 
 - Deleting the kept copy of unreadable saved data now asks for confirmation first, and the dialog offers to export it.
@@ -193,7 +195,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.2...HEAD
+[2.1.2]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.5...v2.1.0
 [2.0.5]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.4...v2.0.5
