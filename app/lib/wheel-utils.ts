@@ -11,6 +11,50 @@ export function resolveStateValue<T>(
     : value;
 }
 
+/*
+ * Keeps the first `count` grapheme
+ * clusters of `text`, so an emoji,
+ * skin tone, flag or ZWJ sequence is
+ * never split. Falls back to code
+ * points when Intl.Segmenter is
+ * missing, which never leaves a lone
+ * surrogate.
+ */
+export function truncateGraphemes(
+  text: string,
+  count: number,
+): string {
+  if (count <= 0) {
+    return "";
+  }
+
+  if (
+    typeof Intl !== "undefined" &&
+    typeof Intl.Segmenter ===
+      "function"
+  ) {
+    let result = "";
+    let kept = 0;
+
+    for (const { segment } of new Intl.Segmenter().segment(
+      text,
+    )) {
+      if (kept >= count) {
+        break;
+      }
+
+      result += segment;
+      kept++;
+    }
+
+    return result;
+  }
+
+  return Array.from(text)
+    .slice(0, count)
+    .join("");
+}
+
 export function formatHistoryTime(
   timestamp: number,
 ): string {

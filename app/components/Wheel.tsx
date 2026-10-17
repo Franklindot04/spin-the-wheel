@@ -17,7 +17,10 @@ import {
   MAX_WHEEL_SIZE,
   MIN_WHEEL_SIZE,
 } from "../lib/wheel-defaults";
-import { getEntryWeight } from "../lib/wheel-utils";
+import {
+  getEntryWeight,
+  truncateGraphemes,
+} from "../lib/wheel-utils";
 
 export type { WheelEntry } from "../lib/wheel-types";
 
@@ -198,8 +201,8 @@ function getLabelLayout(
 
     const text = fits
       ? label
-      : `${label.slice(
-          0,
+      : `${truncateGraphemes(
+          label,
           maxChars - 1,
         )}…`;
 
