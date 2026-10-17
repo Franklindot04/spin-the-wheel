@@ -22,3 +22,69 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Loading screen colours. The head script sets
+ * data-theme on <html> before the first paint. The
+ * colours are the ones the real page uses for each
+ * theme: page, header, panel.
+ */
+.shell-page {
+  @apply bg-slate-950;
+}
+
+.shell-header {
+  @apply border-slate-300 bg-slate-100;
+}
+
+.shell-panel {
+  @apply border-slate-700 bg-slate-900;
+}
+
+[data-theme="ocean"] .shell-page {
+  @apply bg-cyan-950;
+}
+
+[data-theme="ocean"] .shell-header {
+  @apply border-cyan-300 bg-cyan-100;
+}
+
+[data-theme="ocean"] .shell-panel {
+  @apply border-cyan-700 bg-cyan-900;
+}
+
+[data-theme="forest"] .shell-page {
+  @apply bg-emerald-950;
+}
+
+[data-theme="forest"] .shell-header {
+  @apply border-emerald-300 bg-emerald-100;
+}
+
+[data-theme="forest"] .shell-panel {
+  @apply border-emerald-700 bg-emerald-900;
+}
+
+[data-theme="sunset"] .shell-page {
+  @apply bg-orange-950;
+}
+
+[data-theme="sunset"] .shell-header {
+  @apply border-orange-300 bg-orange-100;
+}
+
+[data-theme="sunset"] .shell-panel {
+  @apply border-orange-700 bg-orange-900;
+}
+
+[data-theme="violet"] .shell-page {
+  @apply bg-violet-950;
+}
+
+[data-theme="violet"] .shell-header {
+  @apply border-violet-300 bg-violet-100;
+}
+
+[data-theme="violet"] .shell-panel {
+  @apply border-violet-700 bg-violet-900;
+}

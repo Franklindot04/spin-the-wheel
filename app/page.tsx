@@ -6,7 +6,7 @@ import SettingsPanel, { type SettingsTab, type WheelSettings as PanelWheelSettin
 import WheelComponent from "./components/Wheel";
 import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
-import { APPEARANCE_THEMES, } from "./lib/appearance-themes";
+import { APPEARANCE_THEMES, THEME_STORAGE_KEY, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
@@ -69,6 +69,7 @@ export default function Home() {
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
     const [storageLoaded, setStorageLoaded,] = useState(false);
     const hasLoadedStorage = useRef(false);
+    const mirroredThemeRef = useRef<string | null>(null);
     const spinTimerRef = useRef<number | null>(null);
     useEffect(() => {
         return () => {
@@ -295,6 +296,22 @@ export default function Home() {
         catch {
             // Keep the data in memory and tell the user it is not saved.
             failed = true;
+        }
+        // Keep the theme copy used by the loading screen in step with the active wheel.
+        if (!storageStaleRef.current) {
+            const activeTheme = (appData.wheels.find((wheel) => wheel.id ===
+                appData.activeWheelId) ??
+                appData.wheels[0])?.settings.appearanceTheme;
+            if (activeTheme &&
+                activeTheme !== mirroredThemeRef.current) {
+                try {
+                    window.localStorage.setItem(THEME_STORAGE_KEY, activeTheme);
+                    mirroredThemeRef.current = activeTheme;
+                }
+                catch {
+                    // The loading screen falls back to Classic.
+                }
+            }
         }
         // Report the result after the effect so the notice follows the latest write.
         queueMicrotask(() => {
@@ -1225,12 +1242,12 @@ export default function Home() {
         ? "not-disabled:hover:bg-slate-600"
         : theme.accentHoverClass;
     if (!storageLoaded) {
-        return (<main key="loading-shell" className="min-h-screen bg-slate-950" aria-busy="true">
-        <header className="border-b border-slate-200 bg-slate-50">
+        return (<main key="loading-shell" className="shell-page min-h-screen" aria-busy="true">
+        <header className="shell-header border-b">
           <div className="mx-auto h-[101px] max-w-7xl px-4 sm:px-6"/>
         </header>
         <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-          <div className="min-h-[560px] rounded-2xl border border-slate-700 bg-slate-900 shadow-sm" role="status">
+          <div className="shell-panel min-h-[560px] rounded-2xl border shadow-sm" role="status">
             <span className="sr-only">Loading saved wheels…</span>
           </div>
         </section>
