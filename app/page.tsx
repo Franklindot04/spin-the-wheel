@@ -53,6 +53,7 @@ export default function Home() {
     const entriesResetDialogRef = useRef<HTMLDivElement>(null);
     const entriesResetButtonRef = useRef<HTMLButtonElement>(null);
     const [deleteCopyOpen, setDeleteCopyOpen,] = useState(false);
+    const [deleteCopyFailed, setDeleteCopyFailed,] = useState(false);
     const deleteCopyDialogRef = useRef<HTMLDivElement>(null);
     const deleteCopyButtonRef = useRef<HTMLButtonElement>(null);
     const [importError, setImportError,] = useState("");
@@ -1038,13 +1039,25 @@ export default function Home() {
         URL.revokeObjectURL(url);
     }
     function deleteUnreadableCopy() {
+        setDeleteCopyFailed(false);
+        // A memory-only copy was never stored, so there is nothing to verify.
+        let deleted = storedDataNotice?.memoryOnly === true;
         try {
             window.localStorage.removeItem(UNREADABLE_BACKUP_KEY);
+            // Read the key back so a silent failure is not reported as deleted.
+            deleted =
+                deleted ||
+                    window.localStorage.getItem(UNREADABLE_BACKUP_KEY) === null;
         }
         catch {
-            // The copy stays; it is offered again the next time the app loads.
+            // The copy may still be stored; keep the banner unless it was memory-only.
         }
-        setStoredDataNotice(null);
+        if (deleted) {
+            setStoredDataNotice(null);
+        }
+        else {
+            setDeleteCopyFailed(true);
+        }
         setDeleteCopyOpen(false);
     }
     function handleImportFile(event: ChangeEvent<HTMLInputElement>) {
@@ -1239,6 +1252,9 @@ export default function Home() {
                         : "A copy of saved data that could not be read earlier is still kept."}
               {storedDataNotice.memoryOnly
                 ? " The copy lasts only until the page is closed."
+                : ""}
+              {deleteCopyFailed
+                ? " The copy could not be deleted. Export it first if you need it, then try again."
                 : ""}
             </p>
             <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
