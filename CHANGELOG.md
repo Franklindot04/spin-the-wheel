@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- While a quiz is running, questions cannot be deleted either, and the hint says so.
+- The character counters under entry names, questions and answers count whole characters, so an emoji counts as one.
+- If another browser tab changes your saved wheels, a banner asks you to reload, and this tab stops saving until you do, so it cannot overwrite the newer data. Import is disabled while the banner shows.
+
+### Fixed
+
+- If deleting the kept copy of unreadable data fails, the banner stays and says so, so the copy is not lost silently.
+- Cancelling Restore defaults returns to the Settings tab you were on.
+- Changing two settings at the same moment can no longer lose one of them.
+
 ## [2.1.2] - 2026-10-17
 
 ### Changed
