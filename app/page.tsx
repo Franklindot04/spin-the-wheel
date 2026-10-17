@@ -52,6 +52,9 @@ export default function Home() {
     const resetDialogRef = useRef<HTMLDivElement>(null);
     const entriesResetDialogRef = useRef<HTMLDivElement>(null);
     const entriesResetButtonRef = useRef<HTMLButtonElement>(null);
+    const [deleteCopyOpen, setDeleteCopyOpen,] = useState(false);
+    const deleteCopyDialogRef = useRef<HTMLDivElement>(null);
+    const deleteCopyButtonRef = useRef<HTMLButtonElement>(null);
     const [importError, setImportError,] = useState("");
     const [saveFailed, setSaveFailed,] = useState(false);
     const [storedDataNotice, setStoredDataNotice,] = useState<StoredDataNotice | null>(null);
@@ -422,6 +425,60 @@ export default function Home() {
             resetButton?.focus();
         };
     }, [entriesResetOpen]);
+    useEffect(() => {
+        if (!deleteCopyOpen) {
+            return;
+        }
+        const deleteCopyButton = deleteCopyButtonRef.current;
+        const settingsButton = settingsButtonRef.current;
+        const dialog = deleteCopyDialogRef.current;
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key ===
+                "Escape") {
+                setDeleteCopyOpen(false);
+                return;
+            }
+            if (event.key !==
+                "Tab" ||
+                !dialog) {
+                return;
+            }
+            // Keep keyboard focus inside the dialog.
+            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
+            if (focusable.length === 0) {
+                event.preventDefault();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            if (event.shiftKey &&
+                (active === first ||
+                    active === dialog ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                last.focus();
+            }
+            else if (!event.shiftKey &&
+                (active === last ||
+                    !dialog.contains(active))) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        dialog?.focus();
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            // The banner button is gone once the copy is deleted.
+            if (deleteCopyButton?.isConnected) {
+                deleteCopyButton.focus();
+            }
+            else {
+                settingsButton?.focus();
+            }
+        };
+    }, [deleteCopyOpen]);
     const currentSetupEntries = mode === "standard"
         ? standardEntries
         : quizEntries;
@@ -977,6 +1034,7 @@ export default function Home() {
             // The copy stays; it is offered again the next time the app loads.
         }
         setStoredDataNotice(null);
+        setDeleteCopyOpen(false);
     }
     function handleImportFile(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
@@ -1137,7 +1195,7 @@ export default function Home() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:flex-nowrap">
-            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label="Select wheel" className={`max-w-[9rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none transition md:max-w-none ${theme.controlClass} ${headerHoverClass} focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50`}>
+            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label="Select wheel" style={{ "--tw-ring-color": headerTextColor } as CSSProperties} className={`max-w-[9rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none transition md:max-w-none ${theme.controlClass} ${spinning ? "" : theme.controlHoverClass} focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50`}>
               {appData.wheels.map((wheel) => (<option key={wheel.id} value={wheel.id}>
                     {wheel.name}
                   </option>))}
@@ -1146,7 +1204,7 @@ export default function Home() {
               + Wheel
             </button>
             {appData.wheels.length >
-            1 && (<button type="button" onClick={deleteActiveWheel} disabled={spinning} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+            1 && (<button type="button" onClick={deleteActiveWheel} disabled={spinning} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
                 − Wheel
               </button>)}
             <button type="button" onClick={renameActiveWheel} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
@@ -1176,7 +1234,7 @@ export default function Home() {
               <button type="button" onClick={exportRawData} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
                 Export raw data
               </button>
-              <button type="button" onClick={deleteUnreadableCopy} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+              <button ref={deleteCopyButtonRef} type="button" onClick={() => setDeleteCopyOpen(true)} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
                 Delete copy
               </button>
             </div>
@@ -1438,7 +1496,7 @@ export default function Home() {
                 (mode ===
                     "standard"
                     ? standardHistory
-                    : quizHistory).length === 0} className="mt-4 w-full rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
+                    : quizHistory).length === 0} className="mt-4 w-full rounded-lg border border-red-400 px-4 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40">
                 Clear History
               </button>
             </div>)}
@@ -1581,6 +1639,32 @@ export default function Home() {
                 Reset
               </button>
               <button type="button" onClick={() => setEntriesResetOpen(false)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>)}
+      {deleteCopyOpen && storedDataNotice && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
+          <div ref={deleteCopyDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Delete the kept copy" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
+            <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
+              Delete the kept copy?
+            </h2>
+            <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
+              {storedDataNotice.memoryOnly
+                ? "This copy exists only until the page is closed. Deleting it now loses it immediately."
+                : "This permanently deletes the copy of your unreadable saved data kept in this browser. It cannot be recovered afterwards."}
+            </p>
+            <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
+              Export raw data first if you want to keep it.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button type="button" onClick={exportRawData} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                Export raw data
+              </button>
+              <button type="button" onClick={deleteUnreadableCopy} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
+                Delete copy
+              </button>
+              <button type="button" onClick={() => setDeleteCopyOpen(false)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
                 Cancel
               </button>
             </div>

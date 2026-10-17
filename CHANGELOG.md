@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- Deleting the kept copy of unreadable saved data now asks for confirmation first, and the dialog offers to export it.
+
+### Fixed
+
+- The wheel selector in the header stays readable when you hover over it and shows a clear ring when focused.
+- The "Clear History" and "− Wheel" buttons use red that is easier to read on every theme, and "Clear History" has a visible outline.
+
 ## [2.1.1] - 2026-10-17
 
 ### Added
