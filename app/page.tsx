@@ -61,6 +61,9 @@ export default function Home() {
     const [saveFailed, setSaveFailed,] = useState(false);
     const [storedDataNotice, setStoredDataNotice,] = useState<StoredDataNotice | null>(null);
     const [v2StillUnreadable, setV2StillUnreadable,] = useState(false);
+    const [storageStale, setStorageStale,] = useState(false);
+    const storageStaleRef = useRef(false);
+    const lastSeenStorageRef = useRef<string | null>(null);
     const importAlertRef = useRef<HTMLDivElement>(null);
     const saveAlertRef = useRef<HTMLDivElement>(null);
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
@@ -232,6 +235,7 @@ export default function Home() {
                     setAppData(loaded.data);
                 }
                 setStoredDataNotice(loaded.notice);
+                lastSeenStorageRef.current = window.localStorage.getItem(STORAGE_KEY);
                 // Only an unreadable v2 stays unreadable until it is rewritten.
                 setV2StillUnreadable(loaded.notice?.kind === "defaults");
             }
@@ -248,12 +252,45 @@ export default function Home() {
         hasLoadedStorage.current = storageLoaded;
     }, [storageLoaded]);
     useEffect(() => {
-        if (!hasLoadedStorage.current) {
+        function handleStorage(event: StorageEvent) {
+            if (event.storageArea !== window.localStorage ||
+                event.key !== STORAGE_KEY ||
+                event.newValue === null ||
+                event.newValue === lastSeenStorageRef.current) {
+                return;
+            }
+            // Another tab saved newer data; stop saving here until the user reloads.
+            storageStaleRef.current = true;
+            setStorageStale(true);
+        }
+        window.addEventListener("storage", handleStorage);
+        return () => {
+            window.removeEventListener("storage", handleStorage);
+        };
+    }, []);
+    useEffect(() => {
+        if (!hasLoadedStorage.current ||
+            storageStaleRef.current) {
             return;
         }
         let failed = false;
+        let stale = false;
         try {
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            const serialized = JSON.stringify(appData);
+            const stored = window.localStorage.getItem(STORAGE_KEY);
+            if (stored === serialized) {
+                lastSeenStorageRef.current = serialized;
+            }
+            else if (stored !== null &&
+                stored !== lastSeenStorageRef.current) {
+                // Another tab saved since this tab last read or wrote; do not overwrite it.
+                stale = true;
+                storageStaleRef.current = true;
+            }
+            else {
+                window.localStorage.setItem(STORAGE_KEY, serialized);
+                lastSeenStorageRef.current = serialized;
+            }
         }
         catch {
             // Keep the data in memory and tell the user it is not saved.
@@ -261,6 +298,10 @@ export default function Home() {
         }
         // Report the result after the effect so the notice follows the latest write.
         queueMicrotask(() => {
+            if (stale) {
+                setStorageStale(true);
+                return;
+            }
             setSaveFailed(failed);
             if (!failed) {
                 setV2StillUnreadable(false);
@@ -1248,6 +1289,17 @@ export default function Home() {
         </div>
       </header>
       <div className="mx-auto max-w-7xl space-y-3 px-4 empty:hidden pt-4 sm:px-6">
+        {storageStale && (<div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-start sm:justify-between">
+            <p className="min-w-0 break-words">Your wheels were changed in another tab. Reload to load the latest version. Changes made in this tab are not saved until you reload.</p>
+            <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
+              <button type="button" onClick={() => window.location.reload()} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+                Reload
+              </button>
+              <button type="button" onClick={exportData} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+                Export this tab&apos;s data
+              </button>
+            </div>
+          </div>)}
         {storedDataNotice && (<div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-start sm:justify-between">
             <p className="min-w-0 break-words">
               {storedDataNotice.kind === "defaults"
@@ -1458,7 +1510,7 @@ export default function Home() {
             <button type="button" onClick={() => {
                 setImportError("");
                 importInputRef.current?.click();
-            }} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title="Import data">
+            }} disabled={spinning || storageStale} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"}>
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 21V9"/>
                 <path d="m7 14 5-5 5 5"/>
@@ -1631,7 +1683,7 @@ export default function Home() {
               This will replace the current saved wheel data.
             </p>
             <div className="mt-5 flex gap-3">
-              <button type="button" onClick={applyImportedData} disabled={spinning} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
+              <button type="button" onClick={applyImportedData} disabled={spinning || storageStale} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                 Import
               </button>
               <button type="button" onClick={() => setPendingImport(null)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
