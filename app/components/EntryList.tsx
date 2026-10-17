@@ -7,7 +7,11 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
-import { canDeleteEntry, getEntryWeight } from "../lib/wheel-utils";
+import {
+  canDeleteEntry,
+  countGraphemes,
+  getEntryWeight,
+} from "../lib/wheel-utils";
 import EntryMenu from "./EntryMenu";
 
 type EntryListProps = {
@@ -227,7 +231,20 @@ export default function EntryList({
               );
 
             const labelLength =
-              entry.label.length;
+              countGraphemes(
+                entry.label,
+              );
+
+            const questionLength =
+              countGraphemes(
+                entry.question ??
+                  "",
+              );
+
+            const answerLength =
+              countGraphemes(
+                entry.answer ?? "",
+              );
 
             const hiddenContentClass =
               entry.hidden
@@ -532,13 +549,11 @@ export default function EntryList({
                       <span
                         className={`text-[10px] font-medium ${theme.textMutedClass}`}
                       >
-                        {
-                          (
-                            entry.question ??
-                            ""
-                          ).length
-                        }{" "}
-                        characters
+                        {questionLength}{" "}
+                        {questionLength ===
+                        1
+                          ? "character"
+                          : "characters"}
                       </span>
                     </div>
 
@@ -579,13 +594,11 @@ export default function EntryList({
                       <span
                         className={`text-[10px] font-medium ${theme.textMutedClass}`}
                       >
-                        {
-                          (
-                            entry.answer ??
-                            ""
-                          ).length
-                        }{" "}
-                        characters
+                        {answerLength}{" "}
+                        {answerLength ===
+                        1
+                          ? "character"
+                          : "characters"}
                       </span>
                     </div>
                   </div>
