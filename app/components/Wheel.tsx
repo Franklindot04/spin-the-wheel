@@ -4,6 +4,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useId,
   useRef,
   useState,
   useSyncExternalStore,
@@ -64,6 +65,22 @@ const IMAGE_SHRINK_STEP = 0.5;
 const IMAGE_EDGE_GAP = 2;
 const IMAGE_RIM_GAP = 3;
 const IMAGE_LABEL_GAP = 3;
+
+function toIdPart(value: string) {
+  /*
+   * Keeps letters, digits and "-" and turns
+   * anything else, such as the ":" in a React
+   * id or a space in an entry id, into its
+   * character code. Different values always
+   * give different parts, and the result is
+   * safe inside url(#...).
+   */
+  return value.replace(
+    /[^A-Za-z0-9-]/g,
+    (character) =>
+      `_${character.charCodeAt(0).toString(16)}_`,
+  );
+}
 
 function polarToCartesian(
   cx: number,
@@ -588,6 +605,10 @@ export default function Wheel({
   accentHoverClass,
   theme,
 }: WheelProps) {
+  const imageClipPrefix = `slice-image-${toIdPart(
+    useId(),
+  )}`;
+
   const [
     internalWheelSize,
     setInternalWheelSize,
@@ -1198,6 +1219,15 @@ export default function Wheel({
                     mid,
                   );
 
+                const imageRadius =
+                  (IMAGE_SIZE / 2) *
+                  (imagePlacement?.scale ??
+                    1);
+
+                const imageClipId = `${imageClipPrefix}-${toIdPart(
+                  entry.id,
+                )}`;
+
                 return (
                   <g
                     key={
@@ -1228,24 +1258,52 @@ export default function Wheel({
 
                     {entry.image &&
                     imagePlacement ? (
-                      <image
-                        href={
-                          entry.image
-                        }
-                        x={
-                          imagePoint.x -
-                          18
-                        }
-                        y={
-                          imagePoint.y -
-                          18
-                        }
-                        width="36"
-                        height="36"
-                        transform={`translate(${imagePoint.x} ${imagePoint.y}) scale(${imagePlacement.scale}) translate(${-imagePoint.x} ${-imagePoint.y})`}
-                        preserveAspectRatio="xMidYMid slice"
-                        clipPath="circle(18px at 18px 18px)"
-                      />
+                      <>
+                        <defs>
+                          <clipPath
+                            id={
+                              imageClipId
+                            }
+                            clipPathUnits="userSpaceOnUse"
+                          >
+                            <circle
+                              cx={
+                                imagePoint.x
+                              }
+                              cy={
+                                imagePoint.y
+                              }
+                              r={
+                                imageRadius
+                              }
+                            />
+                          </clipPath>
+                        </defs>
+
+                        <image
+                          href={
+                            entry.image
+                          }
+                          x={
+                            imagePoint.x -
+                            imageRadius
+                          }
+                          y={
+                            imagePoint.y -
+                            imageRadius
+                          }
+                          width={
+                            imageRadius *
+                            2
+                          }
+                          height={
+                            imageRadius *
+                            2
+                          }
+                          preserveAspectRatio="xMidYMid slice"
+                          clipPath={`url(#${imageClipId})`}
+                        />
+                      </>
                     ) : null}
 
                     {labelLayout ? (
