@@ -64,11 +64,6 @@ const FONT_OPTIONS = [
       "Arial, Helvetica, sans-serif",
   },
   {
-    label: "Inter",
-    value:
-      "Inter, ui-sans-serif, system-ui, sans-serif",
-  },
-  {
     label: "Georgia",
     value:
       "Georgia, 'Times New Roman', serif",
@@ -89,6 +84,17 @@ const FONT_OPTIONS = [
       "'Courier New', Courier, monospace",
   },
 ];
+
+function getUnlistedFontLabel(
+  fontFamily: string,
+): string {
+  const name = fontFamily
+    .split(",")[0]
+    .trim()
+    .replace(/^['"]|['"]$/g, "");
+
+  return `${name || fontFamily} (not available)`;
+}
 
 function formatFileSize(
   bytes: number,
@@ -1134,6 +1140,24 @@ export default function EntryMenu({
                     FONT_OPTIONS[0].value,
                 }}
               >
+                {entry.fontFamily &&
+                !FONT_OPTIONS.some(
+                  (font) =>
+                    font.value ===
+                    entry.fontFamily,
+                ) ? (
+                  <option
+                    value={
+                      entry.fontFamily
+                    }
+                    disabled
+                  >
+                    {getUnlistedFontLabel(
+                      entry.fontFamily,
+                    )}
+                  </option>
+                ) : null}
+
                 {FONT_OPTIONS.map(
                   (font) => (
                     <option
