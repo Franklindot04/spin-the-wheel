@@ -1628,6 +1628,9 @@ export default function Home() {
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
               Reset the {mode === "quiz" ? "quiz questions" : "entries"} to the defaults?
             </p>
+            {mode === "quiz" && quizStarted && (<p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
+                This also ends the quiz and returns to setup.
+              </p>)}
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
               Export your data first if you want to keep a copy.
             </p>
