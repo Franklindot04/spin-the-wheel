@@ -1259,7 +1259,7 @@ export default function EntryMenu({
                         spinning
                       }
                       aria-label="Remove image"
-                      className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-200 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-200 transition not-disabled:hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Remove
                     </button>
@@ -1346,7 +1346,7 @@ export default function EntryMenu({
                         spinning
                       }
                       aria-label="Remove winner sound"
-                      className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-200 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-200 transition not-disabled:hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Remove
                     </button>
@@ -1435,7 +1435,7 @@ export default function EntryMenu({
                   : undefined
               }
               aria-label={`Delete entry ${entry.label}`.trim()}
-              className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-medium text-red-300 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-medium text-red-300 transition not-disabled:hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <MenuIcon type="delete" />
 

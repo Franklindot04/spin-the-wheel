@@ -9,11 +9,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Changed
 
 - Deleting the kept copy of unreadable saved data now asks for confirmation first, and the dialog offers to export it.
+- While a quiz is running, the hint under the question list now says that questions cannot be added or duplicated.
+- The Reset Entries confirmation says that resetting during a quiz also ends the quiz.
+- A quiz card can be dismissed with a "Done" button, or you can go back to setup from it, when the quiz is complete or all remaining questions are hidden.
 
 ### Fixed
 
 - The wheel selector in the header stays readable when you hover over it and shows a clear ring when focused.
 - The "Clear History" and "− Wheel" buttons use red that is easier to read on every theme, and "Clear History" has a visible outline.
+- Disabled buttons no longer change background when the mouse is over them.
+- A label that is cut short on the wheel no longer splits an emoji or leaves a broken character.
 
 ## [2.1.1] - 2026-10-17
 

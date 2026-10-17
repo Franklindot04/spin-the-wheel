@@ -2,14 +2,6 @@ import type { SetStateAction } from "react";
 
 import type { WheelEntry } from "./wheel-types";
 
-export function getRandomIndex(length: number): number {
-  if (length <= 0) {
-    return -1;
-  }
-
-  return Math.floor(Math.random() * length);
-}
-
 export function resolveStateValue<T>(
   value: SetStateAction<T>,
   previous: T,
@@ -17,6 +9,50 @@ export function resolveStateValue<T>(
   return typeof value === "function"
     ? (value as (previous: T) => T)(previous)
     : value;
+}
+
+/*
+ * Keeps the first `count` grapheme
+ * clusters of `text`, so an emoji,
+ * skin tone, flag or ZWJ sequence is
+ * never split. Falls back to code
+ * points when Intl.Segmenter is
+ * missing, which never leaves a lone
+ * surrogate.
+ */
+export function truncateGraphemes(
+  text: string,
+  count: number,
+): string {
+  if (count <= 0) {
+    return "";
+  }
+
+  if (
+    typeof Intl !== "undefined" &&
+    typeof Intl.Segmenter ===
+      "function"
+  ) {
+    let result = "";
+    let kept = 0;
+
+    for (const { segment } of new Intl.Segmenter().segment(
+      text,
+    )) {
+      if (kept >= count) {
+        break;
+      }
+
+      result += segment;
+      kept++;
+    }
+
+    return result;
+  }
+
+  return Array.from(text)
+    .slice(0, count)
+    .join("");
 }
 
 export function formatHistoryTime(

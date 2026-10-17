@@ -1,6 +1,5 @@
 import type {
   AppData,
-  AppearanceTheme,
   AutoGenerateType,
   ConfettiEffect,
   Mode,
@@ -740,13 +739,4 @@ export function createInitialAppData(): AppData {
     wheels: [wheel],
     activeWheelId: wheel.id,
   };
-}
-
-export function isAppearanceTheme(
-  value: unknown,
-): value is AppearanceTheme {
-  return (
-    typeof value === "string" &&
-    value in APPEARANCE_THEMES
-  );
 }

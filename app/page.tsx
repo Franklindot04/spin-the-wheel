@@ -741,6 +741,13 @@ export default function Home() {
         setQuizStarted(false);
         setRotation(0);
     }
+    function dismissQuizCard() {
+        if (spinning) {
+            return;
+        }
+        setSelectedEntry(null);
+        setShowAnswer(false);
+    }
     function addHistoryItem(entry: WheelEntry, historyMode: Mode) {
         const item: SpinHistoryItem = {
             id: crypto.randomUUID(),
@@ -1138,19 +1145,19 @@ export default function Home() {
                     ? "border-violet-300"
                     : "border-slate-300";
     const headerHoverClass = appearanceTheme === "ocean"
-        ? "hover:bg-cyan-200"
+        ? "not-disabled:hover:bg-cyan-200"
         : appearanceTheme === "forest"
-            ? "hover:bg-emerald-200"
+            ? "not-disabled:hover:bg-emerald-200"
             : appearanceTheme === "sunset"
-                ? "hover:bg-orange-200"
+                ? "not-disabled:hover:bg-orange-200"
                 : appearanceTheme === "violet"
-                    ? "hover:bg-violet-200"
-                    : "hover:bg-slate-200";
+                    ? "not-disabled:hover:bg-violet-200"
+                    : "not-disabled:hover:bg-slate-200";
     const actionAccentClass = appearanceTheme === "classic"
         ? "bg-slate-700"
         : theme.accentClass;
     const actionHoverClass = appearanceTheme === "classic"
-        ? "hover:bg-slate-600"
+        ? "not-disabled:hover:bg-slate-600"
         : theme.accentHoverClass;
     if (!storageLoaded) {
         return (<main key="loading-shell" className="min-h-screen bg-slate-950" aria-busy="true">
@@ -1204,7 +1211,7 @@ export default function Home() {
               + Wheel
             </button>
             {appData.wheels.length >
-            1 && (<button type="button" onClick={deleteActiveWheel} disabled={spinning} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+            1 && (<button type="button" onClick={deleteActiveWheel} disabled={spinning} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition not-disabled:hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
                 − Wheel
               </button>)}
             <button type="button" onClick={renameActiveWheel} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
@@ -1338,6 +1345,15 @@ export default function Home() {
                         1} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                     Give it another spin 😉
                   </button>)}
+                {(quizComplete ||
+                    remainingQuizEntriesHidden) && (<>
+                    <button type="button" onClick={backToQuizSetup} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                      Back to Setup
+                    </button>
+                    <button type="button" onClick={dismissQuizCard} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                      Done
+                    </button>
+                  </>)}
               </div>
             </div>)}
           {mode === "quiz" &&
@@ -1496,7 +1512,7 @@ export default function Home() {
                 (mode ===
                     "standard"
                     ? standardHistory
-                    : quizHistory).length === 0} className="mt-4 w-full rounded-lg border border-red-400 px-4 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40">
+                    : quizHistory).length === 0} className="mt-4 w-full rounded-lg border border-red-400 px-4 py-2.5 text-sm font-semibold text-red-300 transition not-disabled:hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40">
                 Clear History
               </button>
             </div>)}
@@ -1628,6 +1644,9 @@ export default function Home() {
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
               Reset the {mode === "quiz" ? "quiz questions" : "entries"} to the defaults?
             </p>
+            {mode === "quiz" && quizStarted && (<p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
+                This also ends the quiz and returns to setup.
+              </p>)}
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
               Export your data first if you want to keep a copy.
             </p>

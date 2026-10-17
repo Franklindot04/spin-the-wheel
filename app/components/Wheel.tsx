@@ -12,7 +12,15 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
-import { getEntryWeight } from "../lib/wheel-utils";
+import {
+  DEFAULT_WHEEL_SIZE,
+  MAX_WHEEL_SIZE,
+  MIN_WHEEL_SIZE,
+} from "../lib/wheel-defaults";
+import {
+  getEntryWeight,
+  truncateGraphemes,
+} from "../lib/wheel-utils";
 
 export type { WheelEntry } from "../lib/wheel-types";
 
@@ -34,9 +42,6 @@ type WheelProps = {
   theme?: AppearanceThemeConfig;
 };
 
-const MIN_SIZE = 420;
-const DEFAULT_SIZE = 560;
-const MAX_SIZE = 760;
 const SIZE_STEP = 40;
 const VIEWBOX_SIZE = 440;
 const CENTER = VIEWBOX_SIZE / 2;
@@ -196,8 +201,8 @@ function getLabelLayout(
 
     const text = fits
       ? label
-      : `${label.slice(
-          0,
+      : `${truncateGraphemes(
+          label,
           maxChars - 1,
         )}…`;
 
@@ -399,8 +404,8 @@ function getImagePlacement(
 
 function clampSize(value: number) {
   return Math.min(
-    MAX_SIZE,
-    Math.max(MIN_SIZE, value),
+    MAX_WHEEL_SIZE,
+    Math.max(MIN_WHEEL_SIZE, value),
   );
 }
 
@@ -569,7 +574,7 @@ export default function Wheel({
     setInternalWheelSize,
   ] = useState(
     clampSize(
-      wheelSize ?? DEFAULT_SIZE,
+      wheelSize ?? DEFAULT_WHEEL_SIZE,
     ),
   );
 
@@ -990,7 +995,7 @@ export default function Wheel({
             }
             disabled={
               renderedSize <=
-                MIN_SIZE ||
+                MIN_WHEEL_SIZE ||
               spinning
             }
             className={`flex h-9 w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
@@ -1022,7 +1027,7 @@ export default function Wheel({
             }
             disabled={
               renderedSize >=
-                MAX_SIZE ||
+                MAX_WHEEL_SIZE ||
               (availableWidth !==
                 null &&
                 renderedSize >=

@@ -214,7 +214,7 @@ export default function EntryList({
         <p
           className={`mt-3 text-xs leading-5 ${theme.textMutedClass}`}
         >
-          Names, questions and answers are locked while the quiz runs. Back to Setup to edit.
+          Names, questions and answers are locked while the quiz runs, and questions cannot be added or duplicated. Back to Setup to edit.
         </p>
       )}
 
@@ -426,7 +426,7 @@ export default function EntryList({
                           entry,
                         )
                       }
-                      className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-red-200 transition hover:bg-red-950/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-30`}
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-red-200 transition not-disabled:hover:bg-red-950/40 not-disabled:hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-30`}
                       aria-label={`Delete ${entry.label}`}
                       title="Delete entry"
                     >
