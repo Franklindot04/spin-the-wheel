@@ -214,7 +214,7 @@ export default function EntryList({
         <p
           className={`mt-3 text-xs leading-5 ${theme.textMutedClass}`}
         >
-          Names, questions and answers are locked while the quiz runs. Back to Setup to edit.
+          Names, questions and answers are locked while the quiz runs, and questions cannot be added or duplicated. Back to Setup to edit.
         </p>
       )}
 
