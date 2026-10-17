@@ -57,6 +57,10 @@ const MAX_IMAGE_SIZE =
 const MAX_AUDIO_SIZE =
   2 * 1024 * 1024;
 
+const MAX_IMAGE_DIMENSION = 512;
+
+const IMAGE_JPEG_QUALITY = 0.85;
+
 const FONT_OPTIONS = [
   {
     label: "Arial",
@@ -116,7 +120,7 @@ function formatFileSize(
 }
 
 function readFileAsDataUrl(
-  file: File,
+  file: Blob,
 ): Promise<string> {
   return new Promise(
     (resolve, reject) => {
@@ -149,6 +153,169 @@ function readFileAsDataUrl(
       reader.readAsDataURL(file);
     },
   );
+}
+
+type DecodedImage = {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  release: () => void;
+};
+
+async function decodeImage(
+  file: File,
+): Promise<DecodedImage> {
+  if (
+    typeof createImageBitmap ===
+    "function"
+  ) {
+    try {
+      const bitmap =
+        await createImageBitmap(
+          file,
+          {
+            imageOrientation:
+              "from-image",
+          },
+        );
+
+      return {
+        source: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        release: () =>
+          bitmap.close(),
+      };
+    } catch {
+      // Fall back to an image element below.
+    }
+  }
+
+  const url =
+    URL.createObjectURL(file);
+
+  try {
+    const image = new Image();
+
+    image.src = url;
+
+    await image.decode();
+
+    if (
+      !image.naturalWidth ||
+      !image.naturalHeight
+    ) {
+      throw new Error(
+        "The image has no size.",
+      );
+    }
+
+    return {
+      source: image,
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      release: () =>
+        URL.revokeObjectURL(url),
+    };
+  } catch (error) {
+    URL.revokeObjectURL(url);
+
+    throw error;
+  }
+}
+
+async function renderImage(
+  decoded: DecodedImage,
+): Promise<Blob> {
+  const scale = Math.min(
+    1,
+    MAX_IMAGE_DIMENSION /
+      Math.max(
+        decoded.width,
+        decoded.height,
+      ),
+  );
+
+  const width = Math.max(
+    1,
+    Math.round(
+      decoded.width * scale,
+    ),
+  );
+
+  const height = Math.max(
+    1,
+    Math.round(
+      decoded.height * scale,
+    ),
+  );
+
+  const canvas =
+    document.createElement(
+      "canvas",
+    );
+
+  canvas.width = width;
+  canvas.height = height;
+
+  const context =
+    canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error(
+      "The image could not be drawn.",
+    );
+  }
+
+  context.drawImage(
+    decoded.source,
+    0,
+    0,
+    width,
+    height,
+  );
+
+  const pixels =
+    context.getImageData(
+      0,
+      0,
+      width,
+      height,
+    ).data;
+
+  let transparent = false;
+
+  for (
+    let index = 3;
+    index < pixels.length;
+    index += 4
+  ) {
+    if (pixels[index] < 255) {
+      transparent = true;
+      break;
+    }
+  }
+
+  const blob =
+    await new Promise<Blob | null>(
+      (resolve) => {
+        canvas.toBlob(
+          resolve,
+          transparent
+            ? "image/png"
+            : "image/jpeg",
+          IMAGE_JPEG_QUALITY,
+        );
+      },
+    );
+
+  if (!blob) {
+    throw new Error(
+      "The image could not be saved.",
+    );
+  }
+
+  return blob;
 }
 
 function MenuIcon({
@@ -729,6 +896,9 @@ export default function EntryMenu({
   const [mediaError, setMediaError] =
     useState<string | null>(null);
 
+  const [mediaNote, setMediaNote] =
+    useState<string | null>(null);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -814,6 +984,7 @@ export default function EntryMenu({
     }
 
     setMediaError(null);
+    setMediaNote(null);
 
     if (
       !file.type.startsWith(
@@ -826,14 +997,67 @@ export default function EntryMenu({
       return;
     }
 
+    const isGif =
+      file.type === "image/gif";
+
+    let imageBlob: Blob = file;
+
+    let decoded: DecodedImage;
+
+    try {
+      decoded =
+        await decodeImage(file);
+    } catch {
+      setMediaError(
+        `Could not read this image (${formatFileSize(
+          file.size,
+        )}).`,
+      );
+      return;
+    }
+
+    try {
+      if (
+        isGif ||
+        file.size >
+          MAX_IMAGE_SIZE ||
+        decoded.width >
+          MAX_IMAGE_DIMENSION ||
+        decoded.height >
+          MAX_IMAGE_DIMENSION
+      ) {
+        imageBlob =
+          await renderImage(
+            decoded,
+          );
+      }
+    } catch {
+      setMediaError(
+        `Could not read this image (${formatFileSize(
+          file.size,
+        )}).`,
+      );
+      return;
+    } finally {
+      decoded.release();
+    }
+
     if (
-      file.size >
+      imageBlob.size >
       MAX_IMAGE_SIZE
     ) {
+      // Rounded up to 0.1 MB so a size just over the limit never shows as the limit.
       setMediaError(
-        `Image must be ${formatFileSize(
+        `Image is ${formatFileSize(
+          Math.ceil(
+            imageBlob.size /
+              (MAX_IMAGE_SIZE /
+                10),
+          ) *
+            (MAX_IMAGE_SIZE / 10),
+        )} and still over the ${formatFileSize(
           MAX_IMAGE_SIZE,
-        )} or smaller.`,
+        )} limit after resizing.`,
       );
       return;
     }
@@ -841,7 +1065,7 @@ export default function EntryMenu({
     try {
       const dataUrl =
         await readFileAsDataUrl(
-          file,
+          imageBlob,
         );
 
       onUpdate(entry.id, {
@@ -849,6 +1073,12 @@ export default function EntryMenu({
       });
 
       setMediaError(null);
+
+      if (isGif) {
+        setMediaNote(
+          "Only the first frame of the GIF is used.",
+        );
+      }
     } catch {
       setMediaError(
         "The image could not be loaded.",
@@ -923,6 +1153,7 @@ export default function EntryMenu({
 
   function openImagePicker() {
     setMediaError(null);
+    setMediaNote(null);
     imageInputRef.current?.click();
   }
 
@@ -937,6 +1168,7 @@ export default function EntryMenu({
     });
 
     setMediaError(null);
+    setMediaNote(null);
   }
 
   function removeSound() {
@@ -1416,6 +1648,18 @@ export default function EntryMenu({
               <div className="mx-3 mb-2 rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2">
                 <p className="text-[11px] font-medium leading-4 text-red-300">
                   {mediaError}
+                </p>
+              </div>
+            )}
+
+            {mediaNote && !mediaError && (
+              <div
+                className={`mx-3 mb-2 rounded-lg ${theme.subtleSurfaceClass} px-3 py-2`}
+              >
+                <p
+                  className={`text-[11px] font-medium leading-4 ${theme.textSecondaryClass}`}
+                >
+                  {mediaNote}
                 </p>
               </div>
             )}
