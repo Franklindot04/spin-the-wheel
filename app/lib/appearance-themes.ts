@@ -18,7 +18,7 @@ export const APPEARANCE_THEMES: Record<
     headerBorderClass: "border-slate-200",
 
     accentClass: "bg-slate-900",
-    accentHoverClass: "hover:bg-slate-800",
+    accentHoverClass: "not-disabled:hover:bg-slate-800",
     accentHex: "#0f172a",
     accentHoverHex: "#1e293b",
     pointerFallbackHex: "#f8fafc",
@@ -32,7 +32,7 @@ export const APPEARANCE_THEMES: Record<
 
     borderClass: "border-slate-700",
     controlClass: "bg-slate-900 border-slate-700 text-slate-200",
-    controlHoverClass: "hover:bg-slate-800",
+    controlHoverClass: "not-disabled:hover:bg-slate-800",
     inputClass:
       "bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-300",
   },
@@ -48,7 +48,7 @@ export const APPEARANCE_THEMES: Record<
     headerBorderClass: "border-cyan-200",
 
     accentClass: "bg-cyan-700",
-    accentHoverClass: "hover:bg-cyan-800",
+    accentHoverClass: "not-disabled:hover:bg-cyan-800",
     accentHex: "#0e7490",
     accentHoverHex: "#155e75",
     pointerFallbackHex: "#ecfeff",
@@ -62,7 +62,7 @@ export const APPEARANCE_THEMES: Record<
 
     borderClass: "border-cyan-700",
     controlClass: "bg-cyan-900 border-cyan-700 text-cyan-100",
-    controlHoverClass: "hover:bg-cyan-800",
+    controlHoverClass: "not-disabled:hover:bg-cyan-800",
     inputClass:
       "bg-cyan-800 border-cyan-700 text-cyan-50 placeholder:text-cyan-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-300",
   },
@@ -78,7 +78,7 @@ export const APPEARANCE_THEMES: Record<
     headerBorderClass: "border-emerald-200",
 
     accentClass: "bg-emerald-700",
-    accentHoverClass: "hover:bg-emerald-800",
+    accentHoverClass: "not-disabled:hover:bg-emerald-800",
     accentHex: "#047857",
     accentHoverHex: "#065f46",
     pointerFallbackHex: "#ecfdf5",
@@ -92,7 +92,7 @@ export const APPEARANCE_THEMES: Record<
 
     borderClass: "border-emerald-700",
     controlClass: "bg-emerald-900 border-emerald-700 text-emerald-100",
-    controlHoverClass: "hover:bg-emerald-800",
+    controlHoverClass: "not-disabled:hover:bg-emerald-800",
     inputClass:
       "bg-emerald-800 border-emerald-700 text-emerald-50 placeholder:text-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-300",
   },
@@ -108,7 +108,7 @@ export const APPEARANCE_THEMES: Record<
     headerBorderClass: "border-orange-200",
 
     accentClass: "bg-orange-700",
-    accentHoverClass: "hover:bg-orange-800",
+    accentHoverClass: "not-disabled:hover:bg-orange-800",
     accentHex: "#c2410c",
     accentHoverHex: "#9a3412",
     pointerFallbackHex: "#fff7ed",
@@ -122,7 +122,7 @@ export const APPEARANCE_THEMES: Record<
 
     borderClass: "border-orange-700",
     controlClass: "bg-orange-900 border-orange-700 text-orange-100",
-    controlHoverClass: "hover:bg-orange-800",
+    controlHoverClass: "not-disabled:hover:bg-orange-800",
     inputClass:
       "bg-orange-800 border-orange-700 text-orange-50 placeholder:text-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-300",
   },
@@ -138,7 +138,7 @@ export const APPEARANCE_THEMES: Record<
     headerBorderClass: "border-violet-200",
 
     accentClass: "bg-violet-700",
-    accentHoverClass: "hover:bg-violet-800",
+    accentHoverClass: "not-disabled:hover:bg-violet-800",
     accentHex: "#6d28d9",
     accentHoverHex: "#5b21b6",
     pointerFallbackHex: "#f5f3ff",
@@ -152,7 +152,7 @@ export const APPEARANCE_THEMES: Record<
 
     borderClass: "border-violet-700",
     controlClass: "bg-violet-900 border-violet-700 text-violet-100",
-    controlHoverClass: "hover:bg-violet-800",
+    controlHoverClass: "not-disabled:hover:bg-violet-800",
     inputClass:
       "bg-violet-800 border-violet-700 text-violet-50 placeholder:text-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-300",
   },
