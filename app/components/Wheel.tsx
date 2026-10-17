@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 import type {
@@ -475,6 +476,24 @@ function getInitialPointerColor(
   );
 }
 
+function subscribeToFullscreenSupport() {
+  // Support never changes while the page is open.
+  return () => {};
+}
+
+function getFullscreenSupport() {
+  return (
+    document.fullscreenEnabled &&
+    typeof document.documentElement
+      .requestFullscreen ===
+      "function"
+  );
+}
+
+function getServerFullscreenSupport() {
+  return false;
+}
+
 function FullscreenIcon({
   active,
 }: {
@@ -582,6 +601,13 @@ export default function Wheel({
     fullscreen,
     setFullscreen,
   ] = useState(false);
+
+  const fullscreenSupported =
+    useSyncExternalStore(
+      subscribeToFullscreenSupport,
+      getFullscreenSupport,
+      getServerFullscreenSupport,
+    );
 
   const wheelContainerRef =
     useRef<HTMLDivElement | null>(
@@ -977,7 +1003,11 @@ export default function Wheel({
       }
     >
       <div
-        className="mb-4 flex w-full max-w-[760px] items-center justify-end gap-3 sm:justify-between"
+        className={`mb-4 w-full max-w-[760px] items-center justify-end gap-3 sm:justify-between ${
+          fullscreenSupported
+            ? "flex"
+            : "hidden sm:flex"
+        }`}
         aria-label="Wheel controls"
       >
         <div
@@ -1045,36 +1075,38 @@ export default function Wheel({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={
-              toggleFullscreen
-            }
-            disabled={spinning}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
-              theme
-                ? `${theme.controlClass} ${theme.controlHoverClass}`
-                : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
-            }`}
-            aria-label={
-              fullscreen
-                ? "Exit fullscreen"
-                : "Enter fullscreen"
-            }
-            title={
-              fullscreen
-                ? "Exit fullscreen"
-                : "Fullscreen"
-            }
-          >
-            <FullscreenIcon
-              active={
-                fullscreen
+        {fullscreenSupported ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={
+                toggleFullscreen
               }
-            />
-          </button>
-        </div>
+              disabled={spinning}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+                theme
+                  ? `${theme.controlClass} ${theme.controlHoverClass}`
+                  : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+              }`}
+              aria-label={
+                fullscreen
+                  ? "Exit fullscreen"
+                  : "Enter fullscreen"
+              }
+              title={
+                fullscreen
+                  ? "Exit fullscreen"
+                  : "Fullscreen"
+              }
+            >
+              <FullscreenIcon
+                active={
+                  fullscreen
+                }
+              />
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div

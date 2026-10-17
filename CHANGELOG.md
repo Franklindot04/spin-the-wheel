@@ -6,17 +6,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-10-17
+
 ### Changed
 
 - While a quiz is running, questions cannot be deleted either, and the hint says so.
 - The character counters under entry names, questions and answers count whole characters, so an emoji counts as one.
 - If another browser tab changes your saved wheels, a banner asks you to reload, and this tab stops saving until you do, so it cannot overwrite the newer data. Import is disabled while the banner shows.
+- Pictures added to an entry are resized to at most 512 pixels on the longest side before they are saved, so large photos are accepted and use far less browser storage. Photos that are already small are kept as they are, and a GIF keeps only its first frame.
+- Image errors now show the real file size, and a file that cannot be read as a picture is refused with a clear message instead of being saved as a broken image.
+- The fullscreen button is hidden in browsers that do not support fullscreen, such as Safari on iPhone.
 
 ### Fixed
 
 - If deleting the kept copy of unreadable data fails, the banner stays and says so, so the copy is not lost silently.
 - Cancelling Restore defaults returns to the Settings tab you were on.
 - Changing two settings at the same moment can no longer lose one of them.
+- The font menu no longer lists "Inter", which the app never loaded. An entry that already uses a font that is not in the list shows that font name in the menu instead of "Arial".
 
 ## [2.1.2] - 2026-10-17
 
@@ -207,7 +213,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.2...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.3...HEAD
+[2.1.3]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.2...v2.1.3
 [2.1.2]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.0.5...v2.1.0
