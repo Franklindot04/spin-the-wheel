@@ -55,6 +55,40 @@ export function truncateGraphemes(
     .join("");
 }
 
+let graphemeSegmenter:
+  | Intl.Segmenter
+  | null
+  | undefined;
+
+/*
+ * Counts grapheme clusters, so an
+ * emoji, skin tone, flag or ZWJ
+ * sequence counts as one. Falls back
+ * to code points when Intl.Segmenter
+ * is missing. For display counters
+ * only, not for label fitting.
+ */
+export function countGraphemes(
+  text: string,
+): number {
+  if (graphemeSegmenter === undefined) {
+    graphemeSegmenter =
+      typeof Intl !== "undefined" &&
+      typeof Intl.Segmenter ===
+        "function"
+        ? new Intl.Segmenter()
+        : null;
+  }
+
+  if (graphemeSegmenter) {
+    return Array.from(
+      graphemeSegmenter.segment(text),
+    ).length;
+  }
+
+  return Array.from(text).length;
+}
+
 export function formatHistoryTime(
   timestamp: number,
 ): string {

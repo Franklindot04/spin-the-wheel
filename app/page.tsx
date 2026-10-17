@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, } from "react";
 import type { ChangeEvent, CSSProperties, SetStateAction, } from "react";
 import EntryList from "./components/EntryList";
-import SettingsPanel, { type WheelSettings as PanelWheelSettings, } from "./components/SettingsPanel";
+import SettingsPanel, { type SettingsTab, type WheelSettings as PanelWheelSettings, } from "./components/SettingsPanel";
 import WheelComponent from "./components/Wheel";
 import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
@@ -43,6 +43,7 @@ export default function Home() {
     const [selectedEntry, setSelectedEntry,] = useState<WheelEntry | null>(null);
     const [showAnswer, setShowAnswer,] = useState(false);
     const [settingsOpen, setSettingsOpen,] = useState(false);
+    const [settingsTab, setSettingsTab,] = useState<SettingsTab>("main");
     const [historyOpen, setHistoryOpen,] = useState(false);
     const [resetConfirmOpen, setResetConfirmOpen,] = useState(false);
     const [entriesResetOpen, setEntriesResetOpen,] = useState(false);
@@ -53,12 +54,16 @@ export default function Home() {
     const entriesResetDialogRef = useRef<HTMLDivElement>(null);
     const entriesResetButtonRef = useRef<HTMLButtonElement>(null);
     const [deleteCopyOpen, setDeleteCopyOpen,] = useState(false);
+    const [deleteCopyFailed, setDeleteCopyFailed,] = useState(false);
     const deleteCopyDialogRef = useRef<HTMLDivElement>(null);
     const deleteCopyButtonRef = useRef<HTMLButtonElement>(null);
     const [importError, setImportError,] = useState("");
     const [saveFailed, setSaveFailed,] = useState(false);
     const [storedDataNotice, setStoredDataNotice,] = useState<StoredDataNotice | null>(null);
     const [v2StillUnreadable, setV2StillUnreadable,] = useState(false);
+    const [storageStale, setStorageStale,] = useState(false);
+    const storageStaleRef = useRef(false);
+    const lastSeenStorageRef = useRef<string | null>(null);
     const importAlertRef = useRef<HTMLDivElement>(null);
     const saveAlertRef = useRef<HTMLDivElement>(null);
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
@@ -201,10 +206,13 @@ export default function Home() {
     };
     const wheelTitle = activeWheel.title;
     const wheelDescription = activeWheel.description;
-    function handleSettingsChange(panelSettings: PanelWheelSettings) {
-        updateActiveWheel({
-            settings: panelSettingsToWheelSettings(panelSettings, activeWheel.settings),
-        });
+    function handleSettingsChange(changes: Partial<PanelWheelSettings>) {
+        setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
+            settings: panelSettingsToWheelSettings({
+                ...wheelSettingsToPanelSettings(wheel.settings),
+                ...changes,
+            }, wheel.settings),
+        })));
     }
     const panelSettings = wheelSettingsToPanelSettings(activeWheel.settings);
     const standardHistory = activeWheel.standardHistory;
@@ -227,6 +235,7 @@ export default function Home() {
                     setAppData(loaded.data);
                 }
                 setStoredDataNotice(loaded.notice);
+                lastSeenStorageRef.current = window.localStorage.getItem(STORAGE_KEY);
                 // Only an unreadable v2 stays unreadable until it is rewritten.
                 setV2StillUnreadable(loaded.notice?.kind === "defaults");
             }
@@ -243,12 +252,45 @@ export default function Home() {
         hasLoadedStorage.current = storageLoaded;
     }, [storageLoaded]);
     useEffect(() => {
-        if (!hasLoadedStorage.current) {
+        function handleStorage(event: StorageEvent) {
+            if (event.storageArea !== window.localStorage ||
+                event.key !== STORAGE_KEY ||
+                event.newValue === null ||
+                event.newValue === lastSeenStorageRef.current) {
+                return;
+            }
+            // Another tab saved newer data; stop saving here until the user reloads.
+            storageStaleRef.current = true;
+            setStorageStale(true);
+        }
+        window.addEventListener("storage", handleStorage);
+        return () => {
+            window.removeEventListener("storage", handleStorage);
+        };
+    }, []);
+    useEffect(() => {
+        if (!hasLoadedStorage.current ||
+            storageStaleRef.current) {
             return;
         }
         let failed = false;
+        let stale = false;
         try {
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            const serialized = JSON.stringify(appData);
+            const stored = window.localStorage.getItem(STORAGE_KEY);
+            if (stored === serialized) {
+                lastSeenStorageRef.current = serialized;
+            }
+            else if (stored !== null &&
+                stored !== lastSeenStorageRef.current) {
+                // Another tab saved since this tab last read or wrote; do not overwrite it.
+                stale = true;
+                storageStaleRef.current = true;
+            }
+            else {
+                window.localStorage.setItem(STORAGE_KEY, serialized);
+                lastSeenStorageRef.current = serialized;
+            }
         }
         catch {
             // Keep the data in memory and tell the user it is not saved.
@@ -256,6 +298,10 @@ export default function Home() {
         }
         // Report the result after the effect so the notice follows the latest write.
         queueMicrotask(() => {
+            if (stale) {
+                setStorageStale(true);
+                return;
+            }
             setSaveFailed(failed);
             if (!failed) {
                 setV2StillUnreadable(false);
@@ -277,6 +323,7 @@ export default function Home() {
         }
     }, [saveFailed]);
     function closeSettings() {
+        setSettingsTab("main");
         setResetConfirmOpen(false);
         setPendingImport(null);
         setSettingsOpen(false);
@@ -689,6 +736,10 @@ export default function Home() {
         if (spinning) {
             return;
         }
+        if (mode === "quiz" &&
+            quizStarted) {
+            return;
+        }
         const entries = mode === "standard"
             ? standardEntries
             : quizEntries;
@@ -957,6 +1008,7 @@ export default function Home() {
         setShowAnswer(false);
         setRotation(0);
         setResetConfirmOpen(false);
+        setSettingsTab("main");
     }
     function openResetEntries() {
         if (spinning) {
@@ -1034,13 +1086,25 @@ export default function Home() {
         URL.revokeObjectURL(url);
     }
     function deleteUnreadableCopy() {
+        setDeleteCopyFailed(false);
+        // A memory-only copy was never stored, so there is nothing to verify.
+        let deleted = storedDataNotice?.memoryOnly === true;
         try {
             window.localStorage.removeItem(UNREADABLE_BACKUP_KEY);
+            // Read the key back so a silent failure is not reported as deleted.
+            deleted =
+                deleted ||
+                    window.localStorage.getItem(UNREADABLE_BACKUP_KEY) === null;
         }
         catch {
-            // The copy stays; it is offered again the next time the app loads.
+            // The copy may still be stored; keep the banner unless it was memory-only.
         }
-        setStoredDataNotice(null);
+        if (deleted) {
+            setStoredDataNotice(null);
+        }
+        else {
+            setDeleteCopyFailed(true);
+        }
         setDeleteCopyOpen(false);
     }
     function handleImportFile(event: ChangeEvent<HTMLInputElement>) {
@@ -1079,6 +1143,7 @@ export default function Home() {
         setRotation(0);
         setPendingImport(null);
         setImportError("");
+        setSettingsTab("main");
         setSettingsOpen(false);
         setHistoryOpen(false);
     }
@@ -1224,6 +1289,17 @@ export default function Home() {
         </div>
       </header>
       <div className="mx-auto max-w-7xl space-y-3 px-4 empty:hidden pt-4 sm:px-6">
+        {storageStale && (<div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-start sm:justify-between">
+            <p className="min-w-0 break-words">Your wheels were changed in another tab. Reload to load the latest version. Changes made in this tab are not saved until you reload.</p>
+            <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
+              <button type="button" onClick={() => window.location.reload()} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+                Reload
+              </button>
+              <button type="button" onClick={exportData} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+                Export this tab&apos;s data
+              </button>
+            </div>
+          </div>)}
         {storedDataNotice && (<div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-start sm:justify-between">
             <p className="min-w-0 break-words">
               {storedDataNotice.kind === "defaults"
@@ -1235,6 +1311,9 @@ export default function Home() {
                         : "A copy of saved data that could not be read earlier is still kept."}
               {storedDataNotice.memoryOnly
                 ? " The copy lasts only until the page is closed."
+                : ""}
+              {deleteCopyFailed
+                ? " The copy could not be deleted. Export it first if you need it, then try again."
                 : ""}
             </p>
             <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
@@ -1285,12 +1364,12 @@ export default function Home() {
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings
-            .pointerMatchSliceColor} wheelSize={activeWheel.settings.wheelSize} onWheelSizeChange={(size) => updateActiveWheel({
+            .pointerMatchSliceColor} wheelSize={activeWheel.settings.wheelSize} onWheelSizeChange={(size) => setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
                 settings: {
-                    ...activeWheel.settings,
+                    ...wheel.settings,
                     wheelSize: size,
                 },
-            })} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
           </div>
           {mode === "quiz" &&
             !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
@@ -1431,7 +1510,7 @@ export default function Home() {
             <button type="button" onClick={() => {
                 setImportError("");
                 importInputRef.current?.click();
-            }} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title="Import data">
+            }} disabled={spinning || storageStale} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"}>
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 21V9"/>
                 <path d="m7 14 5-5 5 5"/>
@@ -1442,6 +1521,7 @@ export default function Home() {
           </div>
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
+                quizStarted} deletionsDisabled={mode === "quiz" &&
                 quizStarted} textLocked={quizTextLocked} disabled={spinning} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button ref={entriesResetButtonRef} type="button" onClick={openResetEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
@@ -1585,7 +1665,7 @@ export default function Home() {
             }}>
           <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl">
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
+              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} activeTab={settingsTab} onActiveTabChange={setSettingsTab} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
             </div>
             <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
               <button type="button" onClick={closeSettings} className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
@@ -1603,7 +1683,7 @@ export default function Home() {
               This will replace the current saved wheel data.
             </p>
             <div className="mt-5 flex gap-3">
-              <button type="button" onClick={applyImportedData} disabled={spinning} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
+              <button type="button" onClick={applyImportedData} disabled={spinning || storageStale} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                 Import
               </button>
               <button type="button" onClick={() => setPendingImport(null)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>

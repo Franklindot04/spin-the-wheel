@@ -7,7 +7,11 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
-import { canDeleteEntry, getEntryWeight } from "../lib/wheel-utils";
+import {
+  canDeleteEntry,
+  countGraphemes,
+  getEntryWeight,
+} from "../lib/wheel-utils";
 import EntryMenu from "./EntryMenu";
 
 type EntryListProps = {
@@ -21,6 +25,7 @@ type EntryListProps = {
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   additionsDisabled?: boolean;
+  deletionsDisabled?: boolean;
   textLocked?: boolean;
   disabled?: boolean;
   maxEntries?: number;
@@ -83,6 +88,7 @@ export default function EntryList({
   onDelete,
   onDuplicate,
   additionsDisabled = false,
+  deletionsDisabled = false,
   textLocked = false,
   disabled = false,
   maxEntries,
@@ -104,6 +110,9 @@ export default function EntryList({
       ? "questions"
       : "entries"
   }`;
+
+  const deleteLockedTitle =
+    "Back to Setup to delete questions";
 
   const lockedClass = textLocked
     ? "border-dashed cursor-default"
@@ -214,7 +223,7 @@ export default function EntryList({
         <p
           className={`mt-3 text-xs leading-5 ${theme.textMutedClass}`}
         >
-          Names, questions and answers are locked while the quiz runs, and questions cannot be added or duplicated. Back to Setup to edit.
+          Names, questions and answers are locked while the quiz runs, and questions cannot be added, duplicated or deleted. Back to Setup to edit.
         </p>
       )}
 
@@ -227,7 +236,20 @@ export default function EntryList({
               );
 
             const labelLength =
-              entry.label.length;
+              countGraphemes(
+                entry.label,
+              );
+
+            const questionLength =
+              countGraphemes(
+                entry.question ??
+                  "",
+              );
+
+            const answerLength =
+              countGraphemes(
+                entry.answer ?? "",
+              );
 
             const hiddenContentClass =
               entry.hidden
@@ -373,10 +395,16 @@ export default function EntryList({
                           : limitMessage
                       }
                       deleteDisabled={
+                        deletionsDisabled ||
                         !canDeleteEntry(
                           entries,
                           entry,
                         )
+                      }
+                      deleteDisabledTitle={
+                        deletionsDisabled
+                          ? deleteLockedTitle
+                          : undefined
                       }
                       onToggle={() =>
                         setOpenMenuId(
@@ -421,6 +449,7 @@ export default function EntryList({
                       }
                       disabled={
                         disabled ||
+                        deletionsDisabled ||
                         !canDeleteEntry(
                           entries,
                           entry,
@@ -428,7 +457,11 @@ export default function EntryList({
                       }
                       className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-red-200 transition not-disabled:hover:bg-red-950/40 not-disabled:hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-30`}
                       aria-label={`Delete ${entry.label}`}
-                      title="Delete entry"
+                      title={
+                        deletionsDisabled
+                          ? deleteLockedTitle
+                          : "Delete entry"
+                      }
                     >
                       ×
                     </button>
@@ -532,13 +565,11 @@ export default function EntryList({
                       <span
                         className={`text-[10px] font-medium ${theme.textMutedClass}`}
                       >
-                        {
-                          (
-                            entry.question ??
-                            ""
-                          ).length
-                        }{" "}
-                        characters
+                        {questionLength}{" "}
+                        {questionLength ===
+                        1
+                          ? "character"
+                          : "characters"}
                       </span>
                     </div>
 
@@ -579,13 +610,11 @@ export default function EntryList({
                       <span
                         className={`text-[10px] font-medium ${theme.textMutedClass}`}
                       >
-                        {
-                          (
-                            entry.answer ??
-                            ""
-                          ).length
-                        }{" "}
-                        characters
+                        {answerLength}{" "}
+                        {answerLength ===
+                        1
+                          ? "character"
+                          : "characters"}
                       </span>
                     </div>
                   </div>

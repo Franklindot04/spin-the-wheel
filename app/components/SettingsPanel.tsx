@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 export type SettingsTab =
   | "main"
   | "sound"
@@ -48,9 +46,13 @@ export type WheelSettings = {
 type SettingsPanelProps = {
   settings: WheelSettings;
   onSettingsChange: (
-    settings: WheelSettings,
+    changes: Partial<WheelSettings>,
   ) => void;
   onRestoreDefaults: () => void;
+  activeTab: SettingsTab;
+  onActiveTabChange: (
+    tab: SettingsTab,
+  ) => void;
   accentClass?: string;
   accentHex?: string;
 };
@@ -367,19 +369,15 @@ export default function SettingsPanel({
   settings,
   onSettingsChange,
   onRestoreDefaults,
+  activeTab,
+  onActiveTabChange,
   accentClass = "bg-slate-900",
   accentHex = "#0f172a",
 }: SettingsPanelProps) {
-  const [activeTab, setActiveTab] =
-    useState<SettingsTab>("main");
-
   function updateSettings(
     changes: Partial<WheelSettings>,
   ) {
-    onSettingsChange({
-      ...settings,
-      ...changes,
-    });
+    onSettingsChange(changes);
   }
 
   return (
@@ -415,7 +413,7 @@ export default function SettingsPanel({
                 key={tab.id}
                 type="button"
                 onClick={() =>
-                  setActiveTab(tab.id)
+                  onActiveTabChange(tab.id)
                 }
                 className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition sm:px-4 sm:py-2.5 ${
                   active
