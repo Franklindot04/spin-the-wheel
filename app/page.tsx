@@ -203,10 +203,13 @@ export default function Home() {
     };
     const wheelTitle = activeWheel.title;
     const wheelDescription = activeWheel.description;
-    function handleSettingsChange(panelSettings: PanelWheelSettings) {
-        updateActiveWheel({
-            settings: panelSettingsToWheelSettings(panelSettings, activeWheel.settings),
-        });
+    function handleSettingsChange(changes: Partial<PanelWheelSettings>) {
+        setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
+            settings: panelSettingsToWheelSettings({
+                ...wheelSettingsToPanelSettings(wheel.settings),
+                ...changes,
+            }, wheel.settings),
+        })));
     }
     const panelSettings = wheelSettingsToPanelSettings(activeWheel.settings);
     const standardHistory = activeWheel.standardHistory;
@@ -1309,12 +1312,12 @@ export default function Home() {
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings
-            .pointerMatchSliceColor} wheelSize={activeWheel.settings.wheelSize} onWheelSizeChange={(size) => updateActiveWheel({
+            .pointerMatchSliceColor} wheelSize={activeWheel.settings.wheelSize} onWheelSizeChange={(size) => setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
                 settings: {
-                    ...activeWheel.settings,
+                    ...wheel.settings,
                     wheelSize: size,
                 },
-            })} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
           </div>
           {mode === "quiz" &&
             !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>

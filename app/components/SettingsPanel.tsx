@@ -46,7 +46,7 @@ export type WheelSettings = {
 type SettingsPanelProps = {
   settings: WheelSettings;
   onSettingsChange: (
-    settings: WheelSettings,
+    changes: Partial<WheelSettings>,
   ) => void;
   onRestoreDefaults: () => void;
   activeTab: SettingsTab;
@@ -377,10 +377,7 @@ export default function SettingsPanel({
   function updateSettings(
     changes: Partial<WheelSettings>,
   ) {
-    onSettingsChange({
-      ...settings,
-      ...changes,
-    });
+    onSettingsChange(changes);
   }
 
   return (
