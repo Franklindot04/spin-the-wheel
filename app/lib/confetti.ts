@@ -114,10 +114,16 @@ function buildPieces(
   height: number,
   focus: ConfettiFocus,
 ): Piece[] {
+  /*
+   * Pieces fly a distance that depends on the size of the
+   * canvas, then drift down slowly, so on a phone they
+   * stay on the screen as long as on a desktop. "reach" is
+   * how far a piece would travel with no gravity: its
+   * speed is the reach times its drag.
+   */
+  const size = Math.min(width, height);
   const share =
-    Math.min(width, height) < SMALL_SCREEN
-      ? SMALL_SCREEN_SHARE
-      : 1;
+    size < SMALL_SCREEN ? SMALL_SCREEN_SHARE : 1;
   const pieces: Piece[] = [];
 
   if (style === "minimal") {
@@ -130,12 +136,13 @@ function buildPieces(
           focus.x,
           focus.y,
           toRadians(between(-135, -45)),
-          between(260, 520),
+          between(0.2, 0.45) * size * 1.2,
           "paper",
           {
             size: between(5, 8),
-            gravity: 700,
-            life: between(1.4, 1.9),
+            gravity: 55,
+            drag: 1.2,
+            life: between(3.6, 4.2),
           },
         ),
       );
@@ -150,9 +157,13 @@ function buildPieces(
           focus.x,
           focus.y,
           between(0, Math.PI * 2),
-          between(300, 700),
+          between(0.2, 0.55) * size * 1.4,
           Math.random() < 0.25 ? "dot" : "paper",
-          { life: between(2, 2.6) },
+          {
+            gravity: 40,
+            drag: 1.4,
+            life: between(5, 5.6),
+          },
         ),
       );
     }
@@ -176,12 +187,13 @@ function buildPieces(
               ? between(-80, -55)
               : between(-125, -100),
           ),
-          between(700, 1150),
+          between(0.45, 0.8) * size * 1.3,
           Math.random() < 0.2 ? "dot" : "paper",
           {
-            delay: between(0, 0.2),
-            drag: 0.7,
-            life: between(2.6, 3.3),
+            delay: between(0, 0.4),
+            gravity: 45,
+            drag: 1.3,
+            life: between(6.5, 7.5),
           },
         ),
       );
@@ -193,12 +205,13 @@ function buildPieces(
           between(0, width),
           -12,
           Math.PI / 2,
-          between(60, 200),
+          between(25, 45),
           "paper",
           {
-            delay: between(0, 1),
-            drag: 0.5,
-            life: between(2.2, 3),
+            delay: between(0, 2.5),
+            gravity: 30,
+            drag: 0.8,
+            life: between(4.5, 5.3),
           },
         ),
       );
@@ -208,7 +221,7 @@ function buildPieces(
      * Four bursts of bright streaks in the upper part
      * of the screen, one after another.
      */
-    const delays = [0, 0.5, 1, 1.6];
+    const delays = [0, 1, 2, 3.2];
 
     delays.forEach((delay, burst) => {
       const centerX =
@@ -218,7 +231,7 @@ function buildPieces(
       const centerY =
         burst === 0
           ? focus.y
-          : between(height * 0.15, height * 0.5);
+          : between(height * 0.15, height * 0.45);
       const color = pick(COLORS);
 
       for (
@@ -231,15 +244,15 @@ function buildPieces(
             centerX,
             centerY,
             between(0, Math.PI * 2),
-            between(160, 380),
+            between(0.12, 0.3) * size * 1.2,
             "spark",
             {
               color,
               delay,
-              gravity: 220,
-              drag: 1.6,
+              gravity: 40,
+              drag: 1.2,
               size: between(2, 3.5),
-              life: between(1.1, 1.5),
+              life: between(2.6, 3),
             },
           ),
         );
@@ -328,8 +341,8 @@ export function startConfetti(
       context!.beginPath();
       context!.moveTo(piece.x, piece.y);
       context!.lineTo(
-        piece.x - piece.vx * 0.05,
-        piece.y - piece.vy * 0.05,
+        piece.x - piece.vx * 0.08,
+        piece.y - piece.vy * 0.08,
       );
       context!.stroke();
 
