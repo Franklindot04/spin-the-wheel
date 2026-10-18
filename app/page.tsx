@@ -41,6 +41,7 @@ export default function Home() {
     const [quizStarted, setQuizStarted,] = useState(false);
     const [rotation, setRotation,] = useState(0);
     const [confettiRun, setConfettiRun,] = useState(0);
+    const answerConfettiFiredRef = useRef(false);
     const [spinning, setSpinning,] = useState(false);
     const [selectedEntry, setSelectedEntry,] = useState<WheelEntry | null>(null);
     const [showAnswer, setShowAnswer,] = useState(false);
@@ -973,6 +974,7 @@ export default function Home() {
          */
         setSelectedEntry(null);
         setShowAnswer(false);
+        answerConfettiFiredRef.current = false;
         setSpinning(true);
         setRotation(targetRotation);
         /*
@@ -1019,7 +1021,13 @@ export default function Home() {
             setSelectedEntry(finalEntry);
             setSpinning(false);
             playWinnerSound(activeWheel.settings.winnerSound ?? "success", finalEntry.winnerSound);
-            setConfettiRun((current) => current + 1);
+            /*
+             * In Quiz Mode the confetti waits for Show Answer.
+             */
+            answerConfettiFiredRef.current = false;
+            if (mode !== "quiz") {
+                setConfettiRun((current) => current + 1);
+            }
             addHistoryItem(finalEntry, mode);
             if (mode === "quiz") {
                 setAskedQuizIds((current) => [
@@ -1279,6 +1287,19 @@ export default function Home() {
      * and once inside the view (inView). Only the copy in the view is
      * reachable, and it leaves out Back to Setup and Done.
      */
+    /*
+     * Show Answer fires the confetti once for each drawn
+     * question. Hiding the answer and showing it again does
+     * not fire it again. A new draw resets this.
+     */
+    function toggleAnswer() {
+        const reveal = !showAnswer;
+        setShowAnswer(reveal);
+        if (reveal && !answerConfettiFiredRef.current) {
+            answerConfettiFiredRef.current = true;
+            setConfettiRun((current) => current + 1);
+        }
+    }
     function renderStandardResult(inView: boolean) {
         if (!selectedEntry) {
             return null;
@@ -1322,7 +1343,7 @@ export default function Home() {
               </p>
             </div>)}
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <button type="button" onClick={() => setShowAnswer((current) => !current)} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
+            <button type="button" onClick={toggleAnswer} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
               {showAnswer
             ? "Hide Answer"
             : "Show Answer"}
