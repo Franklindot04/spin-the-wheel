@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-18
+
 ### Added
 
 - An in-page full-screen view for the wheel, used where the browser's own fullscreen is not available, such as on iPhone. It has a Close button, closes with Escape or the browser back gesture, and keeps the page from scrolling behind it.
@@ -228,7 +230,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.3...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.3...v2.2.0
 [2.1.3]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.2...v2.1.3
 [2.1.2]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.0...v2.1.1
