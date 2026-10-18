@@ -1685,7 +1685,7 @@ export default function Home() {
               <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} activeTab={settingsTab} onActiveTabChange={setSettingsTab} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
             </div>
             <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
-              <button type="button" onClick={closeSettings} className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
+              <button type="button" onClick={closeSettings} className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
                 Done
               </button>
             </div>
