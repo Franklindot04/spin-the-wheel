@@ -1266,7 +1266,7 @@ export default function Home() {
         if (!displayedQuizEntry) {
             return null;
         }
-        return (<div role={inView ? "status" : undefined} inert={inView ? undefined : wheelExpanded} aria-hidden={inView ? undefined : wheelExpanded || undefined} className={`mx-auto max-w-2xl rounded-2xl border text-center shadow-sm ${inView ? "p-4" : "mt-6 p-6"} ${theme.borderClass} ${theme.surfaceClass}`}>
+        return (<div inert={inView ? undefined : wheelExpanded} aria-hidden={inView ? undefined : wheelExpanded || undefined} className={`mx-auto max-w-2xl rounded-2xl border text-center shadow-sm ${inView ? "p-4" : "mt-6 p-6"} ${theme.borderClass} ${theme.surfaceClass}`}>
           <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
             And the question is...
           </p>
@@ -1464,9 +1464,11 @@ export default function Home() {
                 ? (<div role="status" className="min-h-14">
                   {renderStandardResult(true)}
                 </div>)
-                : quizStarted && displayedQuizEntry
+                : (<div role="status">
+                  {quizStarted && displayedQuizEntry
                     ? renderQuizCard(true)
-                    : null}/>
+                    : null}
+                </div>)}/>
           </div>
           {mode === "quiz" &&
             !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
