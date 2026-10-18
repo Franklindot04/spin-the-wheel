@@ -1198,7 +1198,7 @@ export default function Wheel({
       >
         <div
           className={`hidden items-center overflow-hidden rounded-xl border shadow-sm ${
-            inPageView
+            expanded
               ? ""
               : "sm:flex"
           } ${
@@ -1267,7 +1267,7 @@ export default function Wheel({
 
         <div
           className={`flex items-center gap-2 ${
-            inPageView
+            expanded
               ? "ml-auto"
               : ""
           }`}
