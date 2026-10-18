@@ -621,6 +621,7 @@ export default function SettingsPanel({
                   })
                 }
                 label="Enable sound"
+                description="On iPhone, the ringer switch can silence web sounds."
                 accentClass={accentClass}
               />
             </div>
