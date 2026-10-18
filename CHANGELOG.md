@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- Sound and confetti now work. The wheel ticks while it spins, and plays a winner sound and confetti when a winner is drawn. You can choose the sounds and confetti style in Settings.
+- A speaker button beside the fullscreen button mutes and unmutes sound, including in the fullscreen views.
+- An uploaded winner sound for an entry plays instead of the Settings sound when that entry wins.
+- Play and Stop buttons beside the Spin sound and Winner sound menus in Settings let you hear a sound before choosing it.
+
+### Changed
+
+- In Quiz Mode, the winner sound and confetti play when you press Show Answer, not when the question is drawn.
+- The Winner display setting is hidden for now, because only the result panel works.
+
+### Fixed
+
+- The spin sound and winner sound you choose in Settings are now kept after a reload.
+
 ## [2.5.0] - 2026-10-18
 
 ### Added
