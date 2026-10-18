@@ -23,6 +23,11 @@ import {
   MIN_WHEEL_SIZE,
 } from "../lib/wheel-defaults";
 import {
+  playSpinTick,
+  unlock,
+} from "../lib/sound-engine";
+import { createTickTracker } from "../lib/spin-ticks";
+import {
   getEntryWeight,
   truncateGraphemes,
 } from "../lib/wheel-utils";
@@ -39,6 +44,8 @@ type WheelProps = {
   emptyTitle?: string;
   emptyMessage?: string;
   spinDuration?: number;
+  spinSound?: string;
+  soundActive?: boolean;
   pointerMatchSliceColor?: boolean;
   wheelSize?: number;
   onWheelSizeChange?: (size: number) => void;
@@ -445,6 +452,42 @@ function clampSize(value: number) {
 
 const DEFAULT_POINTER_FALLBACK = "#0f172a";
 
+/*
+ * The wheel's real rotation in degrees, read from
+ * the turning group while the CSS transition runs.
+ * Returns null when the browser gives no matrix.
+ */
+function readRotation(
+  element: Element,
+): number | null {
+  const transform =
+    window.getComputedStyle(element)
+      .transform;
+  const match = /^matrix(3d)?\(([^)]+)\)$/.exec(
+    transform,
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const values = match[2]
+    .split(",")
+    .map((value) => Number(value));
+
+  const cos = values[0];
+  const sin = values[1];
+
+  if (
+    !Number.isFinite(cos) ||
+    !Number.isFinite(sin)
+  ) {
+    return null;
+  }
+
+  return (Math.atan2(sin, cos) * 180) / Math.PI;
+}
+
 function getInitialPointerColor(
   entries: WheelEntry[],
   rotation: number,
@@ -614,6 +657,8 @@ export default function Wheel({
   emptyTitle = "No visible entries",
   emptyMessage = "Add entries or show hidden ones to spin the wheel.",
   spinDuration = 4.5,
+  spinSound = "none",
+  soundActive = false,
   pointerMatchSliceColor = true,
   wheelSize,
   onWheelSizeChange,
@@ -704,6 +749,9 @@ export default function Wheel({
 
   const rotationRef =
     useRef(rotation);
+
+  const rotatingGroupRef =
+    useRef<SVGGElement | null>(null);
 
   const [
     availableWidth,
@@ -826,6 +874,88 @@ export default function Wheel({
     rotationRef.current =
       rotation;
   }, [rotation]);
+
+  /*
+   * Plays a sound each time a slice edge passes the
+   * pointer. It follows the real rotation, so the
+   * sounds slow down with the wheel and stop when it
+   * stops. The loop also stops when sound is turned
+   * off or muted, and while the page is hidden.
+   */
+  useEffect(() => {
+    const group = rotatingGroupRef.current;
+
+    if (
+      !spinning ||
+      !soundActive ||
+      spinSound === "none" ||
+      !group
+    ) {
+      return;
+    }
+
+    const starts = slices.map(
+      (slice) => slice.start,
+    );
+
+    let tracker = createTickTracker(starts);
+    let frame = 0;
+
+    function step(now: number) {
+      const angle = readRotation(
+        group as SVGGElement,
+      );
+
+      if (angle !== null) {
+        const edges = tracker.update(
+          angle,
+          now,
+        );
+
+        if (edges > 0) {
+          playSpinTick(
+            spinSound,
+            1 + Math.min(edges - 1, 4) * 0.125,
+          );
+        }
+      }
+
+      frame = window.requestAnimationFrame(step);
+    }
+
+    function start() {
+      tracker = createTickTracker(starts);
+      frame = window.requestAnimationFrame(step);
+    }
+
+    function stop() {
+      window.cancelAnimationFrame(frame);
+    }
+
+    function handleVisibility() {
+      stop();
+
+      if (document.visibilityState !== "hidden") {
+        start();
+      }
+    }
+
+    start();
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility,
+    );
+
+    return () => {
+      stop();
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility,
+      );
+    };
+  }, [spinning, soundActive, spinSound, slices]);
 
   useLayoutEffect(() => {
     /*
@@ -1078,6 +1208,11 @@ export default function Wheel({
      * The pointer must remain the same
      * color throughout the entire spin.
      */
+    /*
+     * Runs inside the tap so iPhone allows sound.
+     */
+    unlock();
+
     onSpin();
 
     spinTimerRef.current =
@@ -1391,6 +1526,7 @@ export default function Wheel({
           role="img"
         >
           <g
+            ref={rotatingGroupRef}
             style={{
               transform: `rotate(${rotation}deg)`,
               transformOrigin: `${CENTER}px ${CENTER}px`,

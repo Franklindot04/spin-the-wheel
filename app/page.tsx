@@ -8,7 +8,8 @@ import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, THEME_STORAGE_KEY, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
-import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
+import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, } from "./lib/wheel-defaults";
+import { setSoundSettings } from "./lib/sound-engine";
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
@@ -217,6 +218,14 @@ export default function Home() {
         })));
     }
     const panelSettings = wheelSettingsToPanelSettings(activeWheel.settings);
+    const soundEnabled = activeWheel.settings.soundEnabled ?? DEFAULT_SOUND_ENABLED;
+    const soundVolume = activeWheel.settings.volume ?? DEFAULT_VOLUME;
+    useEffect(() => {
+        setSoundSettings({
+            enabled: soundEnabled,
+            volume: soundVolume,
+        });
+    }, [soundEnabled, soundVolume]);
     const standardHistory = activeWheel.standardHistory;
     const setStandardHistory = (next: SetStateAction<SpinHistoryItem[]>) => {
         setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
@@ -1451,7 +1460,7 @@ export default function Home() {
           <div className={mode === "quiz"
             ? "flex min-h-0 items-center justify-center sm:min-h-[560px]"
             : "flex min-h-0 items-center justify-center sm:min-h-[620px]"}>
-            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
+            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} spinSound={activeWheel.settings.spinSound} soundActive={soundEnabled && soundVolume > 0} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings

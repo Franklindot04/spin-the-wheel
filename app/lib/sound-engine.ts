@@ -207,6 +207,155 @@ export function unlock() {
   }
 }
 
+let noiseBuffer: AudioBuffer | null = null;
+
+function getNoiseBuffer(
+  target: AudioContext,
+): AudioBuffer {
+  if (noiseBuffer) {
+    return noiseBuffer;
+  }
+
+  const length = Math.floor(
+    target.sampleRate * 0.05,
+  );
+  const buffer = target.createBuffer(
+    1,
+    length,
+    target.sampleRate,
+  );
+  const samples = buffer.getChannelData(0);
+
+  for (let index = 0; index < length; index += 1) {
+    samples[index] = Math.random() * 2 - 1;
+  }
+
+  noiseBuffer = buffer;
+
+  return buffer;
+}
+
+/*
+ * One short sound as a slice edge passes the
+ * pointer. "strength" is 1 for a single edge and
+ * grows a little when several went by together.
+ * Does nothing for "none", an unknown name, or
+ * when sound should stay quiet.
+ */
+export function playSpinTick(
+  sound: string,
+  strength = 1,
+) {
+  try {
+    if (
+      sound !== "tick" &&
+      sound !== "click" &&
+      sound !== "pop"
+    ) {
+      return;
+    }
+
+    const target = getSoundOutput();
+
+    if (!target) {
+      return;
+    }
+
+    const { context: audio, output } = target;
+    const start = audio.currentTime;
+    const peak =
+      0.45 * Math.min(1.5, Math.max(0.5, strength));
+    const envelope = audio.createGain();
+
+    envelope.connect(output);
+
+    if (sound === "click") {
+      /*
+       * A dull knock: a burst of noise with the
+       * highs and lows taken off.
+       */
+      const source = audio.createBufferSource();
+      const filter = audio.createBiquadFilter();
+
+      source.buffer = getNoiseBuffer(audio);
+      filter.type = "bandpass";
+      filter.frequency.value =
+        1800 + Math.random() * 400;
+      filter.Q.value = 1.2;
+      source.connect(filter);
+      filter.connect(envelope);
+
+      envelope.gain.setValueAtTime(peak, start);
+      envelope.gain.exponentialRampToValueAtTime(
+        0.001,
+        start + 0.025,
+      );
+
+      source.start(start);
+      source.stop(start + 0.03);
+
+      return;
+    }
+
+    const oscillator = audio.createOscillator();
+
+    oscillator.type = "sine";
+
+    if (sound === "pop") {
+      /*
+       * A soft bubble: a low note that drops fast.
+       */
+      oscillator.frequency.setValueAtTime(
+        620,
+        start,
+      );
+      oscillator.frequency.exponentialRampToValueAtTime(
+        160,
+        start + 0.06,
+      );
+
+      envelope.gain.setValueAtTime(peak, start);
+      envelope.gain.exponentialRampToValueAtTime(
+        0.001,
+        start + 0.075,
+      );
+
+      oscillator.connect(envelope);
+      oscillator.start(start);
+      oscillator.stop(start + 0.08);
+
+      return;
+    }
+
+    /*
+     * A light tick: a high note that falls a little,
+     * with a tiny change in pitch each time.
+     */
+    const pitch = 1500 * (0.95 + Math.random() * 0.1);
+
+    oscillator.frequency.setValueAtTime(
+      pitch,
+      start,
+    );
+    oscillator.frequency.exponentialRampToValueAtTime(
+      pitch * 0.6,
+      start + 0.02,
+    );
+
+    envelope.gain.setValueAtTime(peak, start);
+    envelope.gain.exponentialRampToValueAtTime(
+      0.001,
+      start + 0.025,
+    );
+
+    oscillator.connect(envelope);
+    oscillator.start(start);
+    oscillator.stop(start + 0.03);
+  } catch {
+    // Keep going without sound.
+  }
+}
+
 /*
  * The place to connect a sound to, or null when it
  * should stay quiet: sound off, volume 0, the page
