@@ -9,7 +9,7 @@ import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, THEME_STORAGE_KEY, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, } from "./lib/wheel-defaults";
-import { setSoundSettings } from "./lib/sound-engine";
+import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/sound-engine";
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
@@ -912,6 +912,7 @@ export default function Home() {
                     360;
         }
         const selected = entriesForSpin[selectedIndex];
+        prepareEntrySound(selected.winnerSound);
         const selectedAngle = (getEntryWeight(selected) /
             totalWeight) *
             360;
@@ -998,6 +999,7 @@ export default function Home() {
             }
             setSelectedEntry(finalEntry);
             setSpinning(false);
+            playWinnerSound(activeWheel.settings.winnerSound ?? "success", finalEntry.winnerSound);
             addHistoryItem(finalEntry, mode);
             if (mode === "quiz") {
                 setAskedQuizIds((current) => [

@@ -24,6 +24,7 @@ import {
 } from "../lib/wheel-defaults";
 import {
   playSpinTick,
+  stopWinnerSound,
   unlock,
 } from "../lib/sound-engine";
 import { createTickTracker } from "../lib/spin-ticks";
@@ -1212,6 +1213,11 @@ export default function Wheel({
      * Runs inside the tap so iPhone allows sound.
      */
     unlock();
+
+    /*
+     * A winner sound from the last spin ends here.
+     */
+    stopWinnerSound();
 
     onSpin();
 

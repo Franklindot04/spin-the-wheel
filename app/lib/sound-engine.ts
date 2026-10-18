@@ -108,6 +108,8 @@ function resumeContext() {
 function handleVisibilityChange() {
   if (isPageVisible()) {
     resumeContext();
+  } else {
+    stopWinnerSound();
   }
 }
 
@@ -172,6 +174,10 @@ export function setSoundSettings(settings: {
   volume = settings.volume;
 
   applyVolume();
+
+  if (!soundEnabled || volume <= 0) {
+    stopWinnerSound();
+  }
 }
 
 /*
@@ -351,6 +357,453 @@ export function playSpinTick(
     oscillator.connect(envelope);
     oscillator.start(start);
     oscillator.stop(start + 0.03);
+  } catch {
+    // Keep going without sound.
+  }
+}
+
+/*
+ * Winner sounds. Everything a winner sound plays is
+ * routed through one "bus" gain, so a sound that is
+ * still going can be faded out when the next spin
+ * starts, when sound is turned off, or when the page
+ * is hidden.
+ */
+const winnerBuses = new Set<GainNode>();
+
+let winnerRequest = 0;
+
+let applauseBuffer: AudioBuffer | null = null;
+
+/*
+ * Decoded uploaded sounds, kept by their data URL.
+ * null means the file could not be decoded, so it is
+ * not tried again. Only the last few are kept, since
+ * a decoded sound is much bigger than the file.
+ */
+const MAX_CACHED_SOUNDS = 4;
+
+const decodedSounds = new Map<
+  string,
+  AudioBuffer | null
+>();
+
+const decodingSounds = new Map<
+  string,
+  Promise<AudioBuffer | null>
+>();
+
+export function stopWinnerSound() {
+  winnerRequest += 1;
+
+  try {
+    for (const bus of winnerBuses) {
+      try {
+        if (context) {
+          bus.gain.cancelScheduledValues(
+            context.currentTime,
+          );
+          bus.gain.setTargetAtTime(
+            0,
+            context.currentTime,
+            0.015,
+          );
+        }
+      } catch {
+        // Fall through to disconnecting it.
+      }
+
+      window.setTimeout(() => {
+        try {
+          bus.disconnect();
+        } catch {
+          // Already gone.
+        }
+      }, 150);
+    }
+
+    winnerBuses.clear();
+  } catch {
+    // Keep going without sound.
+  }
+}
+
+function openWinnerBus(
+  target: SoundOutput,
+  seconds: number,
+): GainNode {
+  const bus = target.context.createGain();
+
+  bus.connect(target.output);
+  winnerBuses.add(bus);
+
+  window.setTimeout(() => {
+    if (winnerBuses.delete(bus)) {
+      try {
+        bus.disconnect();
+      } catch {
+        // Already gone.
+      }
+    }
+  }, (seconds + 0.3) * 1000);
+
+  return bus;
+}
+
+function playNote(
+  audio: AudioContext,
+  bus: GainNode,
+  type: OscillatorType,
+  frequency: number,
+  begin: number,
+  length: number,
+  peak: number,
+) {
+  const oscillator = audio.createOscillator();
+  const envelope = audio.createGain();
+
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(
+    frequency,
+    begin,
+  );
+
+  envelope.gain.setValueAtTime(0, begin);
+  envelope.gain.linearRampToValueAtTime(
+    peak,
+    begin + 0.01,
+  );
+  envelope.gain.exponentialRampToValueAtTime(
+    0.001,
+    begin + length,
+  );
+
+  oscillator.connect(envelope);
+  envelope.connect(bus);
+  oscillator.start(begin);
+  oscillator.stop(begin + length + 0.05);
+}
+
+function playSuccess(
+  audio: AudioContext,
+  bus: GainNode,
+) {
+  /*
+   * Four rising notes (C, E, G, high C) that end on a
+   * longer one.
+   */
+  const begin = audio.currentTime;
+
+  playNote(audio, bus, "triangle", 523.25, begin, 0.35, 0.3);
+  playNote(audio, bus, "triangle", 659.25, begin + 0.11, 0.35, 0.3);
+  playNote(audio, bus, "triangle", 783.99, begin + 0.22, 0.35, 0.3);
+  playNote(audio, bus, "triangle", 1046.5, begin + 0.33, 0.9, 0.32);
+}
+
+function playChime(
+  audio: AudioContext,
+  bus: GainNode,
+) {
+  /*
+   * Two bell strikes. Each is a pure note plus softer
+   * notes above it that die away faster.
+   */
+  const begin = audio.currentTime;
+
+  const strikes = [
+    { at: 0, base: 1318.5, level: 1 },
+    { at: 0.3, base: 1568, level: 0.7 },
+  ];
+
+  const partials = [
+    { ratio: 1, gain: 0.35, length: 1.6 },
+    { ratio: 1.5, gain: 0.2, length: 1.1 },
+    { ratio: 2, gain: 0.12, length: 0.7 },
+    { ratio: 2.52, gain: 0.06, length: 0.45 },
+  ];
+
+  for (const strike of strikes) {
+    for (const partial of partials) {
+      playNote(
+        audio,
+        bus,
+        "sine",
+        strike.base * partial.ratio,
+        begin + strike.at,
+        partial.length,
+        partial.gain * strike.level,
+      );
+    }
+  }
+}
+
+function playApplause(
+  audio: AudioContext,
+  bus: GainNode,
+) {
+  /*
+   * Many tiny claps of filtered noise. They bunch up
+   * in the middle and thin out at the ends.
+   */
+  const LENGTH = 1.8;
+
+  if (!applauseBuffer) {
+    const size = Math.floor(audio.sampleRate * 2.5);
+    const buffer = audio.createBuffer(
+      1,
+      size,
+      audio.sampleRate,
+    );
+    const samples = buffer.getChannelData(0);
+
+    for (let index = 0; index < size; index += 1) {
+      samples[index] = Math.random() * 2 - 1;
+    }
+
+    applauseBuffer = buffer;
+  }
+
+  const source = audio.createBufferSource();
+  const filter = audio.createBiquadFilter();
+  const claps = audio.createGain();
+  const begin = audio.currentTime;
+
+  source.buffer = applauseBuffer;
+  filter.type = "bandpass";
+  filter.frequency.value = 2200;
+  filter.Q.value = 0.5;
+
+  source.connect(filter);
+  filter.connect(claps);
+  claps.connect(bus);
+
+  claps.gain.setValueAtTime(0, begin);
+
+  const times: number[] = [];
+
+  while (times.length < 45) {
+    const at = Math.random() * LENGTH;
+
+    if (
+      Math.random() <
+      Math.pow(Math.sin((Math.PI * at) / LENGTH), 0.6)
+    ) {
+      times.push(at);
+    }
+  }
+
+  times.sort((first, second) => first - second);
+
+  let free = 0;
+
+  for (const at of times) {
+    const clapStart = begin + Math.max(at, free);
+    const length = 0.015 + Math.random() * 0.025;
+    const level = 0.12 + Math.random() * 0.28;
+
+    claps.gain.setValueAtTime(0, clapStart);
+    claps.gain.linearRampToValueAtTime(
+      level,
+      clapStart + 0.003,
+    );
+    claps.gain.exponentialRampToValueAtTime(
+      0.001,
+      clapStart + length,
+    );
+
+    free = clapStart - begin + length + 0.002;
+  }
+
+  source.start(begin, Math.random() * 0.4);
+  source.stop(begin + free + 0.1);
+}
+
+function playPresetWinnerSound(
+  sound: string,
+) {
+  if (
+    sound !== "success" &&
+    sound !== "chime" &&
+    sound !== "applause"
+  ) {
+    return;
+  }
+
+  const target = getSoundOutput();
+
+  if (!target) {
+    return;
+  }
+
+  const seconds =
+    sound === "applause" ? 2.4 : 2;
+  const bus = openWinnerBus(target, seconds);
+
+  if (sound === "success") {
+    playSuccess(target.context, bus);
+  } else if (sound === "chime") {
+    playChime(target.context, bus);
+  } else {
+    playApplause(target.context, bus);
+  }
+}
+
+function decodeAudioFile(
+  audio: AudioContext,
+  data: ArrayBuffer,
+): Promise<AudioBuffer> {
+  /*
+   * Older Safari only takes callbacks.
+   */
+  return new Promise((resolve, reject) => {
+    const decoding = audio.decodeAudioData(
+      data,
+      resolve,
+      reject,
+    );
+
+    if (decoding && decoding.catch) {
+      decoding.catch(reject);
+    }
+  });
+}
+
+function rememberSound(
+  url: string,
+  buffer: AudioBuffer | null,
+) {
+  decodedSounds.delete(url);
+  decodedSounds.set(url, buffer);
+
+  while (decodedSounds.size > MAX_CACHED_SOUNDS) {
+    const oldest = decodedSounds.keys().next();
+
+    if (oldest.done) {
+      break;
+    }
+
+    decodedSounds.delete(oldest.value);
+  }
+}
+
+function decodeEntrySound(
+  url: string,
+): Promise<AudioBuffer | null> {
+  const known = decodedSounds.get(url);
+
+  if (known !== undefined) {
+    return Promise.resolve(known);
+  }
+
+  const running = decodingSounds.get(url);
+
+  if (running) {
+    return running;
+  }
+
+  const audio = context;
+
+  if (!audio) {
+    return Promise.resolve(null);
+  }
+
+  const job = fetch(url)
+    .then((response) => response.arrayBuffer())
+    .then((data) => decodeAudioFile(audio, data))
+    .then(
+      (buffer): AudioBuffer | null => buffer,
+      (): AudioBuffer | null => null,
+    )
+    .then((buffer) => {
+      rememberSound(url, buffer);
+      decodingSounds.delete(url);
+
+      return buffer;
+    });
+
+  decodingSounds.set(url, job);
+
+  return job;
+}
+
+/*
+ * Starts decoding an uploaded sound ahead of time, so
+ * it is ready when the wheel stops. The result is
+ * ignored here. Safe with nothing, or with a file
+ * that cannot be decoded.
+ */
+export function prepareEntrySound(
+  url: string | undefined,
+) {
+  try {
+    if (url) {
+      decodeEntrySound(url).catch(() => {
+        // Nothing to do: the winner falls back later.
+      });
+    }
+  } catch {
+    // Keep going without sound.
+  }
+}
+
+/*
+ * Plays the winner sound. An uploaded sound on the
+ * winning entry replaces the one chosen in Settings,
+ * even when that one is None. If the uploaded sound
+ * cannot be decoded or played, the Settings sound
+ * plays instead and nothing is shown.
+ */
+export function playWinnerSound(
+  sound: string,
+  entrySound?: string,
+) {
+  try {
+    stopWinnerSound();
+
+    const request = winnerRequest;
+
+    if (!entrySound) {
+      playPresetWinnerSound(sound);
+
+      return;
+    }
+
+    decodeEntrySound(entrySound)
+      .then((buffer) => {
+        if (request !== winnerRequest) {
+          return;
+        }
+
+        const target = getSoundOutput();
+
+        if (buffer && target) {
+          const bus = openWinnerBus(
+            target,
+            buffer.duration,
+          );
+          const source =
+            target.context.createBufferSource();
+
+          source.buffer = buffer;
+          source.connect(bus);
+          source.start(0);
+
+          return;
+        }
+
+        if (!buffer) {
+          playPresetWinnerSound(sound);
+        }
+      })
+      .catch(() => {
+        try {
+          if (request === winnerRequest) {
+            playPresetWinnerSound(sound);
+          }
+        } catch {
+          // Keep going without sound.
+        }
+      });
   } catch {
     // Keep going without sound.
   }
