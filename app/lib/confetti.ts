@@ -31,7 +31,7 @@ const COLORS = [
   "#ec4899",
 ];
 
-const MAX_PIECES = 160;
+const MAX_PIECES = 240;
 
 const MAX_PIXEL_RATIO = 2;
 
@@ -94,7 +94,7 @@ function makePiece(
     vy: Math.sin(angle) * speed,
     gravity: 800,
     drag: 1.2,
-    size: between(6, 11),
+    size: between(8, 14),
     angle: between(0, Math.PI * 2),
     turn: between(-9, 9),
     flap: between(6, 12),
@@ -126,102 +126,154 @@ function buildPieces(
     size < SMALL_SCREEN ? SMALL_SCREEN_SHARE : 1;
   const pieces: Piece[] = [];
 
+  /*
+   * New pieces keep coming through the show so the middle
+   * is never empty. A late piece lives only until the end
+   * of the show, so the length does not change.
+   */
+  function addTrickle(
+    count: number,
+    firstAt: number,
+    lastAt: number,
+    endAt: number,
+    shortest: number,
+    longest: number,
+    make: (options: Partial<Piece>) => Piece,
+  ) {
+    for (let index = 0; index < count * share; index += 1) {
+      const delay = between(firstAt, lastAt);
+
+      pieces.push(
+        make({
+          delay,
+          life: Math.min(
+            between(shortest, longest),
+            endAt - delay,
+          ),
+        }),
+      );
+    }
+  }
+
   if (style === "minimal") {
     /*
-     * A small, soft fan of pieces from the wheel.
+     * A small, soft fan of pieces from the wheel. This is
+     * the lightest style, with the fewest pieces.
      */
+    const fan = (options: Partial<Piece>, reach: number) =>
+      makePiece(
+        focus.x,
+        focus.y,
+        toRadians(between(-135, -45)),
+        reach * size * 1.2,
+        "paper",
+        {
+          size: between(6, 10),
+          gravity: 55,
+          drag: 1.2,
+          ...options,
+        },
+      );
+
     for (let index = 0; index < 40 * share; index += 1) {
       pieces.push(
-        makePiece(
-          focus.x,
-          focus.y,
-          toRadians(between(-135, -45)),
-          between(0.2, 0.45) * size * 1.2,
-          "paper",
-          {
-            size: between(5, 8),
-            gravity: 55,
-            drag: 1.2,
-            life: between(3.6, 4.2),
-          },
+        fan(
+          { life: between(3.6, 4.2) },
+          between(0.2, 0.45),
         ),
       );
     }
+
+    addTrickle(20, 0.4, 1.8, 4.1, 2, 2.4, (options) =>
+      fan(options, between(0.15, 0.35)),
+    );
   } else if (style === "burst") {
     /*
-     * One round burst from the middle of the wheel.
+     * One round burst from the middle of the wheel, then
+     * small pops from the same place.
      */
+    const pop = (
+      options: Partial<Piece>,
+      reach: number,
+    ) =>
+      makePiece(
+        focus.x,
+        focus.y,
+        between(0, Math.PI * 2),
+        reach * size * 1.4,
+        Math.random() < 0.25 ? "dot" : "paper",
+        { gravity: 40, drag: 1.4, ...options },
+      );
+
     for (let index = 0; index < 90 * share; index += 1) {
       pieces.push(
-        makePiece(
-          focus.x,
-          focus.y,
-          between(0, Math.PI * 2),
-          between(0.2, 0.55) * size * 1.4,
-          Math.random() < 0.25 ? "dot" : "paper",
-          {
-            gravity: 40,
-            drag: 1.4,
-            life: between(5, 5.6),
-          },
+        pop(
+          { life: between(5, 5.6) },
+          between(0.2, 0.55),
         ),
       );
     }
+
+    addTrickle(80, 0.5, 4, 5.5, 2.2, 3, (options) =>
+      pop(options, between(0.15, 0.4)),
+    );
   } else if (style === "celebration") {
     /*
-     * Two cannons from the bottom corners, then a
-     * light rain from the top.
+     * Two cannons from the bottom corners, then more
+     * smaller shots and a light rain from the top.
      */
-    const cannons = Math.floor(120 * share);
-    const rain = Math.floor(40 * share);
+    const shoot = (
+      options: Partial<Piece>,
+      reach: number,
+    ) => {
+      const left = Math.random() < 0.5;
 
-    for (let index = 0; index < cannons; index += 1) {
-      const left = index % 2 === 0;
+      return makePiece(
+        left ? 0 : width,
+        height,
+        toRadians(
+          left
+            ? between(-80, -55)
+            : between(-125, -100),
+        ),
+        reach * size * 1.3,
+        Math.random() < 0.2 ? "dot" : "paper",
+        { gravity: 45, drag: 1.3, ...options },
+      );
+    };
 
+    for (let index = 0; index < 80 * share; index += 1) {
       pieces.push(
-        makePiece(
-          left ? 0 : width,
-          height,
-          toRadians(
-            left
-              ? between(-80, -55)
-              : between(-125, -100),
-          ),
-          between(0.45, 0.8) * size * 1.3,
-          Math.random() < 0.2 ? "dot" : "paper",
+        shoot(
           {
             delay: between(0, 0.4),
-            gravity: 45,
-            drag: 1.3,
             life: between(6.5, 7.5),
           },
+          between(0.45, 0.8),
         ),
       );
     }
 
-    for (let index = 0; index < rain; index += 1) {
-      pieces.push(
-        makePiece(
-          between(0, width),
-          -12,
-          Math.PI / 2,
-          between(25, 45),
-          "paper",
-          {
-            delay: between(0, 2.5),
-            gravity: 30,
-            drag: 0.8,
-            life: between(4.5, 5.3),
-          },
-        ),
-      );
-    }
+    addTrickle(70, 1, 5.8, 7.5, 2.8, 3.4, (options) =>
+      shoot(options, between(0.3, 0.6)),
+    );
+
+    addTrickle(80, 0.5, 6.2, 7.6, 3, 4, (options) =>
+      makePiece(
+        between(0, width),
+        -12,
+        Math.PI / 2,
+        between(25, 45),
+        "paper",
+        { gravity: 30, drag: 0.8, ...options },
+      ),
+    );
   } else if (style === "fireworks") {
     /*
-     * Four bursts of bright streaks in the upper part
-     * of the screen, one after another.
+     * Six bursts of bright streaks in the upper part of the
+     * screen, one after another.
      */
-    const delays = [0, 1, 2, 3.2];
+    const delays = [0, 0.6, 1.2, 1.9, 2.6, 3.2];
 
     delays.forEach((delay, burst) => {
       const centerX =
@@ -236,7 +288,7 @@ function buildPieces(
 
       for (
         let index = 0;
-        index < 38 * share;
+        index < 36 * share;
         index += 1
       ) {
         pieces.push(
@@ -251,7 +303,7 @@ function buildPieces(
               delay,
               gravity: 40,
               drag: 1.2,
-              size: between(2, 3.5),
+              size: between(2.5, 4),
               life: between(2.6, 3),
             },
           ),
