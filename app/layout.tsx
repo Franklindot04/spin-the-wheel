@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import {
   APPEARANCE_THEMES,
@@ -8,6 +8,18 @@ import {
 export const metadata: Metadata = {
   title: "Spin the Wheel",
   description: "Create and customize wheels for games, quizzes, decisions, and more.",
+  appleWebApp: {
+    capable: true,
+    title: "Spin the Wheel",
+    statusBarStyle: "black",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#020617",
 };
 
 /*

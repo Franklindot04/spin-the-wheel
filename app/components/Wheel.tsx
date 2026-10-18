@@ -1181,7 +1181,7 @@ export default function Wheel({
       }
       className={
         expanded
-          ? `wheel-expanded flex h-dvh w-full flex-col items-center overflow-hidden overscroll-contain p-4 sm:p-8 ${
+          ? `wheel-expanded flex h-svh w-full flex-col items-center overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:pt-[max(2rem,env(safe-area-inset-top))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] sm:pl-[max(2rem,env(safe-area-inset-left))] ${
               inPageView
                 ? "fixed inset-x-0 top-0 z-[100]"
                 : ""
@@ -1641,7 +1641,7 @@ export default function Wheel({
       </div>
 
       {expanded && expandedResult ? (
-        <div className="wheel-slot mt-4 max-h-[35dvh] w-full max-w-2xl shrink-0 overflow-y-auto overscroll-contain">
+        <div className="wheel-slot mt-4 max-h-[35svh] w-full max-w-2xl shrink-0 overflow-y-auto overscroll-contain">
           {expandedResult}
         </div>
       ) : null}

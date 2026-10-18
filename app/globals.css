@@ -110,6 +110,41 @@ body {
 }
 
 /*
+ * Turning the phone swaps the layout in one step, which
+ * reads as a jump. A short fade hides it. The animation
+ * name differs per orientation so that it restarts when
+ * the orientation changes. The result slot is left out so
+ * it does not fade in after every spin.
+ */
+@keyframes wheel-view-fade-portrait {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes wheel-view-fade-landscape {
+  from {
+    opacity: 0;
+  }
+}
+
+.wheel-expanded > :not(.wheel-slot) {
+  animation: wheel-view-fade-portrait 150ms ease-out;
+}
+
+@media (orientation: landscape) {
+  .wheel-expanded > :not(.wheel-slot) {
+    animation-name: wheel-view-fade-landscape;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel-expanded > :not(.wheel-slot) {
+    animation: none;
+  }
+}
+
+/*
  * Full-screen views on a window that is wider than tall
  * and short (a phone held sideways): two columns. The
  * wheel takes the left column at the full height. The
@@ -119,7 +154,14 @@ body {
 @media (orientation: landscape) and (max-height: 500px) and (min-width: 560px) {
   .wheel-expanded {
     display: grid;
-    grid-template-columns: minmax(0, calc(100dvh - 2rem)) minmax(14rem, 1fr);
+    grid-template-columns: minmax(
+        0,
+        calc(
+          100svh - max(1rem, env(safe-area-inset-top)) -
+            max(1rem, env(safe-area-inset-bottom))
+        )
+      )
+      minmax(14rem, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     align-items: stretch;
     column-gap: 1rem;
