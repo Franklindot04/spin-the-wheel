@@ -1197,7 +1197,11 @@ export default function Wheel({
         aria-label="Wheel controls"
       >
         <div
-          className={`hidden items-center overflow-hidden rounded-xl border shadow-sm sm:flex ${
+          className={`hidden items-center overflow-hidden rounded-xl border shadow-sm ${
+            inPageView
+              ? ""
+              : "sm:flex"
+          } ${
             theme?.controlClass ??
             "border-slate-300 bg-white"
           }`}
@@ -1261,7 +1265,13 @@ export default function Wheel({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div
+          className={`flex items-center gap-2 ${
+            inPageView
+              ? "ml-auto"
+              : ""
+          }`}
+        >
           {inPageView ? (
             <button
               ref={closeButtonRef}
