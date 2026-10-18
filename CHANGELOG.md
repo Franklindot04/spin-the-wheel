@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-10-18
+
 ### Added
 
 - While a quiz is running, the list no longer shows the questions and answers, so players cannot read ahead. You can still hide questions and change their weight. Back to Setup shows them again.
@@ -261,7 +263,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.1.3...v2.2.0
