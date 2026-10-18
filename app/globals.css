@@ -127,6 +127,21 @@ body {
 }
 
 /*
+ * While the in-page view is open the page behind is
+ * invisible and out of the tab order and the
+ * accessibility tree. visibility keeps its layout, so
+ * the scroll position and the wheel state survive. The
+ * frame sits inside the page and shows itself again.
+ */
+[data-wheel-view="open"] main {
+  visibility: hidden;
+}
+
+[data-wheel-view="open"] .wheel-view-frame {
+  visibility: visible;
+}
+
+/*
  * Turning the phone swaps the layout in one step, which
  * reads as a jump. A short fade hides it. The animation
  * name differs per orientation so that it restarts when

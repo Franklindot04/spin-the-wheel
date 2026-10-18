@@ -963,6 +963,12 @@ export default function Wheel({
     document.documentElement.style.overscrollBehavior =
       "contain";
 
+    // The page behind is hidden while the view is open (see globals.css).
+    document.documentElement.setAttribute(
+      "data-wheel-view",
+      "open",
+    );
+
     window.addEventListener(
       "keydown",
       handleKeyDown,
@@ -984,6 +990,10 @@ export default function Wheel({
       window.removeEventListener(
         "popstate",
         handlePopState,
+      );
+
+      document.documentElement.removeAttribute(
+        "data-wheel-view",
       );
 
       document.body.style.overflow =
