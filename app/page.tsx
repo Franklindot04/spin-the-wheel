@@ -1627,7 +1627,8 @@ export default function Home() {
                               {formatHistoryTime(item.timestamp)}
                             </span>
                           </div>
-                          {item.question && (<p className={`mt-1 truncate pl-10 text-xs ${theme.textMutedClass}`}>
+                          {item.question &&
+                !quizTextLocked && (<p className={`mt-1 truncate pl-10 text-xs ${theme.textMutedClass}`}>
                               {item.question}
                             </p>)}
                         </div>))}
