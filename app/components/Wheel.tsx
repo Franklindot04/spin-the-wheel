@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 
 import type {
   AppearanceThemeConfig,
+  ConfettiEffect,
   WheelEntry,
 } from "../lib/wheel-types";
 import {
@@ -22,6 +23,10 @@ import {
   MAX_WHEEL_SIZE,
   MIN_WHEEL_SIZE,
 } from "../lib/wheel-defaults";
+import {
+  startConfetti,
+  type ConfettiShow,
+} from "../lib/confetti";
 import {
   playSpinTick,
   stopWinnerSound,
@@ -47,6 +52,8 @@ type WheelProps = {
   spinDuration?: number;
   spinSound?: string;
   soundActive?: boolean;
+  confettiStyle?: ConfettiEffect;
+  confettiRun?: number;
   pointerMatchSliceColor?: boolean;
   wheelSize?: number;
   onWheelSizeChange?: (size: number) => void;
@@ -660,6 +667,8 @@ export default function Wheel({
   spinDuration = 4.5,
   spinSound = "none",
   soundActive = false,
+  confettiStyle = "none",
+  confettiRun = 0,
   pointerMatchSliceColor = true,
   wheelSize,
   onWheelSizeChange,
@@ -753,6 +762,15 @@ export default function Wheel({
 
   const rotatingGroupRef =
     useRef<SVGGElement | null>(null);
+
+  const confettiCanvasRef =
+    useRef<HTMLCanvasElement | null>(null);
+
+  const confettiShowRef =
+    useRef<ConfettiShow | null>(null);
+
+  const lastConfettiRunRef =
+    useRef(confettiRun);
 
   const [
     availableWidth,
@@ -875,6 +893,72 @@ export default function Wheel({
     rotationRef.current =
       rotation;
   }, [rotation]);
+
+  /*
+   * Draws confetti when the run counter goes up, which the
+   * page does at the moment a winner is set. The canvas is
+   * inside this container so it also shows in both full
+   * screen views.
+   */
+  useEffect(() => {
+    if (confettiRun === lastConfettiRunRef.current) {
+      return;
+    }
+
+    lastConfettiRunRef.current = confettiRun;
+
+    const canvas = confettiCanvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    confettiShowRef.current?.stop();
+    confettiShowRef.current = null;
+
+    if (confettiStyle === "none") {
+      return;
+    }
+
+    const wheel = canvas.parentElement?.querySelector(
+      'svg[aria-label="Spin the wheel"]',
+    );
+    const wheelBox = wheel?.getBoundingClientRect();
+    const canvasBox = canvas.getBoundingClientRect();
+
+    confettiShowRef.current = startConfetti(
+      canvas,
+      confettiStyle,
+      wheelBox
+        ? {
+            x:
+              wheelBox.left +
+              wheelBox.width / 2 -
+              canvasBox.left,
+            y:
+              wheelBox.top +
+              wheelBox.height / 2 -
+              canvasBox.top,
+          }
+        : undefined,
+    );
+  }, [confettiRun, confettiStyle]);
+
+  /*
+   * A new spin, or leaving the page, ends the confetti.
+   */
+  useEffect(() => {
+    if (spinning) {
+      confettiShowRef.current?.stop();
+      confettiShowRef.current = null;
+    }
+  }, [spinning]);
+
+  useEffect(() => {
+    return () => {
+      confettiShowRef.current?.stop();
+    };
+  }, []);
 
   /*
    * Plays a sound each time a slice edge passes the
@@ -1214,6 +1298,9 @@ export default function Wheel({
      */
     unlock();
 
+    confettiShowRef.current?.stop();
+    confettiShowRef.current = null;
+
     /*
      * A winner sound from the last spin ends here.
      */
@@ -1348,7 +1435,7 @@ export default function Wheel({
       }
       className={
         expanded
-          ? `wheel-expanded flex w-full flex-col items-center overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:pt-[max(2rem,env(safe-area-inset-top))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] sm:pl-[max(2rem,env(safe-area-inset-left))] ${
+          ? `wheel-expanded relative flex w-full flex-col items-center overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:pt-[max(2rem,env(safe-area-inset-top))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] sm:pl-[max(2rem,env(safe-area-inset-left))] ${
               inPageView
                 ? "h-full"
                 : "h-dvh"
@@ -1356,7 +1443,7 @@ export default function Wheel({
               theme?.pageClass ??
               "bg-white"
             }`
-          : "flex w-full flex-col items-center"
+          : "relative flex w-full flex-col items-center"
       }
     >
       <div
@@ -1829,6 +1916,12 @@ export default function Wheel({
           ? "Spinning…"
           : "Spin"}
       </button>
+
+      <canvas
+        ref={confettiCanvasRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-20 h-full w-full"
+      />
     </div>
     </div>
   );

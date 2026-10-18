@@ -8,7 +8,7 @@ import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, THEME_STORAGE_KEY, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
-import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, } from "./lib/wheel-defaults";
+import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, DEFAULT_CONFETTI_ENABLED, DEFAULT_CONFETTI_EFFECT, } from "./lib/wheel-defaults";
 import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/sound-engine";
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
@@ -40,6 +40,7 @@ export default function Home() {
     const [askedQuizIds, setAskedQuizIds,] = useState<string[]>([]);
     const [quizStarted, setQuizStarted,] = useState(false);
     const [rotation, setRotation,] = useState(0);
+    const [confettiRun, setConfettiRun,] = useState(0);
     const [spinning, setSpinning,] = useState(false);
     const [selectedEntry, setSelectedEntry,] = useState<WheelEntry | null>(null);
     const [showAnswer, setShowAnswer,] = useState(false);
@@ -1000,6 +1001,7 @@ export default function Home() {
             setSelectedEntry(finalEntry);
             setSpinning(false);
             playWinnerSound(activeWheel.settings.winnerSound ?? "success", finalEntry.winnerSound);
+            setConfettiRun((current) => current + 1);
             addHistoryItem(finalEntry, mode);
             if (mode === "quiz") {
                 setAskedQuizIds((current) => [
@@ -1462,7 +1464,7 @@ export default function Home() {
           <div className={mode === "quiz"
             ? "flex min-h-0 items-center justify-center sm:min-h-[560px]"
             : "flex min-h-0 items-center justify-center sm:min-h-[620px]"}>
-            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} spinSound={activeWheel.settings.spinSound} soundActive={soundEnabled && soundVolume > 0} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
+            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} spinSound={activeWheel.settings.spinSound} soundActive={soundEnabled && soundVolume > 0} confettiStyle={(activeWheel.settings.confettiEnabled ?? DEFAULT_CONFETTI_ENABLED) ? (activeWheel.settings.confettiEffect ?? DEFAULT_CONFETTI_EFFECT) : "none"} confettiRun={confettiRun} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings
