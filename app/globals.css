@@ -88,3 +88,23 @@ body {
 [data-theme="violet"] .shell-panel {
   @apply border-violet-700 bg-violet-900;
 }
+
+/*
+ * Fullscreen wheel: the wheel box is the largest square
+ * that fits the space left above the Spin button. Where
+ * container query units are missing the wheel keeps the
+ * width of its container.
+ */
+.wheel-fit-region {
+  container-type: size;
+}
+
+.wheel-fit {
+  width: 100%;
+}
+
+@supports (width: 1cqw) {
+  .wheel-fit {
+    width: min(100cqw, 100cqh) !important;
+  }
+}
