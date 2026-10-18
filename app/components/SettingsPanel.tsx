@@ -320,24 +320,6 @@ const CONFETTI_OPTIONS: Array<{
   },
 ];
 
-const WINNER_DISPLAY_OPTIONS: Array<{
-  value: WinnerDisplayMethod;
-  label: string;
-}> = [
-  {
-    value: "popup",
-    label: "Popup",
-  },
-  {
-    value: "panel",
-    label: "Result panel",
-  },
-  {
-    value: "highlight",
-    label: "Highlight on wheel",
-  },
-];
-
 const AUTO_GENERATE_OPTIONS = [
   {
     value: "names",
@@ -500,27 +482,12 @@ export default function SettingsPanel({
               />
             </div>
 
-            <div>
-              <SectionTitle
-                title="Winner display"
-              />
-
-              <SelectField
-                label="Display method"
-                value={
-                  settings.winnerDisplayMethod
-                }
-                onChange={(value) =>
-                  updateSettings({
-                    winnerDisplayMethod:
-                      value as WinnerDisplayMethod,
-                  })
-                }
-                options={
-                  WINNER_DISPLAY_OPTIONS
-                }
-              />
-            </div>
+            {/*
+              * The Display method control is hidden until the
+              * winner box (issue #57) exists. Only the result
+              * panel works today. The saved value is kept as it
+              * is.
+              */}
 
             <div>
               <SectionTitle
