@@ -11,6 +11,8 @@ import {
   useSyncExternalStore,
 } from "react";
 
+import type { ReactNode } from "react";
+
 import type {
   AppearanceThemeConfig,
   WheelEntry,
@@ -43,6 +45,8 @@ type WheelProps = {
   accentClass: string;
   accentHoverClass: string;
   theme?: AppearanceThemeConfig;
+  expandedResult?: ReactNode;
+  onExpandedChange?: (expanded: boolean) => void;
 };
 
 const SIZE_STEP = 40;
@@ -616,6 +620,8 @@ export default function Wheel({
   accentClass,
   accentHoverClass,
   theme,
+  expandedResult,
+  onExpandedChange,
 }: WheelProps) {
   const imageClipPrefix = `slice-image-${toIdPart(
     useId(),
@@ -669,6 +675,10 @@ export default function Wheel({
 
   const expanded =
     fullscreen || inPageView;
+
+  useEffect(() => {
+    onExpandedChange?.(expanded);
+  }, [expanded, onExpandedChange]);
 
   const fullscreenSupported =
     useSyncExternalStore(
@@ -1619,6 +1629,12 @@ export default function Wheel({
         ) : null}
       </div>
       </div>
+
+      {expanded && expandedResult ? (
+        <div className="mt-4 max-h-[35dvh] w-full max-w-2xl shrink-0 overflow-y-auto overscroll-contain">
+          {expandedResult}
+        </div>
+      ) : null}
 
       <button
         type="button"

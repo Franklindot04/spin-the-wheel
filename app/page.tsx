@@ -42,6 +42,7 @@ export default function Home() {
     const [spinning, setSpinning,] = useState(false);
     const [selectedEntry, setSelectedEntry,] = useState<WheelEntry | null>(null);
     const [showAnswer, setShowAnswer,] = useState(false);
+    const [wheelExpanded, setWheelExpanded,] = useState(false);
     const [settingsOpen, setSettingsOpen,] = useState(false);
     const [settingsTab, setSettingsTab,] = useState<SettingsTab>("main");
     const [historyOpen, setHistoryOpen,] = useState(false);
@@ -1241,6 +1242,79 @@ export default function Home() {
     const actionHoverClass = appearanceTheme === "classic"
         ? "not-disabled:hover:bg-slate-600"
         : theme.accentHoverClass;
+    /*
+     * The result and the quiz card are drawn twice while the wheel is
+     * full screen: once in the page, hidden behind the full-screen view,
+     * and once inside the view (inView). Only the copy in the view is
+     * reachable, and it leaves out Back to Setup and Done.
+     */
+    function renderStandardResult(inView: boolean) {
+        if (!selectedEntry) {
+            return null;
+        }
+        return (<div className={inView ? "text-center" : "mt-6 text-center"} inert={inView ? undefined : wheelExpanded} aria-hidden={inView ? undefined : wheelExpanded || undefined}>
+          <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
+            Result
+          </p>
+          <p className={`mt-2 break-words text-2xl font-bold ${theme.textPrimaryClass}`}>
+            {selectedEntry.emoji && (<span aria-hidden="true">{selectedEntry.emoji}{" "}</span>)}
+            {selectedEntry.label}
+          </p>
+        </div>);
+    }
+    function renderQuizCard(inView: boolean) {
+        if (!displayedQuizEntry) {
+            return null;
+        }
+        return (<div role={inView ? "status" : undefined} inert={inView ? undefined : wheelExpanded} aria-hidden={inView ? undefined : wheelExpanded || undefined} className={`mx-auto max-w-2xl rounded-2xl border text-center shadow-sm ${inView ? "p-4" : "mt-6 p-6"} ${theme.borderClass} ${theme.surfaceClass}`}>
+          <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
+            And the question is...
+          </p>
+          <p className={`mt-2 break-words text-xl font-bold ${theme.textPrimaryClass}`}>
+            {displayedQuizEntry.emoji && (<span aria-hidden="true">{displayedQuizEntry.emoji}{" "}</span>)}
+            {displayedQuizEntry.label}
+          </p>
+          <div className={`mt-4 rounded-xl p-5 text-left ${theme.subtleSurfaceClass}`}>
+            <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
+              Your question
+            </p>
+            <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
+              {displayedQuizEntry.question}
+            </p>
+          </div>
+          {showAnswer && (<div className={`mt-4 rounded-xl border p-5 text-left ${theme.borderClass} ${theme.surfaceClass}`}>
+              <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
+                The answer
+              </p>
+              <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
+                {displayedQuizEntry.answer}
+              </p>
+            </div>)}
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <button type="button" onClick={() => setShowAnswer((current) => !current)} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
+              {showAnswer
+            ? "Hide Answer"
+            : "Show Answer"}
+            </button>
+            {!quizComplete &&
+                !remainingQuizEntriesHidden && (<button type="button" onClick={nextSpin} disabled={spinning ||
+                remainingVisibleQuizCount <
+                    1} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
+                Give it another spin 😉
+              </button>)}
+            {!inView &&
+                (quizComplete ||
+                    remainingQuizEntriesHidden) && (<>
+                <button type="button" onClick={backToQuizSetup} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                  Back to Setup
+                </button>
+                <button type="button" onClick={dismissQuizCard} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
+                  Done
+                </button>
+              </>)}
+          </div>
+        </div>);
+    }
     if (!storageLoaded) {
         return (<main key="loading-shell" className="shell-page min-h-screen" aria-busy="true">
         <header className="shell-header border-b">
@@ -1386,7 +1460,13 @@ export default function Home() {
                     ...wheel.settings,
                     wheelSize: size,
                 },
-            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} expandedResult={mode === "standard"
+                ? (<div role="status" className="min-h-14">
+                  {renderStandardResult(true)}
+                </div>)
+                : quizStarted && displayedQuizEntry
+                    ? renderQuizCard(true)
+                    : null}/>
           </div>
           {mode === "quiz" &&
             !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
@@ -1405,53 +1485,7 @@ export default function Home() {
             </div>)}
           {mode === "quiz" &&
             quizStarted &&
-            displayedQuizEntry && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 text-center shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
-              <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
-                And the question is...
-              </p>
-              <p className={`mt-2 break-words text-xl font-bold ${theme.textPrimaryClass}`}>
-                {displayedQuizEntry.emoji && (<span aria-hidden="true">{displayedQuizEntry.emoji}{" "}</span>)}
-                {displayedQuizEntry.label}
-              </p>
-              <div className={`mt-4 rounded-xl p-5 text-left ${theme.subtleSurfaceClass}`}>
-                <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
-                  Your question
-                </p>
-                <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
-                  {displayedQuizEntry.question}
-                </p>
-              </div>
-              {showAnswer && (<div className={`mt-4 rounded-xl border p-5 text-left ${theme.borderClass} ${theme.surfaceClass}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
-                    The answer
-                  </p>
-                  <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
-                    {displayedQuizEntry.answer}
-                  </p>
-                </div>)}
-              <div className="mt-5 flex flex-wrap justify-center gap-2">
-                <button type="button" onClick={() => setShowAnswer((current) => !current)} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
-                  {showAnswer
-                ? "Hide Answer"
-                : "Show Answer"}
-                </button>
-                {!quizComplete &&
-                    !remainingQuizEntriesHidden && (<button type="button" onClick={nextSpin} disabled={spinning ||
-                    remainingVisibleQuizCount <
-                        1} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
-                    Give it another spin 😉
-                  </button>)}
-                {(quizComplete ||
-                    remainingQuizEntriesHidden) && (<>
-                    <button type="button" onClick={backToQuizSetup} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                      Back to Setup
-                    </button>
-                    <button type="button" onClick={dismissQuizCard} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                      Done
-                    </button>
-                  </>)}
-              </div>
-            </div>)}
+            displayedQuizEntry && renderQuizCard(false)}
           {mode === "quiz" &&
             quizStarted &&
             !displayedQuizEntry &&
@@ -1472,15 +1506,7 @@ export default function Home() {
               </p>
             </div>)}
           {mode === "standard" &&
-            selectedEntry && (<div className="mt-6 text-center">
-              <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
-                Result
-              </p>
-              <p className={`mt-2 break-words text-2xl font-bold ${theme.textPrimaryClass}`}>
-                {selectedEntry.emoji && (<span aria-hidden="true">{selectedEntry.emoji}{" "}</span>)}
-                {selectedEntry.label}
-              </p>
-            </div>)}
+            selectedEntry && renderStandardResult(false)}
         </div>
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center gap-2">
