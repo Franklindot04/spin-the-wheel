@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- In both fullscreen views the winner now shows under the wheel. In Quiz Mode the question card shows there too, with Show Answer and Give it another spin.
+- On a phone held sideways, the fullscreen views use two columns, with the wheel on the left and the result and Spin on the right, so the wheel stays large.
+- The wheel size buttons are hidden in both fullscreen views, where they had no visible effect.
+- When an entry has an image, its label is cut a little sooner so the image always fits next to it. The label font shrinks first, then the text is cut with "…".
+- The Done button in Settings follows the selected theme.
+
 ## [2.2.0] - 2026-10-18
 
 ### Added
