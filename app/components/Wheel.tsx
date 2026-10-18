@@ -27,11 +27,7 @@ import {
   stopWinnerSound,
   unlock,
 } from "../lib/sound-engine";
-import {
-  FILLER_PITCH,
-  FILLER_STRENGTH,
-  createTickTracker,
-} from "../lib/spin-ticks";
+import { createTickTracker } from "../lib/spin-ticks";
 import {
   getEntryWeight,
   truncateGraphemes,
@@ -912,21 +908,15 @@ export default function Wheel({
       );
 
       if (angle !== null) {
-        const tick = tracker.update(
+        const edges = tracker.update(
           angle,
           now,
         );
 
-        if (tick?.kind === "edges") {
+        if (edges > 0) {
           playSpinTick(
             spinSound,
-            1 + Math.min(tick.edges - 1, 4) * 0.125,
-          );
-        } else if (tick?.kind === "filler") {
-          playSpinTick(
-            spinSound,
-            FILLER_STRENGTH,
-            FILLER_PITCH,
+            1 + Math.min(edges - 1, 4) * 0.125,
           );
         }
       }

@@ -17,28 +17,6 @@
  */
 export const MIN_TICK_GAP_MS = 32;
 
-/*
- * A wide slice, or the slow end of a spin, can leave the
- * wheel turning in silence. When nothing has played for
- * this long and the wheel is still turning faster than
- * the speed below (degrees per second), a soft filler
- * tick plays. Any sound restarts the wait. Once the wheel
- * is slower than that it is left to settle quietly.
- */
-export const FILLER_AFTER_MS = 280;
-
-export const FILLER_MIN_SPEED = 8;
-
-/*
- * The filler is half as loud as an edge tick and a little
- * lower in pitch, so it is not mistaken for a slice edge.
- */
-export const FILLER_STRENGTH = 0.5;
-
-export const FILLER_PITCH = 0.85;
-
-const SPEED_WINDOW_MS = 50;
-
 function positiveModulo(
   value: number,
   divisor: number,
@@ -88,25 +66,19 @@ function edgeTotal(
   );
 }
 
-export type TickEvent =
-  | { kind: "edges"; edges: number }
-  | { kind: "filler" }
-  | null;
-
 export type TickTracker = {
   /*
    * Give it the wheel's current rotation in degrees
    * (any whole turns are fine) and the time in
-   * milliseconds. It returns null when nothing should
-   * play. For a slice edge it returns how many edges
-   * went by since the last sound, so a fast stretch can
-   * be a little louder. For a long silence it returns a
-   * filler.
+   * milliseconds. It returns 0 when nothing should
+   * play. Otherwise it returns how many edges went
+   * by since the last sound, so a fast stretch can
+   * be a little louder.
    */
   update: (
     rotation: number,
     now: number,
-  ) => TickEvent;
+  ) => number;
 };
 
 export function createTickTracker(
@@ -118,10 +90,6 @@ export function createTickTracker(
   let lastTotal = 0;
   let pendingEdges = 0;
   let lastTickAt = -Infinity;
-  let lastSoundAt = 0;
-  let speed = 0;
-  let speedMarkRotation = 0;
-  let speedMarkAt = 0;
 
   return {
     update(rotation, now) {
@@ -129,7 +97,7 @@ export function createTickTracker(
         sliceStarts.length === 0 ||
         !Number.isFinite(rotation)
       ) {
-        return null;
+        return 0;
       }
 
       if (lastRotation === null) {
@@ -139,11 +107,8 @@ export function createTickTracker(
           sliceStarts,
           -unwrapped,
         );
-        lastSoundAt = now;
-        speedMarkRotation = unwrapped;
-        speedMarkAt = now;
 
-        return null;
+        return 0;
       }
 
       /*
@@ -163,15 +128,6 @@ export function createTickTracker(
       lastRotation = rotation;
       unwrapped += step;
 
-      if (now - speedMarkAt >= SPEED_WINDOW_MS) {
-        speed =
-          ((unwrapped - speedMarkRotation) /
-            (now - speedMarkAt)) *
-          1000;
-        speedMarkRotation = unwrapped;
-        speedMarkAt = now;
-      }
-
       const total = edgeTotal(
         sliceStarts,
         -unwrapped,
@@ -183,31 +139,19 @@ export function createTickTracker(
 
       lastTotal = total;
 
-      if (now - lastTickAt < minGapMs) {
-        return null;
-      }
-
-      if (pendingEdges > 0) {
-        const edges = pendingEdges;
-
-        pendingEdges = 0;
-        lastTickAt = now;
-        lastSoundAt = now;
-
-        return { kind: "edges", edges };
-      }
-
       if (
-        speed >= FILLER_MIN_SPEED &&
-        now - lastSoundAt >= FILLER_AFTER_MS
+        pendingEdges === 0 ||
+        now - lastTickAt < minGapMs
       ) {
-        lastTickAt = now;
-        lastSoundAt = now;
-
-        return { kind: "filler" };
+        return 0;
       }
 
-      return null;
+      const edges = pendingEdges;
+
+      pendingEdges = 0;
+      lastTickAt = now;
+
+      return edges;
     },
   };
 }

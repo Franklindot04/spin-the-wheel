@@ -251,7 +251,6 @@ function getNoiseBuffer(
 export function playSpinTick(
   sound: string,
   strength = 1,
-  pitch = 1,
 ) {
   try {
     if (
@@ -287,7 +286,7 @@ export function playSpinTick(
       source.buffer = getNoiseBuffer(audio);
       filter.type = "bandpass";
       filter.frequency.value =
-        (1800 + Math.random() * 400) * pitch;
+        1800 + Math.random() * 400;
       filter.Q.value = 1.2;
       source.connect(filter);
       filter.connect(envelope);
@@ -313,11 +312,11 @@ export function playSpinTick(
        * A soft bubble: a low note that drops fast.
        */
       oscillator.frequency.setValueAtTime(
-        620 * pitch,
+        620,
         start,
       );
       oscillator.frequency.exponentialRampToValueAtTime(
-        160 * pitch,
+        160,
         start + 0.06,
       );
 
@@ -338,15 +337,14 @@ export function playSpinTick(
      * A light tick: a high note that falls a little,
      * with a tiny change in pitch each time.
      */
-    const note =
-      1500 * pitch * (0.95 + Math.random() * 0.1);
+    const pitch = 1500 * (0.95 + Math.random() * 0.1);
 
     oscillator.frequency.setValueAtTime(
-      note,
+      pitch,
       start,
     );
     oscillator.frequency.exponentialRampToValueAtTime(
-      note * 0.6,
+      pitch * 0.6,
       start + 0.02,
     );
 
