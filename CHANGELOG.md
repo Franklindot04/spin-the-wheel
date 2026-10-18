@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- While a quiz is running, the list no longer shows the questions and answers, so players cannot read ahead. You can still hide questions and change their weight. Back to Setup shows them again.
+- The History tab hides question text while a quiz is running.
+- A note near the toolbar warns that exports include all questions and answers.
+
 ## [2.4.0] - 2026-10-18
 
 ### Added
