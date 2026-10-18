@@ -376,6 +376,12 @@ let winnerRequest = 0;
 let applauseBuffer: AudioBuffer | null = null;
 
 /*
+ * The loudest point of the applause. It is kept well below
+ * the notes of the other winner sounds.
+ */
+const APPLAUSE_LEVEL = 0.55;
+
+/*
  * Decoded uploaded sounds, kept by their data URL.
  * null means the file could not be decoded, so it is
  * not tried again. Only the last few are kept, since
@@ -537,18 +543,51 @@ function playChime(
   }
 }
 
+/*
+ * How many claps per second the whole crowd makes, at a
+ * moment in the applause. It builds up, stays busy for a
+ * moment, then thins out.
+ */
+const APPLAUSE_SECONDS = 2.6;
+
+const APPLAUSE_BUSIEST = 54;
+
+function getClapRate(time: number): number {
+  if (time < 0.9) {
+    return 6 + (APPLAUSE_BUSIEST - 6) * (time / 0.9);
+  }
+
+  if (time < 1.4) {
+    return APPLAUSE_BUSIEST;
+  }
+
+  return Math.max(
+    4,
+    APPLAUSE_BUSIEST * (1 - (time - 1.4) / 1.2),
+  );
+}
+
 function playApplause(
   audio: AudioContext,
   bus: GainNode,
 ) {
   /*
-   * Many tiny claps of filtered noise. They bunch up
-   * in the middle and thin out at the ends.
+   * A small crowd, about two and a half seconds, kept
+   * quiet. Three layers share one swell that rises, eases
+   * back and fades:
+   *
+   * - A soft hiss of the room: noise with the lows and
+   *   highs taken off.
+   * - Three groups of people, each with its own random
+   *   claps (short bursts of noise, each with a slightly
+   *   different tone). They sit left, middle and right
+   *   where the browser can pan them.
+   *
+   * Claps come close together in the middle and are
+   * sparse at the start and the end.
    */
-  const LENGTH = 1.8;
-
   if (!applauseBuffer) {
-    const size = Math.floor(audio.sampleRate * 2.5);
+    const size = Math.floor(audio.sampleRate * 3);
     const buffer = audio.createBuffer(
       1,
       size,
@@ -563,59 +602,118 @@ function playApplause(
     applauseBuffer = buffer;
   }
 
-  const source = audio.createBufferSource();
-  const filter = audio.createBiquadFilter();
-  const claps = audio.createGain();
   const begin = audio.currentTime;
+  const end = begin + APPLAUSE_SECONDS;
+  const swell = audio.createGain();
 
-  source.buffer = applauseBuffer;
-  filter.type = "bandpass";
-  filter.frequency.value = 2200;
-  filter.Q.value = 0.5;
+  swell.connect(bus);
+  swell.gain.setValueAtTime(0.001, begin);
+  swell.gain.linearRampToValueAtTime(
+    APPLAUSE_LEVEL,
+    begin + 0.7,
+  );
+  swell.gain.linearRampToValueAtTime(
+    APPLAUSE_LEVEL * 0.7,
+    begin + 1.5,
+  );
+  swell.gain.exponentialRampToValueAtTime(0.001, end);
 
-  source.connect(filter);
-  filter.connect(claps);
-  claps.connect(bus);
+  const room = audio.createBufferSource();
+  const roomLow = audio.createBiquadFilter();
+  const roomHigh = audio.createBiquadFilter();
+  const roomGain = audio.createGain();
 
-  claps.gain.setValueAtTime(0, begin);
+  room.buffer = applauseBuffer;
+  roomLow.type = "highpass";
+  roomLow.frequency.value = 450;
+  roomHigh.type = "lowpass";
+  roomHigh.frequency.value = 2600;
+  roomGain.gain.value = 0.16;
 
-  const times: number[] = [];
+  room.connect(roomLow);
+  roomLow.connect(roomHigh);
+  roomHigh.connect(roomGain);
+  roomGain.connect(swell);
+  room.start(begin, Math.random() * 0.3);
+  room.stop(end + 0.05);
 
-  while (times.length < 45) {
-    const at = Math.random() * LENGTH;
+  const groups = [
+    { pan: -0.8, tone: 1500 },
+    { pan: 0, tone: 2300 },
+    { pan: 0.8, tone: 3100 },
+  ];
 
-    if (
-      Math.random() <
-      Math.pow(Math.sin((Math.PI * at) / LENGTH), 0.6)
-    ) {
-      times.push(at);
+  for (const group of groups) {
+    const source = audio.createBufferSource();
+    const filter = audio.createBiquadFilter();
+    const claps = audio.createGain();
+
+    source.buffer = applauseBuffer;
+    filter.type = "bandpass";
+    filter.Q.value = 1;
+    filter.frequency.setValueAtTime(group.tone, begin);
+    claps.gain.setValueAtTime(0, begin);
+
+    source.connect(filter);
+    filter.connect(claps);
+
+    if (typeof audio.createStereoPanner === "function") {
+      const panner = audio.createStereoPanner();
+
+      panner.pan.value = group.pan;
+      claps.connect(panner);
+      panner.connect(swell);
+    } else {
+      claps.connect(swell);
     }
+
+    /*
+     * Claps for this group: random times, thinned to
+     * follow the crowd's rate. Times only go forward and
+     * never overlap, which the gain automation needs.
+     */
+    let clock = 0;
+
+    for (;;) {
+      clock +=
+        -Math.log(1 - Math.random()) /
+        (APPLAUSE_BUSIEST / groups.length);
+
+      if (clock >= APPLAUSE_SECONDS) {
+        break;
+      }
+
+      if (
+        Math.random() >
+        getClapRate(clock) / APPLAUSE_BUSIEST
+      ) {
+        continue;
+      }
+
+      const clapStart = begin + clock;
+      const length = 0.012 + Math.random() * 0.028;
+      const level = 0.4 + Math.random() * 0.6;
+
+      filter.frequency.setValueAtTime(
+        group.tone * (0.7 + Math.random() * 0.7),
+        clapStart,
+      );
+      claps.gain.setValueAtTime(0, clapStart);
+      claps.gain.linearRampToValueAtTime(
+        level,
+        clapStart + 0.002,
+      );
+      claps.gain.exponentialRampToValueAtTime(
+        0.001,
+        clapStart + length,
+      );
+
+      clock += length + 0.002;
+    }
+
+    source.start(begin, Math.random() * 0.3);
+    source.stop(end + 0.05);
   }
-
-  times.sort((first, second) => first - second);
-
-  let free = 0;
-
-  for (const at of times) {
-    const clapStart = begin + Math.max(at, free);
-    const length = 0.015 + Math.random() * 0.025;
-    const level = 0.12 + Math.random() * 0.28;
-
-    claps.gain.setValueAtTime(0, clapStart);
-    claps.gain.linearRampToValueAtTime(
-      level,
-      clapStart + 0.003,
-    );
-    claps.gain.exponentialRampToValueAtTime(
-      0.001,
-      clapStart + length,
-    );
-
-    free = clapStart - begin + length + 0.002;
-  }
-
-  source.start(begin, Math.random() * 0.4);
-  source.stop(begin + free + 0.1);
 }
 
 function playPresetWinnerSound(
@@ -636,7 +734,7 @@ function playPresetWinnerSound(
   }
 
   const seconds =
-    sound === "applause" ? 2.4 : 2;
+    sound === "applause" ? 3 : 2;
   const bus = openWinnerBus(target, seconds);
 
   if (sound === "success") {
