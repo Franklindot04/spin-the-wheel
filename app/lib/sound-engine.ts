@@ -32,6 +32,19 @@ let volume = DEFAULT_VOLUME;
 let listeningForVisibility = false;
 
 /*
+ * Lets a sound preview in Settings play while Enable sound
+ * is off. It does not change the saved setting. Volume 0 and
+ * a hidden page still keep it silent, and changing the
+ * Enable sound setting (for example with the speaker button)
+ * turns it off again.
+ */
+let previewOverride = false;
+
+export function allowPreview(allowed: boolean) {
+  previewOverride = allowed;
+}
+
+/*
  * Maps the 0 to 100 volume setting to a gain.
  * Squaring it follows how loudness is heard, so
  * the lower half of the slider is not too loud.
@@ -170,12 +183,19 @@ export function setSoundSettings(settings: {
   enabled: boolean;
   volume: number;
 }) {
+  if (settings.enabled !== soundEnabled) {
+    previewOverride = false;
+  }
+
   soundEnabled = settings.enabled;
   volume = settings.volume;
 
   applyVolume();
 
-  if (!soundEnabled || volume <= 0) {
+  if (
+    (!soundEnabled && !previewOverride) ||
+    volume <= 0
+  ) {
     stopWinnerSound();
   }
 }
@@ -918,7 +938,7 @@ export function getSoundOutput():
   SoundOutput | null {
   try {
     if (
-      !soundEnabled ||
+      (!soundEnabled && !previewOverride) ||
       volume <= 0 ||
       !isPageVisible() ||
       !context ||
