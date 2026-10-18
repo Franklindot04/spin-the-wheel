@@ -54,6 +54,8 @@ type WheelProps = {
   soundActive?: boolean;
   confettiStyle?: ConfettiEffect;
   confettiRun?: number;
+  soundEnabled?: boolean;
+  onSoundToggle?: () => void;
   pointerMatchSliceColor?: boolean;
   wheelSize?: number;
   onWheelSizeChange?: (size: number) => void;
@@ -622,6 +624,39 @@ function FullscreenIcon({
   );
 }
 
+function SpeakerIcon({
+  muted,
+}: {
+  muted: boolean;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 5 6 9H3v6h3l5 4z" />
+
+      {muted ? (
+        <>
+          <path d="M16 9.5l5 5" />
+          <path d="M21 9.5l-5 5" />
+        </>
+      ) : (
+        <>
+          <path d="M15.5 9a4 4 0 0 1 0 6" />
+          <path d="M18.5 6.5a8 8 0 0 1 0 11" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function MinusIcon() {
   return (
     <svg
@@ -669,6 +704,8 @@ export default function Wheel({
   soundActive = false,
   confettiStyle = "none",
   confettiRun = 0,
+  soundEnabled = true,
+  onSoundToggle,
   pointerMatchSliceColor = true,
   wheelSize,
   onWheelSizeChange,
@@ -1526,6 +1563,31 @@ export default function Wheel({
               : ""
           }`}
         >
+          {onSoundToggle ? (
+            <button
+              type="button"
+              onClick={onSoundToggle}
+              aria-pressed={!soundEnabled}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+                theme
+                  ? `${theme.controlClass} ${theme.controlHoverClass}`
+                  : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+              }`}
+              aria-label={
+                soundEnabled
+                  ? "Mute sound"
+                  : "Unmute sound"
+              }
+              title={
+                soundEnabled
+                  ? "Mute sound"
+                  : "Unmute sound"
+              }
+            >
+              <SpeakerIcon muted={!soundEnabled} />
+            </button>
+          ) : null}
+
           {inPageView ? (
             <button
               ref={closeButtonRef}

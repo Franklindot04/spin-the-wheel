@@ -227,6 +227,24 @@ export default function Home() {
             volume: soundVolume,
         });
     }, [soundEnabled, soundVolume]);
+    function toggleSound() {
+        const next = !soundEnabled;
+        /*
+         * Tell the sound engine right away so ticks and a
+         * winner sound that is playing stop at once, without
+         * waiting for the next render.
+         */
+        setSoundSettings({
+            enabled: next,
+            volume: soundVolume,
+        });
+        setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
+            settings: {
+                ...wheel.settings,
+                soundEnabled: next,
+            },
+        })));
+    }
     const standardHistory = activeWheel.standardHistory;
     const setStandardHistory = (next: SetStateAction<SpinHistoryItem[]>) => {
         setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
@@ -1464,7 +1482,7 @@ export default function Home() {
           <div className={mode === "quiz"
             ? "flex min-h-0 items-center justify-center sm:min-h-[560px]"
             : "flex min-h-0 items-center justify-center sm:min-h-[620px]"}>
-            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} spinSound={activeWheel.settings.spinSound} soundActive={soundEnabled && soundVolume > 0} confettiStyle={(activeWheel.settings.confettiEnabled ?? DEFAULT_CONFETTI_ENABLED) ? (activeWheel.settings.confettiEffect ?? DEFAULT_CONFETTI_EFFECT) : "none"} confettiRun={confettiRun} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
+            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} spinSound={activeWheel.settings.spinSound} soundActive={soundEnabled && soundVolume > 0} confettiStyle={(activeWheel.settings.confettiEnabled ?? DEFAULT_CONFETTI_ENABLED) ? (activeWheel.settings.confettiEffect ?? DEFAULT_CONFETTI_EFFECT) : "none"} confettiRun={confettiRun} soundEnabled={soundEnabled} onSoundToggle={toggleSound} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings
