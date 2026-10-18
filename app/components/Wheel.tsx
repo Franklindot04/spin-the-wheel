@@ -1181,7 +1181,7 @@ export default function Wheel({
       }
       className={
         expanded
-          ? `flex h-dvh w-full flex-col items-center overflow-hidden overscroll-contain p-4 sm:p-8 ${
+          ? `wheel-expanded flex h-dvh w-full flex-col items-center overflow-hidden overscroll-contain p-4 sm:p-8 ${
               inPageView
                 ? "fixed inset-x-0 top-0 z-[100]"
                 : ""
@@ -1193,7 +1193,7 @@ export default function Wheel({
       }
     >
       <div
-        className="mb-4 flex w-full max-w-[760px] shrink-0 items-center justify-end gap-3 sm:justify-between"
+        className="wheel-controls mb-4 flex w-full max-w-[760px] shrink-0 items-center justify-end gap-3 sm:justify-between"
         aria-label="Wheel controls"
       >
         <div
@@ -1631,7 +1631,7 @@ export default function Wheel({
       </div>
 
       {expanded && expandedResult ? (
-        <div className="mt-4 max-h-[35dvh] w-full max-w-2xl shrink-0 overflow-y-auto overscroll-contain">
+        <div className="wheel-slot mt-4 max-h-[35dvh] w-full max-w-2xl shrink-0 overflow-y-auto overscroll-contain">
           {expandedResult}
         </div>
       ) : null}
@@ -1645,7 +1645,7 @@ export default function Wheel({
           visibleEntries.length <
             minSpinEntries
         }
-        className={`mt-6 min-w-32 shrink-0 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
+        className={`wheel-spin mt-6 min-w-32 shrink-0 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
       >
         {spinning
           ? "Spinning…"
