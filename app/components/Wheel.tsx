@@ -11,6 +11,8 @@ import {
   useSyncExternalStore,
 } from "react";
 
+import type { ReactNode } from "react";
+
 import type {
   AppearanceThemeConfig,
   WheelEntry,
@@ -43,6 +45,8 @@ type WheelProps = {
   accentClass: string;
   accentHoverClass: string;
   theme?: AppearanceThemeConfig;
+  expandedResult?: ReactNode;
+  onExpandedChange?: (expanded: boolean) => void;
 };
 
 const SIZE_STEP = 40;
@@ -50,6 +54,14 @@ const VIEWBOX_SIZE = 440;
 const CENTER = VIEWBOX_SIZE / 2;
 const RADIUS = 205;
 const LABEL_MAX_WIDTH = 130;
+/*
+ * Label width budget for an entry with an
+ * image. The label ends at LABEL_RADIUS plus
+ * half its width, so 86 keeps it within 175.
+ * That leaves room for a 24-unit image before
+ * the rim gap.
+ */
+const LABEL_MAX_WIDTH_WITH_IMAGE = 86;
 const LABEL_CHAR_WIDTH = 0.6;
 const LABEL_RADIUS = 132;
 const LABEL_MAX_FONT_SIZE = 15;
@@ -182,7 +194,8 @@ function describeArc(
 function getLabelLayout(
   label: string,
   angle: number,
-  emoji?: string,
+  emoji: string | undefined,
+  maxWidth: number,
 ) {
   /*
    * The emoji and the gap after it are
@@ -201,7 +214,7 @@ function getLabelLayout(
     fontSize--
   ) {
     const maxChars = Math.floor(
-      (LABEL_MAX_WIDTH -
+      (maxWidth -
         emojiAdvance * fontSize) /
         (fontSize *
           LABEL_CHAR_WIDTH),
@@ -295,6 +308,7 @@ function getSliceLayout(
   angle: number,
   emoji: string | undefined,
   hideLabels: boolean,
+  maxWidth: number,
 ) {
   if (hideLabels) {
     return emoji
@@ -310,6 +324,7 @@ function getSliceLayout(
       label,
       angle,
       emoji,
+      maxWidth,
     ) ??
     (emoji
       ? getEmojiOnlyLayout(
@@ -605,6 +620,8 @@ export default function Wheel({
   accentClass,
   accentHoverClass,
   theme,
+  expandedResult,
+  onExpandedChange,
 }: WheelProps) {
   const imageClipPrefix = `slice-image-${toIdPart(
     useId(),
@@ -658,6 +675,10 @@ export default function Wheel({
 
   const expanded =
     fullscreen || inPageView;
+
+  useEffect(() => {
+    onExpandedChange?.(expanded);
+  }, [expanded, onExpandedChange]);
 
   const fullscreenSupported =
     useSyncExternalStore(
@@ -1160,7 +1181,7 @@ export default function Wheel({
       }
       className={
         expanded
-          ? `flex h-dvh w-full flex-col items-center overflow-hidden overscroll-contain p-4 sm:p-8 ${
+          ? `wheel-expanded flex h-dvh w-full flex-col items-center overflow-hidden overscroll-contain p-4 sm:p-8 ${
               inPageView
                 ? "fixed inset-x-0 top-0 z-[100]"
                 : ""
@@ -1172,11 +1193,15 @@ export default function Wheel({
       }
     >
       <div
-        className="mb-4 flex w-full max-w-[760px] shrink-0 items-center justify-end gap-3 sm:justify-between"
+        className="wheel-controls mb-4 flex w-full max-w-[760px] shrink-0 items-center justify-end gap-3 sm:justify-between"
         aria-label="Wheel controls"
       >
         <div
-          className={`hidden items-center overflow-hidden rounded-xl border shadow-sm sm:flex ${
+          className={`hidden items-center overflow-hidden rounded-xl border shadow-sm ${
+            expanded
+              ? ""
+              : "sm:flex"
+          } ${
             theme?.controlClass ??
             "border-slate-300 bg-white"
           }`}
@@ -1240,7 +1265,13 @@ export default function Wheel({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div
+          className={`flex items-center gap-2 ${
+            expanded
+              ? "ml-auto"
+              : ""
+          }`}
+        >
           {inPageView ? (
             <button
               ref={closeButtonRef}
@@ -1383,6 +1414,9 @@ export default function Wheel({
                     entry.emoji,
                     visibleEntries.length >=
                       HIDE_LABELS_AT,
+                    entry.image
+                      ? LABEL_MAX_WIDTH_WITH_IMAGE
+                      : LABEL_MAX_WIDTH,
                   );
 
                 const imagePlacement =
@@ -1606,6 +1640,12 @@ export default function Wheel({
       </div>
       </div>
 
+      {expanded && expandedResult ? (
+        <div className="wheel-slot mt-4 max-h-[35dvh] w-full max-w-2xl shrink-0 overflow-y-auto overscroll-contain">
+          {expandedResult}
+        </div>
+      ) : null}
+
       <button
         type="button"
         onClick={handleSpin}
@@ -1615,7 +1655,7 @@ export default function Wheel({
           visibleEntries.length <
             minSpinEntries
         }
-        className={`mt-6 min-w-32 shrink-0 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
+        className={`wheel-spin mt-6 min-w-32 shrink-0 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
       >
         {spinning
           ? "Spinning…"
