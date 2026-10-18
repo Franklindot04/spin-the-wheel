@@ -14,6 +14,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - The in-page full-screen view keeps clear of the status bar and home indicator on notched phones, uses a stable viewport height, and fades in after rotating.
 
+### Fixed
+
+- On iPhone in a normal browser tab, the in-page full-screen view now covers the whole visible area, so the page behind no longer shows below it, and the quiz card is no longer cut off in landscape.
+- While the in-page full-screen view is open, the page behind it is hidden and cannot be reached with Tab.
+
 ## [2.3.0] - 2026-10-18
 
 ### Changed

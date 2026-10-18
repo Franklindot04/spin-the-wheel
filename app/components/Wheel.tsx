@@ -963,6 +963,12 @@ export default function Wheel({
     document.documentElement.style.overscrollBehavior =
       "contain";
 
+    // The page behind is hidden while the view is open (see globals.css).
+    document.documentElement.setAttribute(
+      "data-wheel-view",
+      "open",
+    );
+
     window.addEventListener(
       "keydown",
       handleKeyDown,
@@ -984,6 +990,10 @@ export default function Wheel({
       window.removeEventListener(
         "popstate",
         handlePopState,
+      );
+
+      document.documentElement.removeAttribute(
+        "data-wheel-view",
       );
 
       document.body.style.overflow =
@@ -1174,17 +1184,33 @@ export default function Wheel({
     );
   }
 
+  /*
+   * The in-page view is pinned with inset-0 and
+   * has no viewport-unit height, so it follows
+   * the visible area as the browser bars move.
+   * The frame around it is the size container
+   * that the landscape column and the result
+   * slot measure against. Outside the in-page
+   * view it generates no box.
+   */
   return (
+    <div
+      className={
+        inPageView
+          ? "wheel-view-frame fixed inset-0 z-[100]"
+          : "contents"
+      }
+    >
     <div
       ref={
         wheelContainerRef
       }
       className={
         expanded
-          ? `wheel-expanded flex h-svh w-full flex-col items-center overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:pt-[max(2rem,env(safe-area-inset-top))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] sm:pl-[max(2rem,env(safe-area-inset-left))] ${
+          ? `wheel-expanded flex w-full flex-col items-center overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:pt-[max(2rem,env(safe-area-inset-top))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] sm:pl-[max(2rem,env(safe-area-inset-left))] ${
               inPageView
-                ? "fixed inset-x-0 top-0 z-[100]"
-                : ""
+                ? "h-full"
+                : "h-dvh"
             } ${
               theme?.pageClass ??
               "bg-white"
@@ -1641,7 +1667,7 @@ export default function Wheel({
       </div>
 
       {expanded && expandedResult ? (
-        <div className="wheel-slot mt-4 max-h-[35svh] w-full max-w-2xl shrink-0 overflow-y-auto overscroll-contain">
+        <div className="wheel-slot mt-4 w-full max-w-2xl shrink-0 overflow-y-auto overscroll-contain">
           {expandedResult}
         </div>
       ) : null}
@@ -1661,6 +1687,7 @@ export default function Wheel({
           ? "Spinning…"
           : "Spin"}
       </button>
+    </div>
     </div>
   );
 }
