@@ -1020,12 +1020,13 @@ export default function Home() {
             }
             setSelectedEntry(finalEntry);
             setSpinning(false);
-            playWinnerSound(activeWheel.settings.winnerSound ?? "success", finalEntry.winnerSound);
             /*
-             * In Quiz Mode the confetti waits for Show Answer.
+             * In Quiz Mode the winner sound and the confetti wait
+             * for Show Answer.
              */
             answerConfettiFiredRef.current = false;
             if (mode !== "quiz") {
+                playWinnerSound(activeWheel.settings.winnerSound ?? "success", finalEntry.winnerSound);
                 setConfettiRun((current) => current + 1);
             }
             addHistoryItem(finalEntry, mode);
@@ -1288,15 +1289,17 @@ export default function Home() {
      * reachable, and it leaves out Back to Setup and Done.
      */
     /*
-     * Show Answer fires the confetti once for each drawn
-     * question. Hiding the answer and showing it again does
-     * not fire it again. A new draw resets this.
+     * Show Answer plays the winner sound and fires the
+     * confetti once for each drawn question. Hiding the
+     * answer and showing it again does not repeat them. A
+     * new draw resets this.
      */
     function toggleAnswer() {
         const reveal = !showAnswer;
         setShowAnswer(reveal);
         if (reveal && !answerConfettiFiredRef.current) {
             answerConfettiFiredRef.current = true;
+            playWinnerSound(activeWheel.settings.winnerSound ?? "success", selectedEntry?.winnerSound);
             setConfettiRun((current) => current + 1);
         }
     }
