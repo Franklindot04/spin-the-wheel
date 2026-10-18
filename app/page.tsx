@@ -1564,6 +1564,9 @@ export default function Home() {
             </button>
             <input ref={importInputRef} type="file" accept=".json,application/json" onChange={handleImportFile} className="hidden"/>
           </div>
+          {quizTextLocked && (<p className={`-mt-2 mb-4 text-xs leading-5 ${theme.textMutedClass}`}>
+              Exports include all questions and answers.
+            </p>)}
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
                 quizStarted} deletionsDisabled={mode === "quiz" &&
