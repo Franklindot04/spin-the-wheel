@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- The site can be added to the iPhone home screen, with an app icon and a web app manifest.
+
+### Changed
+
+- The in-page full-screen view keeps clear of the status bar and home indicator on notched phones, uses a stable viewport height, and fades in after rotating.
+
 ## [2.3.0] - 2026-10-18
 
 ### Changed
