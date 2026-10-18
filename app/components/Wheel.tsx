@@ -50,6 +50,14 @@ const VIEWBOX_SIZE = 440;
 const CENTER = VIEWBOX_SIZE / 2;
 const RADIUS = 205;
 const LABEL_MAX_WIDTH = 130;
+/*
+ * Label width budget for an entry with an
+ * image. The label ends at LABEL_RADIUS plus
+ * half its width, so 86 keeps it within 175.
+ * That leaves room for a 24-unit image before
+ * the rim gap.
+ */
+const LABEL_MAX_WIDTH_WITH_IMAGE = 86;
 const LABEL_CHAR_WIDTH = 0.6;
 const LABEL_RADIUS = 132;
 const LABEL_MAX_FONT_SIZE = 15;
@@ -182,7 +190,8 @@ function describeArc(
 function getLabelLayout(
   label: string,
   angle: number,
-  emoji?: string,
+  emoji: string | undefined,
+  maxWidth: number,
 ) {
   /*
    * The emoji and the gap after it are
@@ -201,7 +210,7 @@ function getLabelLayout(
     fontSize--
   ) {
     const maxChars = Math.floor(
-      (LABEL_MAX_WIDTH -
+      (maxWidth -
         emojiAdvance * fontSize) /
         (fontSize *
           LABEL_CHAR_WIDTH),
@@ -295,6 +304,7 @@ function getSliceLayout(
   angle: number,
   emoji: string | undefined,
   hideLabels: boolean,
+  maxWidth: number,
 ) {
   if (hideLabels) {
     return emoji
@@ -310,6 +320,7 @@ function getSliceLayout(
       label,
       angle,
       emoji,
+      maxWidth,
     ) ??
     (emoji
       ? getEmojiOnlyLayout(
@@ -1383,6 +1394,9 @@ export default function Wheel({
                     entry.emoji,
                     visibleEntries.length >=
                       HIDE_LABELS_AT,
+                    entry.image
+                      ? LABEL_MAX_WIDTH_WITH_IMAGE
+                      : LABEL_MAX_WIDTH,
                   );
 
                 const imagePlacement =
