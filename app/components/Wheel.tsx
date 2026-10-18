@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
+  useId,
   useRef,
   useState,
   useSyncExternalStore,
@@ -64,6 +66,22 @@ const IMAGE_SHRINK_STEP = 0.5;
 const IMAGE_EDGE_GAP = 2;
 const IMAGE_RIM_GAP = 3;
 const IMAGE_LABEL_GAP = 3;
+
+function toIdPart(value: string) {
+  /*
+   * Keeps letters, digits and "-" and turns
+   * anything else, such as the ":" in a React
+   * id or a space in an entry id, into its
+   * character code. Different values always
+   * give different parts, and the result is
+   * safe inside url(#...).
+   */
+  return value.replace(
+    /[^A-Za-z0-9-]/g,
+    (character) =>
+      `_${character.charCodeAt(0).toString(16)}_`,
+  );
+}
 
 function polarToCartesian(
   cx: number,
@@ -588,6 +606,10 @@ export default function Wheel({
   accentHoverClass,
   theme,
 }: WheelProps) {
+  const imageClipPrefix = `slice-image-${toIdPart(
+    useId(),
+  )}`;
+
   const [
     internalWheelSize,
     setInternalWheelSize,
@@ -601,6 +623,41 @@ export default function Wheel({
     fullscreen,
     setFullscreen,
   ] = useState(false);
+
+  const [
+    inPageView,
+    setInPageView,
+  ] = useState(false);
+
+  const historyEntryRef =
+    useRef(false);
+
+  const inPageViewWasOpenRef =
+    useRef(false);
+
+  const fullscreenButtonRef =
+    useRef<HTMLButtonElement | null>(
+      null,
+    );
+
+  const closeButtonRef =
+    useRef<HTMLButtonElement | null>(
+      null,
+    );
+
+  const closeInPageView =
+    useCallback(() => {
+      setInPageView(false);
+
+      if (historyEntryRef.current) {
+        historyEntryRef.current = false;
+
+        window.history.back();
+      }
+    }, []);
+
+  const expanded =
+    fullscreen || inPageView;
 
   const fullscreenSupported =
     useSyncExternalStore(
@@ -852,6 +909,84 @@ export default function Wheel({
   }, []);
 
   useEffect(() => {
+    if (!inPageView) {
+      return;
+    }
+
+    function handleKeyDown(
+      event: KeyboardEvent,
+    ) {
+      if (event.key === "Escape") {
+        closeInPageView();
+      }
+    }
+
+    function handlePopState() {
+      if (historyEntryRef.current) {
+        historyEntryRef.current = false;
+
+        setInPageView(false);
+      }
+    }
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    const previousOverscroll =
+      document.documentElement.style
+        .overscrollBehavior;
+
+    document.body.style.overflow =
+      "hidden";
+
+    document.documentElement.style.overscrollBehavior =
+      "contain";
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    window.addEventListener(
+      "popstate",
+      handlePopState,
+    );
+
+    closeButtonRef.current?.focus();
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+
+      window.removeEventListener(
+        "popstate",
+        handlePopState,
+      );
+
+      document.body.style.overflow =
+        previousOverflow;
+
+      document.documentElement.style.overscrollBehavior =
+        previousOverscroll;
+    };
+  }, [inPageView, closeInPageView]);
+
+  useEffect(() => {
+    // Give focus back to the fullscreen button once the view has closed.
+    if (inPageView) {
+      inPageViewWasOpenRef.current = true;
+    } else if (
+      inPageViewWasOpenRef.current
+    ) {
+      inPageViewWasOpenRef.current = false;
+
+      fullscreenButtonRef.current?.focus();
+    }
+  }, [inPageView]);
+
+  useEffect(() => {
     return () => {
       if (
         spinTimerRef.current !==
@@ -956,17 +1091,47 @@ export default function Wheel({
       return;
     }
 
-    try {
-      if (
-        document.fullscreenElement
-      ) {
+    if (
+      document.fullscreenElement
+    ) {
+      try {
         await document.exitFullscreen();
-      } else {
-        await wheelContainerRef.current.requestFullscreen();
+      } catch {
+        setFullscreen(false);
       }
-    } catch {
-      setFullscreen(false);
+
+      return;
     }
+
+    if (fullscreenSupported) {
+      try {
+        await wheelContainerRef.current.requestFullscreen();
+
+        return;
+      } catch {
+        setFullscreen(false);
+      }
+    }
+
+    openInPageView();
+  }
+
+  function openInPageView() {
+    /*
+     * One history entry lets the browser back
+     * gesture close the view. It is removed
+     * again when the view is closed any other
+     * way.
+     */
+    window.history.pushState(
+      { wheelFullView: true },
+      "",
+      window.location.href,
+    );
+
+    historyEntryRef.current = true;
+
+    setInPageView(true);
   }
 
   function changeWheelSize(
@@ -994,8 +1159,12 @@ export default function Wheel({
         wheelContainerRef
       }
       className={
-        fullscreen
-          ? `flex min-h-screen w-full flex-col items-center justify-center p-8 ${
+        expanded
+          ? `flex h-dvh w-full flex-col items-center overflow-hidden overscroll-contain p-4 sm:p-8 ${
+              inPageView
+                ? "fixed inset-x-0 top-0 z-[100]"
+                : ""
+            } ${
               theme?.pageClass ??
               "bg-white"
             }`
@@ -1003,11 +1172,7 @@ export default function Wheel({
       }
     >
       <div
-        className={`mb-4 w-full max-w-[760px] items-center justify-end gap-3 sm:justify-between ${
-          fullscreenSupported
-            ? "flex"
-            : "hidden sm:flex"
-        }`}
+        className="mb-4 flex w-full max-w-[760px] shrink-0 items-center justify-end gap-3 sm:justify-between"
         aria-label="Wheel controls"
       >
         <div
@@ -1075,9 +1240,41 @@ export default function Wheel({
           </button>
         </div>
 
-        {fullscreenSupported ? (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {inPageView ? (
             <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={
+                closeInPageView
+              }
+              className={`flex h-9 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+                theme
+                  ? `${theme.controlClass} ${theme.controlHoverClass}`
+                  : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+              }`}
+              aria-label="Close fullscreen"
+              title="Close (Esc)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              >
+                <path d="M6 6l12 12" />
+                <path d="M18 6L6 18" />
+              </svg>
+              Close
+            </button>
+          ) : (
+            <button
+              ref={
+                fullscreenButtonRef
+              }
               type="button"
               onClick={
                 toggleFullscreen
@@ -1105,15 +1302,28 @@ export default function Wheel({
                 }
               />
             </button>
-          </div>
-        ) : null}
+          )}
+        </div>
       </div>
 
       <div
-        className="relative flex items-center justify-center"
+        className={
+          expanded
+            ? "wheel-fit-region flex min-h-0 w-full flex-1 items-center justify-center"
+            : "contents"
+        }
+      >
+      <div
+        className={`relative flex items-center justify-center ${
+          expanded
+            ? "wheel-fit"
+            : ""
+        }`}
         style={{
           width: "100%",
-          maxWidth: renderedSize,
+          maxWidth: expanded
+            ? undefined
+            : renderedSize,
           aspectRatio: "1 / 1",
         }}
       >
@@ -1198,6 +1408,15 @@ export default function Wheel({
                     mid,
                   );
 
+                const imageRadius =
+                  (IMAGE_SIZE / 2) *
+                  (imagePlacement?.scale ??
+                    1);
+
+                const imageClipId = `${imageClipPrefix}-${toIdPart(
+                  entry.id,
+                )}`;
+
                 return (
                   <g
                     key={
@@ -1228,24 +1447,52 @@ export default function Wheel({
 
                     {entry.image &&
                     imagePlacement ? (
-                      <image
-                        href={
-                          entry.image
-                        }
-                        x={
-                          imagePoint.x -
-                          18
-                        }
-                        y={
-                          imagePoint.y -
-                          18
-                        }
-                        width="36"
-                        height="36"
-                        transform={`translate(${imagePoint.x} ${imagePoint.y}) scale(${imagePlacement.scale}) translate(${-imagePoint.x} ${-imagePoint.y})`}
-                        preserveAspectRatio="xMidYMid slice"
-                        clipPath="circle(18px at 18px 18px)"
-                      />
+                      <>
+                        <defs>
+                          <clipPath
+                            id={
+                              imageClipId
+                            }
+                            clipPathUnits="userSpaceOnUse"
+                          >
+                            <circle
+                              cx={
+                                imagePoint.x
+                              }
+                              cy={
+                                imagePoint.y
+                              }
+                              r={
+                                imageRadius
+                              }
+                            />
+                          </clipPath>
+                        </defs>
+
+                        <image
+                          href={
+                            entry.image
+                          }
+                          x={
+                            imagePoint.x -
+                            imageRadius
+                          }
+                          y={
+                            imagePoint.y -
+                            imageRadius
+                          }
+                          width={
+                            imageRadius *
+                            2
+                          }
+                          height={
+                            imageRadius *
+                            2
+                          }
+                          preserveAspectRatio="xMidYMid slice"
+                          clipPath={`url(#${imageClipId})`}
+                        />
+                      </>
                     ) : null}
 
                     {labelLayout ? (
@@ -1357,6 +1604,7 @@ export default function Wheel({
           </div>
         ) : null}
       </div>
+      </div>
 
       <button
         type="button"
@@ -1367,7 +1615,7 @@ export default function Wheel({
           visibleEntries.length <
             minSpinEntries
         }
-        className={`mt-6 min-w-32 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
+        className={`mt-6 min-w-32 shrink-0 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
       >
         {spinning
           ? "Spinning…"

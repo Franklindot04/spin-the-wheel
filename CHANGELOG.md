@@ -6,6 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- An in-page full-screen view for the wheel, used where the browser's own fullscreen is not available, such as on iPhone. It has a Close button, closes with Escape or the browser back gesture, and keeps the page from scrolling behind it.
+
+### Changed
+
+- The fullscreen button is now shown in every browser. It uses real fullscreen where that works and the in-page view where it does not.
+- In fullscreen the wheel grows to fill the screen, and the page no longer scrolls.
+- The saved theme is applied before the page first paints, so reloading no longer flashes the dark Classic colours. The first reload after updating can still flash once.
+
+### Fixed
+
+- On touch devices, scrolling the page no longer closes an open entry menu. Tapping outside the menu still closes it.
+- Entry images are drawn with a clip that should keep them round in Safari.
+
 ## [2.1.3] - 2026-10-17
 
 ### Changed

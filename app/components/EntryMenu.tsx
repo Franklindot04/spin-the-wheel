@@ -904,19 +904,96 @@ export default function EntryMenu({
       return;
     }
 
-    function handlePointerDown(
+    /*
+     * A touch that starts a page scroll ends in
+     * pointercancel, so a touch only closes the
+     * menu when it is a tap: released outside
+     * the menu, close to where it started.
+     * Mouse and pen close on pointerdown.
+     */
+    const TAP_MOVE_LIMIT = 10;
+
+    let touchStart: {
+      id: number;
+      x: number;
+      y: number;
+    } | null = null;
+
+    function isOutside(
       event: PointerEvent,
     ) {
       const target =
         event.target as Node;
 
-      if (
-        menuRef.current &&
+      return (
+        menuRef.current !== null &&
         !menuRef.current.contains(
           target,
         )
+      );
+    }
+
+    function handlePointerDown(
+      event: PointerEvent,
+    ) {
+      if (
+        event.pointerType ===
+        "touch"
+      ) {
+        touchStart = isOutside(
+          event,
+        )
+          ? {
+              id: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+            }
+          : null;
+
+        return;
+      }
+
+      if (isOutside(event)) {
+        onClose();
+      }
+    }
+
+    function handlePointerUp(
+      event: PointerEvent,
+    ) {
+      if (
+        event.pointerType !==
+          "touch" ||
+        !touchStart ||
+        touchStart.id !==
+          event.pointerId
+      ) {
+        return;
+      }
+
+      const start = touchStart;
+
+      touchStart = null;
+
+      if (
+        Math.hypot(
+          event.clientX - start.x,
+          event.clientY - start.y,
+        ) < TAP_MOVE_LIMIT &&
+        isOutside(event)
       ) {
         onClose();
+      }
+    }
+
+    function handlePointerCancel(
+      event: PointerEvent,
+    ) {
+      if (
+        touchStart?.id ===
+        event.pointerId
+      ) {
+        touchStart = null;
       }
     }
 
@@ -934,6 +1011,16 @@ export default function EntryMenu({
     );
 
     document.addEventListener(
+      "pointerup",
+      handlePointerUp,
+    );
+
+    document.addEventListener(
+      "pointercancel",
+      handlePointerCancel,
+    );
+
+    document.addEventListener(
       "keydown",
       handleKeyDown,
     );
@@ -942,6 +1029,16 @@ export default function EntryMenu({
       document.removeEventListener(
         "pointerdown",
         handlePointerDown,
+      );
+
+      document.removeEventListener(
+        "pointerup",
+        handlePointerUp,
+      );
+
+      document.removeEventListener(
+        "pointercancel",
+        handlePointerCancel,
       );
 
       document.removeEventListener(

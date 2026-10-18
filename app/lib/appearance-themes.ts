@@ -3,6 +3,15 @@ import type {
   AppearanceThemeConfig,
 } from "./wheel-types";
 
+/*
+ * Holds only the active wheel's theme name. It is
+ * written by the app and read only by the script in
+ * the page head, so the loading screen can use the
+ * saved theme before the saved wheels are read.
+ */
+export const THEME_STORAGE_KEY =
+  "spin-the-wheel:theme";
+
 export const APPEARANCE_THEMES: Record<
   AppearanceTheme,
   AppearanceThemeConfig
