@@ -110,6 +110,23 @@ body {
 }
 
 /*
+ * The in-page view sits in a fixed frame that always is
+ * the visible area. The frame is a size container, so
+ * 100cqh is the visible height. Browsers without
+ * container query units keep the svh fallbacks. In the
+ * native fullscreen view there is no frame, and cq units
+ * then fall back to the small viewport.
+ */
+.wheel-view-frame {
+  container-type: size;
+}
+
+.wheel-slot {
+  max-height: 35svh;
+  max-height: 35cqh;
+}
+
+/*
  * Turning the phone swaps the layout in one step, which
  * reads as a jump. A short fade hides it. The animation
  * name differs per orientation so that it restarts when
@@ -158,6 +175,15 @@ body {
         0,
         calc(
           100svh - max(1rem, env(safe-area-inset-top)) -
+            max(1rem, env(safe-area-inset-bottom))
+        )
+      )
+      minmax(14rem, 1fr);
+    grid-template-columns:
+      minmax(
+        0,
+        calc(
+          100cqh - max(1rem, env(safe-area-inset-top)) -
             max(1rem, env(safe-area-inset-bottom))
         )
       )
