@@ -118,6 +118,9 @@ export default function EntryList({
     ? "border-dashed cursor-default"
     : "";
 
+  const quizTextHidden =
+    mode === "quiz" && textLocked;
+
   function toggleHidden(
     entry: WheelEntry,
   ) {
@@ -219,11 +222,11 @@ export default function EntryList({
         </button>
       </div>
 
-      {textLocked && (
+      {quizTextHidden && (
         <p
-          className={`mt-3 text-xs leading-5 ${theme.textMutedClass}`}
+          className={`mt-4 rounded-xl p-4 text-sm leading-6 ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}
         >
-          Names, questions and answers are locked while the quiz runs, and questions cannot be added, duplicated or deleted. Back to Setup to edit.
+          Questions and answers are hidden while the quiz runs. You can still hide questions or change their weight. Questions cannot be added or deleted. Back to Setup shows them again.
         </p>
       )}
 
@@ -283,42 +286,54 @@ export default function EntryList({
                   <div
                     className={`order-first min-w-full flex-1 sm:order-none sm:min-w-0 ${hiddenContentClass}`}
                   >
-                    <input
-                      value={
-                        entry.label
-                      }
-                      onChange={(
-                        event,
-                      ) =>
-                        onUpdate(
-                          entry.id,
-                          {
-                            label:
-                              event
-                                .target
-                                .value,
-                          },
-                        )
-                      }
-                      disabled={
-                        disabled
-                      }
-                      readOnly={
-                        textLocked
-                      }
-                      aria-readonly={
-                        textLocked ||
-                        undefined
-                      }
-                      className={`w-full rounded-lg border px-3 py-2 text-sm font-medium outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass} ${lockedClass} ${
-                        entry.hidden
-                          ? theme.textMutedClass
-                          : theme.textPrimaryClass
-                      }`}
-                      aria-label={`Entry ${
-                        index + 1
-                      }`}
-                    />
+                    {quizTextHidden ? (
+                      <p
+                        className={`w-full break-words rounded-lg px-3 py-2 text-sm font-medium ${
+                          entry.hidden
+                            ? theme.textMutedClass
+                            : theme.textPrimaryClass
+                        }`}
+                      >
+                        {entry.label}
+                      </p>
+                    ) : (
+                      <input
+                        value={
+                          entry.label
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          onUpdate(
+                            entry.id,
+                            {
+                              label:
+                                event
+                                  .target
+                                  .value,
+                            },
+                          )
+                        }
+                        disabled={
+                          disabled
+                        }
+                        readOnly={
+                          textLocked
+                        }
+                        aria-readonly={
+                          textLocked ||
+                          undefined
+                        }
+                        className={`w-full rounded-lg border px-3 py-2 text-sm font-medium outline-none transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.inputClass} ${lockedClass} ${
+                          entry.hidden
+                            ? theme.textMutedClass
+                            : theme.textPrimaryClass
+                        }`}
+                        aria-label={`Entry ${
+                          index + 1
+                        }`}
+                      />
+                    )}
 
                     <div className="mt-1.5 flex items-center justify-between gap-3 px-1">
                       <span
@@ -524,7 +539,8 @@ export default function EntryList({
                 </div>
 
                 {mode ===
-                  "quiz" && (
+                  "quiz" &&
+                  !quizTextHidden && (
                   <div
                     className={`mt-3 space-y-2 border-t pt-3 ${theme.borderClass} ${hiddenContentClass}`}
                   >
