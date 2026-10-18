@@ -164,7 +164,7 @@ function buildPieces(
       makePiece(
         focus.x,
         focus.y,
-        toRadians(between(-135, -45)),
+        toRadians(between(-150, -30)),
         reach * size * 1.2,
         "paper",
         {
@@ -175,48 +175,106 @@ function buildPieces(
         },
       );
 
-    for (let index = 0; index < 40 * share; index += 1) {
+    /*
+     * Most of the opening goes up in the first 0.3 s.
+     */
+    for (let index = 0; index < 56 * share; index += 1) {
       pieces.push(
         fan(
-          { life: between(3.6, 4.2) },
-          between(0.2, 0.45),
+          {
+            delay: between(0, 0.3),
+            life: between(3.6, 3.9),
+          },
+          between(0.35, 0.85),
         ),
       );
     }
 
-    addTrickle(20, 0.4, 1.8, 4.1, 2, 2.4, (options) =>
-      fan(options, between(0.15, 0.35)),
+    addTrickle(30, 0.4, 2.6, 4.1, 2, 2.4, (options) =>
+      fan(options, between(0.2, 0.5)),
     );
   } else if (style === "burst") {
     /*
      * One round burst from the middle of the wheel, then
-     * small pops from the same place.
+     * a string of small pops.
      */
     const pop = (
+      x: number,
+      y: number,
       options: Partial<Piece>,
       reach: number,
     ) =>
       makePiece(
-        focus.x,
-        focus.y,
+        x,
+        y,
         between(0, Math.PI * 2),
         reach * size * 1.4,
         Math.random() < 0.25 ? "dot" : "paper",
         { gravity: 40, drag: 1.4, ...options },
       );
 
-    for (let index = 0; index < 90 * share; index += 1) {
+    /*
+     * The opening burst, from the middle of the wheel in
+     * the first 0.3 s.
+     */
+    for (let index = 0; index < 80 * share; index += 1) {
       pieces.push(
         pop(
-          { life: between(5, 5.6) },
-          between(0.2, 0.55),
+          focus.x,
+          focus.y,
+          {
+            delay: between(0, 0.3),
+            life: between(5, 5.3),
+          },
+          between(0.25, 0.7),
         ),
       );
     }
 
-    addTrickle(80, 0.5, 4, 5.5, 2.2, 3, (options) =>
-      pop(options, between(0.15, 0.4)),
-    );
+    /*
+     * Then 19 small pops, about a quarter of a second
+     * apart. They alternate between the middle of the
+     * wheel and random points around it.
+     */
+    for (let burst = 0; burst < 19; burst += 1) {
+      const at = 0.3 + burst * 0.24 + between(0, 0.08);
+      const angle = between(0, Math.PI * 2);
+      const away = between(0.15, 0.45) * size;
+      const around = burst % 2 === 1;
+      const x = around
+        ? Math.min(
+            width,
+            Math.max(0, focus.x + Math.cos(angle) * away),
+          )
+        : focus.x;
+      const y = around
+        ? Math.min(
+            height,
+            Math.max(0, focus.y + Math.sin(angle) * away),
+          )
+        : focus.y;
+
+      for (
+        let index = 0;
+        index < 8 * share;
+        index += 1
+      ) {
+        pieces.push(
+          pop(
+            x,
+            y,
+            {
+              delay: at + between(0, 0.05),
+              life: Math.min(
+                between(2.4, 3),
+                5.5 - at,
+              ),
+            },
+            between(0.12, 0.3),
+          ),
+        );
+      }
+    }
   } else if (style === "celebration") {
     /*
      * Two cannons from the bottom corners, then more
@@ -233,8 +291,8 @@ function buildPieces(
         height,
         toRadians(
           left
-            ? between(-80, -55)
-            : between(-125, -100),
+            ? between(-88, -32)
+            : between(-148, -92),
         ),
         reach * size * 1.3,
         Math.random() < 0.2 ? "dot" : "paper",
@@ -242,23 +300,68 @@ function buildPieces(
       );
     };
 
-    for (let index = 0; index < 80 * share; index += 1) {
+    /*
+     * The opening, all in the first 0.3 s: cannons from the
+     * bottom corners, sprays from the sides, and a shower
+     * from the top, so the whole screen fills at once.
+     */
+    for (let index = 0; index < 70 * share; index += 1) {
       pieces.push(
         shoot(
           {
-            delay: between(0, 0.4),
+            delay: between(0, 0.3),
             life: between(6.5, 7.5),
           },
-          between(0.45, 0.8),
+          between(0.7, 1.2),
         ),
       );
     }
 
-    addTrickle(70, 1, 5.8, 7.5, 2.8, 3.4, (options) =>
+    for (let index = 0; index < 25 * share; index += 1) {
+      const left = index % 2 === 0;
+
+      pieces.push(
+        makePiece(
+          left ? 0 : width,
+          between(0.25, 0.7) * height,
+          toRadians(
+            left ? between(-20, 10) : between(170, 200),
+          ),
+          between(0.5, 1) * size * 1.3,
+          Math.random() < 0.2 ? "dot" : "paper",
+          {
+            delay: between(0, 0.3),
+            gravity: 45,
+            drag: 1.3,
+            life: between(6.5, 7.5),
+          },
+        ),
+      );
+    }
+
+    for (let index = 0; index < 45 * share; index += 1) {
+      pieces.push(
+        makePiece(
+          between(0, width),
+          -12,
+          toRadians(between(70, 110)),
+          between(140, 300),
+          "paper",
+          {
+            delay: between(0, 0.3),
+            gravity: 45,
+            drag: 0.9,
+            life: between(6.5, 7.2),
+          },
+        ),
+      );
+    }
+
+    addTrickle(45, 0.5, 5.8, 7.5, 2.8, 3.4, (options) =>
       shoot(options, between(0.3, 0.6)),
     );
 
-    addTrickle(80, 0.5, 6.2, 7.6, 3, 4, (options) =>
+    addTrickle(55, 0.3, 6.2, 7.6, 3, 4, (options) =>
       makePiece(
         between(0, width),
         -12,
