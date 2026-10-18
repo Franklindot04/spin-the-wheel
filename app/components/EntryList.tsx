@@ -226,7 +226,7 @@ export default function EntryList({
         <p
           className={`mt-4 rounded-xl p-4 text-sm leading-6 ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}
         >
-          Questions and answers are hidden while the quiz runs. You can still hide questions or change their weight. Back to Setup shows them again.
+          Questions and answers are hidden while the quiz runs. You can still hide questions or change their weight. Questions cannot be added or deleted. Back to Setup shows them again.
         </p>
       )}
 
