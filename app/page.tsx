@@ -13,6 +13,7 @@ import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/soun
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
+import { shareLink } from "./lib/share";
 function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partial<Wheel>): AppData {
     return {
         ...current,
@@ -87,6 +88,40 @@ export default function Home() {
             }
         };
     }, []);
+    const [shareMessage, setShareMessage,] = useState("");
+    const shareTimerRef = useRef<number | null>(null);
+    const shareUnmountedRef = useRef(false);
+    useEffect(() => {
+        shareUnmountedRef.current = false;
+        return () => {
+            shareUnmountedRef.current = true;
+            if (shareTimerRef.current !== null) {
+                window.clearTimeout(shareTimerRef.current);
+            }
+        };
+    }, []);
+    function showShareMessage(text: string) {
+        if (shareUnmountedRef.current) {
+            return;
+        }
+        if (shareTimerRef.current !== null) {
+            window.clearTimeout(shareTimerRef.current);
+        }
+        setShareMessage(text);
+        shareTimerRef.current = window.setTimeout(() => {
+            shareTimerRef.current = null;
+            setShareMessage("");
+        }, 2500);
+    }
+    async function handleShare() {
+        const result = await shareLink();
+        if (result === "copied") {
+            showShareMessage("Link copied");
+        }
+        else if (result === "failed") {
+            showShareMessage("Could not copy the link");
+        }
+    }
     function updateActiveWheel(changes: Partial<Wheel>) {
         setAppData((current) => ({
             ...current,
@@ -1506,7 +1541,7 @@ export default function Home() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:flex-nowrap">
-            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label="Select wheel" style={{ "--tw-ring-color": headerTextColor } as CSSProperties} className={`max-w-[9rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none transition md:max-w-none ${theme.controlClass} ${spinning ? "" : theme.controlHoverClass} focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50`}>
+            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label="Select wheel" style={{ "--tw-ring-color": headerTextColor } as CSSProperties} className={`max-w-[9rem] max-[348px]:max-w-[6.5rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none transition md:max-w-none ${theme.controlClass} ${spinning ? "" : theme.controlHoverClass} focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50`}>
               {appData.wheels.map((wheel) => (<option key={wheel.id} value={wheel.id}>
                     {wheel.name}
                   </option>))}
@@ -1524,9 +1559,23 @@ export default function Home() {
             <button ref={settingsButtonRef} type="button" onClick={() => setSettingsOpen(true)} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
               Settings
             </button>
+            <button type="button" onClick={handleShare} aria-label="Share Spin the Wheel" title="Share" className={`relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border transition before:absolute before:-inset-1 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass}`} style={{ color: headerTextColor }}>
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <path d="M8.6 13.5l6.8 4"/>
+                <path d="M15.4 6.5l-6.8 4"/>
+              </svg>
+            </button>
           </div>
         </div>
       </header>
+      <div role="status" className="pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-[max(1rem,env(safe-area-inset-left))]">
+        {shareMessage && (<span className={`rounded-lg border px-4 py-2 text-sm font-semibold shadow-lg ${headerSurfaceClass} ${headerBorderClass} ${headerTextClass}`}>
+            {shareMessage}
+          </span>)}
+      </div>
       <div className="mx-auto max-w-7xl space-y-3 px-4 empty:hidden pt-4 sm:px-6">
         {storageStale && (<div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-start sm:justify-between">
             <p className="min-w-0 break-words">Your wheels were changed in another tab. Reload to load the latest version. Changes made in this tab are not saved until you reload.</p>

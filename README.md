@@ -57,6 +57,7 @@ Create interactive question-and-answer quizzes directly on the wheel.
 - Optional sound controls
 - Slice visibility controls
 - Import and export wheel data as JSON
+- Share the app from the header: the share sheet on phones, or a copied link elsewhere.
 
 ### 📜 History
 
