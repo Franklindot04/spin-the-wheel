@@ -82,6 +82,25 @@ type WheelProps = {
    * Close or the full screen button if Spin cannot be used).
    */
   focusSpinRequest?: number;
+  /*
+   * The quiz box: the drawn question's label, question and
+   * answer, shown once Show Answer is pressed. It uses the same
+   * size rule as the winner box. Closing it (Hide Answer, Escape
+   * or a click outside) calls onHideAnswer.
+   */
+  quiz?: QuizBoxData | null;
+  onHideAnswer?: () => void;
+  onAnotherSpin?: () => void;
+  anotherSpinDisabled?: boolean;
+};
+
+export type QuizBoxData = {
+  label: string;
+  emoji?: string;
+  question: string;
+  answer: string;
+  /* False on the last question, where there is no other spin. */
+  canSpinAgain: boolean;
 };
 
 export type WinnerBoxResult = {
@@ -748,6 +767,10 @@ export default function Wheel({
   reason,
   onBoxFitChange,
   focusSpinRequest = 0,
+  quiz = null,
+  onHideAnswer,
+  onAnotherSpin,
+  anotherSpinDisabled = false,
 }: WheelProps) {
   const imageClipPrefix = `slice-image-${toIdPart(
     useId(),
@@ -843,11 +866,18 @@ export default function Wheel({
 
   const boxOpenRef = useRef(false);
 
+  /*
+   * What closing the open box does: Continue for the winner
+   * box, Hide Answer for the quiz box. Never Remove.
+   */
   const onContinueRef = useRef(onContinue);
 
   useEffect(() => {
-    onContinueRef.current = onContinue;
-  }, [onContinue]);
+    onContinueRef.current =
+      quiz !== null
+        ? onHideAnswer
+        : onContinue;
+  }, [quiz, onContinue, onHideAnswer]);
 
   const [
     wheelPx,
@@ -1304,8 +1334,13 @@ export default function Wheel({
     onBoxFitChange?.(boxFits);
   }, [boxFits, onBoxFitChange]);
 
-  const boxOpen =
+  const winnerOpen =
     result !== null && boxFits;
+
+  const quizOpen =
+    quiz !== null && boxFits;
+
+  const boxOpen = winnerOpen || quizOpen;
 
   useEffect(() => {
     boxOpenRef.current = boxOpen;
@@ -1339,10 +1374,19 @@ export default function Wheel({
       const box =
         winnerBoxRef.current;
 
+      /*
+       * The quiz card's own Show Answer / Hide Answer button is
+       * marked, so a press on it is not also a click outside.
+       */
       return (
         box !== null &&
         !box.contains(
           event.target as Node,
+        ) &&
+        !(
+          event.target as Element
+        ).closest?.(
+          "[data-keep-quiz-box]",
         )
       );
     }
@@ -1540,7 +1584,13 @@ export default function Wheel({
   function continueFromBox() {
     returnFocusRef.current = true;
 
-    onContinue?.();
+    onContinueRef.current?.();
+  }
+
+  function anotherSpinFromBox() {
+    returnFocusRef.current = true;
+
+    onAnotherSpin?.();
   }
 
   function removeFromBox() {
@@ -2358,7 +2408,131 @@ export default function Wheel({
           </div>
         ) : null}
 
-        {boxOpen && result ? (
+        {quizOpen && quiz ? (
+          <div
+            ref={winnerBoxRef}
+            role="dialog"
+            aria-modal="false"
+            aria-label="Quiz answer"
+            aria-describedby={`${boxId}-answer`}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+
+                /* The in-page view must not also see this Escape. */
+                event.stopPropagation();
+
+                continueFromBox();
+              }
+            }}
+            className={`winner-box absolute left-1/2 top-1/2 z-30 flex max-w-[94%] -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl border p-3 text-center shadow-xl ${
+              theme
+                ? `${theme.borderClass} ${theme.surfaceClass}`
+                : "border-slate-600 bg-slate-900"
+            }`}
+            style={{
+              width: Math.min(
+                440,
+                Math.max(
+                  200,
+                  Math.round(
+                    (wheelPx ?? 0) *
+                      0.8,
+                  ),
+                ),
+              ),
+              maxHeight: Math.round(
+                (wheelPx ?? 0) * 0.82,
+              ),
+            }}
+          >
+            <p
+              title={quiz.label}
+              className={`shrink-0 truncate text-xs font-bold ${
+                theme?.textPrimaryClass ??
+                "text-slate-50"
+              }`}
+            >
+              {quiz.emoji ? (
+                <span aria-hidden="true">
+                  {quiz.emoji}{" "}
+                </span>
+              ) : null}
+              {quiz.label}
+            </p>
+
+            <div
+              tabIndex={0}
+              aria-label="Question and answer"
+              className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+            >
+              <p
+                className={`text-[10px] font-semibold uppercase tracking-widest ${
+                  theme?.textMutedClass ??
+                  "text-slate-400"
+                }`}
+              >
+                Question
+              </p>
+
+              <p
+                className={`break-words text-sm leading-5 ${
+                  theme?.textPrimaryClass ??
+                  "text-slate-50"
+                }`}
+              >
+                {quiz.question}
+              </p>
+
+              <p
+                className={`mt-2 text-[10px] font-semibold uppercase tracking-widest ${
+                  theme?.textMutedClass ??
+                  "text-slate-400"
+                }`}
+              >
+                Answer
+              </p>
+
+              <p
+                id={`${boxId}-answer`}
+                className={`break-words text-sm font-semibold leading-5 ${
+                  theme?.textPrimaryClass ??
+                  "text-slate-50"
+                }`}
+              >
+                {quiz.answer}
+              </p>
+            </div>
+
+            <div className="mt-2 flex shrink-0 gap-2">
+              <button
+                ref={continueButtonRef}
+                type="button"
+                onClick={continueFromBox}
+                className={`min-h-9 min-w-0 flex-1 rounded-lg px-1 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${accentClass} ${accentHoverClass}`}
+              >
+                Hide Answer
+              </button>
+
+              {quiz.canSpinAgain ? (
+                <button
+                  type="button"
+                  onClick={anotherSpinFromBox}
+                  disabled={anotherSpinDisabled}
+                  className={`min-h-9 min-w-0 py-1 flex-1 rounded-lg border px-1 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+                    theme
+                      ? `${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`
+                      : "border-slate-600 text-slate-200"
+                  }`}
+                >
+                  Give it another spin 😉
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {winnerOpen && result ? (
           <div
             ref={winnerBoxRef}
             role="dialog"

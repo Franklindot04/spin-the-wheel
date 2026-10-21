@@ -1113,6 +1113,10 @@ export default function Home() {
      * Clear result, on the result panel: closes the result like
      * Continue does, never hides the entry, and sends focus to Spin.
      */
+    /* The quiz box's Hide Answer: hides the answer in the card too. */
+    function hideQuizAnswer() {
+        setShowAnswer(false);
+    }
     function clearResult() {
         if (spinning) {
             return;
@@ -1435,7 +1439,7 @@ export default function Home() {
               </p>
             </div>)}
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <button type="button" onClick={toggleAnswer} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
+            <button type="button" data-keep-quiz-box="" onClick={toggleAnswer} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
               {showAnswer
             ? "Hide Answer"
             : "Show Answer"}
@@ -1606,7 +1610,15 @@ export default function Home() {
                 },
             })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} result={winnerEntryExists && selectedEntry
                 ? { label: selectedEntry.label, emoji: selectedEntry.emoji, image: selectedEntry.image }
-                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} expandedResult={mode === "standard"
+                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} quiz={mode === "quiz" && quizStarted && displayedQuizEntry && showAnswer
+                ? {
+                    label: displayedQuizEntry.label,
+                    emoji: displayedQuizEntry.emoji,
+                    question: displayedQuizEntry.question ?? "",
+                    answer: displayedQuizEntry.answer ?? "",
+                    canSpinAgain: !quizComplete && !remainingQuizEntriesHidden,
+                }
+                : null} onHideAnswer={hideQuizAnswer} onAnotherSpin={nextSpin} anotherSpinDisabled={spinning || remainingVisibleQuizCount < 1} expandedResult={mode === "standard"
                 ? (winnerBoxShown
                     ? undefined
                     : (<div role="status" className="min-h-14">
