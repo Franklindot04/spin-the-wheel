@@ -221,6 +221,20 @@ export default function Home() {
             quizEntries: resolveStateValue(next, wheel.quizEntries),
         })));
     };
+    /*
+     * In Standard Mode the winner shows in a box on the wheel. The
+     * result panel is the fallback when the wheel is too small for
+     * the box. The box shows the entry as it was drawn, and that
+     * entry is locked in the list while the box is open.
+     */
+    const winnerEntryExists = mode === "standard" &&
+        selectedEntry !== null &&
+        standardEntries.some((entry) => entry.id === selectedEntry.id);
+    const winnerBoxShown = winnerEntryExists && winnerBoxFits;
+    /* The drawn entry is locked in the list while its box is open. */
+    const lockedEntryId = winnerBoxShown && selectedEntry
+        ? selectedEntry.id
+        : null;
     const wheelTitle = activeWheel.title;
     const wheelDescription = activeWheel.description;
     function handleSettingsChange(changes: Partial<PanelWheelSettings>) {
@@ -718,7 +732,8 @@ export default function Home() {
         setShowAnswer(false);
     }
     function updateEntry(id: string, changes: Partial<WheelEntry>) {
-        if (spinning) {
+        if (spinning ||
+            id === lockedEntryId) {
             return;
         }
         if (quizTextLocked) {
@@ -754,7 +769,8 @@ export default function Home() {
         }
     }
     function duplicateEntry(id: string) {
-        if (spinning) {
+        if (spinning ||
+            id === lockedEntryId) {
             return;
         }
         if (mode === "quiz" &&
@@ -792,7 +808,8 @@ export default function Home() {
         setShowAnswer(false);
     }
     function deleteEntry(id: string) {
-        if (spinning) {
+        if (spinning ||
+            id === lockedEntryId) {
             return;
         }
         if (mode === "quiz" &&
@@ -1070,11 +1087,20 @@ export default function Home() {
             standardEntries.filter((entry) => !entry.hidden).length <= 2) {
             return;
         }
-        updateEntry(selectedEntry.id, {
-            hidden: true,
-            hiddenByHideAll: undefined,
-        });
+        /*
+         * The drawn entry is locked while the box is open, so this
+         * hides it directly instead of going through updateEntry.
+         */
+        const removedId = selectedEntry.id;
+        setStandardEntries((current) => current.map((entry) => entry.id === removedId
+            ? {
+                ...entry,
+                hidden: true,
+                hiddenByHideAll: undefined,
+            }
+            : entry));
         setSelectedEntry(null);
+        setShowAnswer(false);
     }
     function nextSpin() {
         if (spinning ||
@@ -1344,15 +1370,6 @@ export default function Home() {
             setConfettiRun((current) => current + 1);
         }
     }
-    /*
-     * In Standard Mode the winner shows in a box on the wheel. The
-     * result panel is the fallback when the wheel is too small for
-     * the box. The box reads the live entry, so a rename shows.
-     */
-    const winnerEntry = mode === "standard" && selectedEntry
-        ? standardEntries.find((entry) => entry.id === selectedEntry.id) ?? null
-        : null;
-    const winnerBoxShown = winnerEntry !== null && winnerBoxFits;
     const winnerRemoveDisabled = standardEntries.filter((entry) => !entry.hidden).length <= 2;
     function renderStandardResult(inView: boolean) {
         if (!selectedEntry) {
@@ -1566,8 +1583,8 @@ export default function Home() {
                     ...wheel.settings,
                     wheelSize: size,
                 },
-            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} result={mode === "standard" && winnerEntry
-                ? { label: winnerEntry.label, emoji: winnerEntry.emoji }
+            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} result={winnerEntryExists && selectedEntry
+                ? { label: selectedEntry.label, emoji: selectedEntry.emoji, image: selectedEntry.image }
                 : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} expandedResult={mode === "standard"
                 ? (winnerBoxShown
                     ? undefined
@@ -1680,7 +1697,7 @@ export default function Home() {
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
                 quizStarted} deletionsDisabled={mode === "quiz" &&
-                quizStarted} textLocked={quizTextLocked} disabled={spinning} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+                quizStarted} textLocked={quizTextLocked} disabled={spinning} lockedId={lockedEntryId} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button ref={entriesResetButtonRef} type="button" onClick={openResetEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries

@@ -82,6 +82,7 @@ type WheelProps = {
 export type WinnerBoxResult = {
   label: string;
   emoji?: string;
+  image?: string;
 };
 
 const SIZE_STEP = 40;
