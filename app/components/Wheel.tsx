@@ -54,6 +54,7 @@ type WheelProps = {
   soundActive?: boolean;
   confettiStyle?: ConfettiEffect;
   confettiRun?: number;
+  confettiStop?: number;
   soundEnabled?: boolean;
   onSoundToggle?: () => void;
   pointerMatchSliceColor?: boolean;
@@ -704,6 +705,7 @@ export default function Wheel({
   soundActive = false,
   confettiStyle = "none",
   confettiRun = 0,
+  confettiStop = 0,
   soundEnabled = true,
   onSoundToggle,
   pointerMatchSliceColor = true,
@@ -808,6 +810,9 @@ export default function Wheel({
 
   const lastConfettiRunRef =
     useRef(confettiRun);
+
+  const lastConfettiStopRef =
+    useRef(confettiStop);
 
   const [
     availableWidth,
@@ -989,6 +994,23 @@ export default function Wheel({
       getWheelCentre,
     );
   }, [confettiRun, confettiStyle]);
+
+  /*
+   * The page raises the stop counter when what the confetti
+   * belongs to goes away: a mode switch, another wheel, a
+   * quiz starting or going back to setup, or a reset. It runs
+   * before the screen is painted, so no piece is left behind.
+   * Stopping also clears the canvas.
+   */
+  useLayoutEffect(() => {
+    if (confettiStop === lastConfettiStopRef.current) {
+      return;
+    }
+
+    lastConfettiStopRef.current = confettiStop;
+    confettiShowRef.current?.stop();
+    confettiShowRef.current = null;
+  }, [confettiStop]);
 
   /*
    * A new spin, or leaving the page, ends the confetti.
