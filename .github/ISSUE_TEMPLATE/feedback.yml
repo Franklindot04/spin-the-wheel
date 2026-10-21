@@ -1,0 +1,31 @@
+name: Feedback
+description: Tell us what works, what doesn't, or what you'd like to see
+title: "Feedback: "
+labels: ["feedback"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Filled in when you use Send feedback in the app.
+  - type: textarea
+    id: what-i-did
+    attributes:
+      label: What I did
+    validations:
+      required: false
+  - type: textarea
+    id: what-i-expected
+    attributes:
+      label: What I expected
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: iPhone 15, Safari
