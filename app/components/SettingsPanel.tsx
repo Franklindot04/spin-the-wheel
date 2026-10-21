@@ -813,6 +813,7 @@ export default function SettingsPanel({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Send feedback (opens in a new tab)"
+                aria-describedby="feedback-description"
                 className="flex items-center justify-between gap-6 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={
                   {
@@ -825,7 +826,10 @@ export default function SettingsPanel({
                     Send feedback
                   </p>
 
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                  <p
+                    id="feedback-description"
+                    className="mt-1 text-xs leading-5 text-slate-500"
+                  >
                     Opens a new GitHub issue in a new
                     tab. A GitHub account is needed.
                   </p>
