@@ -827,6 +827,11 @@ export default function Wheel({
       null,
     );
 
+  const winnerBoxRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+
   const returnFocusRef =
     useRef(false);
 
@@ -1298,6 +1303,176 @@ export default function Wheel({
 
   useEffect(() => {
     boxOpenRef.current = boxOpen;
+  }, [boxOpen]);
+
+  /*
+   * A click or tap outside the box closes it like Continue,
+   * never like Remove. It only listens: it does not stop the
+   * event, so a click on Spin, an eye icon, Settings or Export
+   * still does its own job. Like the entry menu, a mouse or pen
+   * closes on pointer down, and a touch closes on release when
+   * the finger moved less than 10 px. A scroll ends in
+   * pointercancel, so it does not close the box.
+   */
+  useEffect(() => {
+    if (!boxOpen) {
+      return;
+    }
+
+    const TAP_MOVE_LIMIT = 10;
+
+    let touchStart: {
+      id: number;
+      x: number;
+      y: number;
+    } | null = null;
+
+    function isOutside(
+      event: PointerEvent,
+    ) {
+      const box =
+        winnerBoxRef.current;
+
+      return (
+        box !== null &&
+        !box.contains(
+          event.target as Node,
+        )
+      );
+    }
+
+    function closeFromOutside(
+      event: PointerEvent,
+    ) {
+      /*
+       * Focus goes back to Spin only when the click was on
+       * something that cannot take focus itself, so clicking a
+       * text field in the list keeps that field. It waits a tick,
+       * because the browser moves focus after the pointer event.
+       */
+      const target =
+        event.target as Element | null;
+
+      if (
+        !target?.closest?.(
+          "a[href], button, input, select, textarea, [tabindex]",
+        )
+      ) {
+        window.setTimeout(() => {
+          const active =
+            document.activeElement;
+
+          if (
+            active &&
+            active !== document.body
+          ) {
+            return;
+          }
+
+          const spin =
+            spinButtonRef.current;
+
+          (spin && !spin.disabled
+            ? spin
+            : (closeButtonRef.current ??
+              fullscreenButtonRef.current)
+          )?.focus();
+        }, 0);
+      }
+
+      onContinueRef.current?.();
+    }
+
+    function handlePointerDown(
+      event: PointerEvent,
+    ) {
+      if (
+        event.pointerType === "touch"
+      ) {
+        touchStart = isOutside(event)
+          ? {
+              id: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+            }
+          : null;
+
+        return;
+      }
+
+      if (isOutside(event)) {
+        closeFromOutside(event);
+      }
+    }
+
+    function handlePointerUp(
+      event: PointerEvent,
+    ) {
+      if (
+        event.pointerType !== "touch" ||
+        !touchStart ||
+        touchStart.id !== event.pointerId
+      ) {
+        return;
+      }
+
+      const start = touchStart;
+
+      touchStart = null;
+
+      if (
+        Math.hypot(
+          event.clientX - start.x,
+          event.clientY - start.y,
+        ) < TAP_MOVE_LIMIT &&
+        isOutside(event)
+      ) {
+        closeFromOutside(event);
+      }
+    }
+
+    function handlePointerCancel(
+      event: PointerEvent,
+    ) {
+      if (
+        touchStart?.id ===
+        event.pointerId
+      ) {
+        touchStart = null;
+      }
+    }
+
+    document.addEventListener(
+      "pointerdown",
+      handlePointerDown,
+    );
+
+    document.addEventListener(
+      "pointerup",
+      handlePointerUp,
+    );
+
+    document.addEventListener(
+      "pointercancel",
+      handlePointerCancel,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        handlePointerDown,
+      );
+
+      document.removeEventListener(
+        "pointerup",
+        handlePointerUp,
+      );
+
+      document.removeEventListener(
+        "pointercancel",
+        handlePointerCancel,
+      );
+    };
   }, [boxOpen]);
 
   /* Focus starts on Continue when the box appears. */
@@ -2157,6 +2332,7 @@ export default function Wheel({
 
         {boxOpen && result ? (
           <div
+            ref={winnerBoxRef}
             role="dialog"
             aria-modal="false"
             aria-label="Winner"
