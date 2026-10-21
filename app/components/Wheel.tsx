@@ -65,9 +65,54 @@ type WheelProps = {
   theme?: AppearanceThemeConfig;
   expandedResult?: ReactNode;
   onExpandedChange?: (expanded: boolean) => void;
+  /*
+   * The winner box. It shows when result is set and the
+   * wheel is big enough for it; onBoxFitChange tells the
+   * page whether it is, so the page can keep the result
+   * panel when it is not.
+   */
+  result?: WinnerBoxResult | null;
+  onContinue?: () => void;
+  onRemove?: () => void;
+  removeDisabled?: boolean;
+  reason?: string;
+  onBoxFitChange?: (fits: boolean) => void;
+  /*
+   * Each time this number goes up, focus moves to Spin (or to
+   * Close or the full screen button if Spin cannot be used).
+   */
+  focusSpinRequest?: number;
+  /*
+   * The quiz box: the drawn question's label, question and
+   * answer, shown once Show Answer is pressed. It uses the same
+   * size rule as the winner box. Closing it (Hide Answer, Escape
+   * or a click outside) calls onHideAnswer.
+   */
+  quiz?: QuizBoxData | null;
+  onHideAnswer?: () => void;
+  onAnotherSpin?: () => void;
+  anotherSpinDisabled?: boolean;
+};
+
+export type QuizBoxData = {
+  label: string;
+  emoji?: string;
+  image?: string;
+  question: string;
+  answer: string;
+  /* False on the last question, where there is no other spin. */
+  canSpinAgain: boolean;
+};
+
+export type WinnerBoxResult = {
+  label: string;
+  emoji?: string;
+  image?: string;
 };
 
 const SIZE_STEP = 40;
+/* Below this wheel width (px) the winner box does not fit. */
+export const MIN_WINNER_BOX_WHEEL = 224;
 const VIEWBOX_SIZE = 440;
 const CENTER = VIEWBOX_SIZE / 2;
 const RADIUS = 205;
@@ -691,6 +736,62 @@ function PlusIcon() {
   );
 }
 
+/*
+ * The round picture in the winner box and the quiz box. It is
+ * clipped to a circle the same way the slice pictures are. It is
+ * decoration: the name and text say everything, so it is hidden
+ * from screen readers.
+ */
+function BoxPicture({
+  src,
+  id,
+  small,
+}: {
+  src: string;
+  id: string;
+  small: boolean;
+}) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      className={`shrink-0 ${
+        small ? "h-8 w-8" : "h-11 w-11"
+      }`}
+    >
+      <defs>
+        <clipPath
+          id={id}
+          clipPathUnits="userSpaceOnUse"
+        >
+          <circle
+            cx="50"
+            cy="50"
+            r="50"
+          />
+        </clipPath>
+      </defs>
+
+      <image
+        href={src}
+        width="100"
+        height="100"
+        preserveAspectRatio="xMidYMid slice"
+        clipPath={`url(#${id})`}
+      />
+
+      <circle
+        cx="50"
+        cy="50"
+        r="48"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="4"
+      />
+    </svg>
+  );
+}
+
 export default function Wheel({
   entries,
   spinning,
@@ -716,6 +817,17 @@ export default function Wheel({
   theme,
   expandedResult,
   onExpandedChange,
+  result = null,
+  onContinue,
+  onRemove,
+  removeDisabled = false,
+  reason,
+  onBoxFitChange,
+  focusSpinRequest = 0,
+  quiz = null,
+  onHideAnswer,
+  onAnotherSpin,
+  anotherSpinDisabled = false,
 }: WheelProps) {
   const imageClipPrefix = `slice-image-${toIdPart(
     useId(),
@@ -785,6 +897,51 @@ export default function Wheel({
     useRef<HTMLDivElement | null>(
       null,
     );
+
+  const wheelBoxRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+
+  const spinButtonRef =
+    useRef<HTMLButtonElement | null>(
+      null,
+    );
+
+  const continueButtonRef =
+    useRef<HTMLButtonElement | null>(
+      null,
+    );
+
+  const winnerBoxRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+
+  const returnFocusRef =
+    useRef(false);
+
+  const boxOpenRef = useRef(false);
+
+  /*
+   * What closing the open box does: Continue for the winner
+   * box, Hide Answer for the quiz box. Never Remove.
+   */
+  const onContinueRef = useRef(onContinue);
+
+  useEffect(() => {
+    onContinueRef.current =
+      quiz !== null
+        ? onHideAnswer
+        : onContinue;
+  }, [quiz, onContinue, onHideAnswer]);
+
+  const [
+    wheelPx,
+    setWheelPx,
+  ] = useState<number | null>(null);
+
+  const boxId = useId();
 
   const [
     labelWidths,
@@ -1191,6 +1348,318 @@ export default function Wheel({
     };
   }, []);
 
+  /*
+   * The width of the wheel itself, which decides whether
+   * the winner box has room.
+   */
+  useEffect(() => {
+    const box = wheelBoxRef.current;
+
+    if (!box) {
+      return;
+    }
+
+    const observer =
+      new ResizeObserver(
+        (observed) => {
+          const width =
+            observed[0]
+              ?.contentRect
+              .width;
+
+          if (width) {
+            setWheelPx(
+              Math.floor(width),
+            );
+          }
+        },
+      );
+
+    observer.observe(box);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  const boxFits =
+    wheelPx === null ||
+    wheelPx >=
+      MIN_WINNER_BOX_WHEEL;
+
+  useEffect(() => {
+    onBoxFitChange?.(boxFits);
+  }, [boxFits, onBoxFitChange]);
+
+  const winnerOpen =
+    result !== null && boxFits;
+
+  const quizOpen =
+    quiz !== null && boxFits;
+
+  const boxOpen = winnerOpen || quizOpen;
+
+  useEffect(() => {
+    boxOpenRef.current = boxOpen;
+  }, [boxOpen]);
+
+  /*
+   * A click or tap outside the box closes it like Continue,
+   * never like Remove. It only listens: it does not stop the
+   * event, so a click on Spin, an eye icon, Settings or Export
+   * still does its own job. Like the entry menu, a mouse or pen
+   * closes on pointer down, and a touch closes on release when
+   * the finger moved less than 10 px. A scroll ends in
+   * pointercancel, so it does not close the box.
+   */
+  useEffect(() => {
+    if (!boxOpen) {
+      return;
+    }
+
+    const TAP_MOVE_LIMIT = 10;
+
+    let touchStart: {
+      id: number;
+      x: number;
+      y: number;
+    } | null = null;
+
+    function isOutside(
+      event: PointerEvent,
+    ) {
+      const box =
+        winnerBoxRef.current;
+
+      /*
+       * The quiz card's own Show Answer / Hide Answer button is
+       * marked, so a press on it is not also a click outside.
+       */
+      return (
+        box !== null &&
+        !box.contains(
+          event.target as Node,
+        ) &&
+        !(
+          event.target as Element
+        ).closest?.(
+          "[data-keep-quiz-box]",
+        )
+      );
+    }
+
+    function closeFromOutside(
+      event: PointerEvent,
+    ) {
+      /*
+       * Focus goes back to Spin only when the click was on
+       * something that cannot take focus itself, so clicking a
+       * text field in the list keeps that field. It waits a tick,
+       * because the browser moves focus after the pointer event.
+       */
+      const target =
+        event.target as Element | null;
+
+      if (
+        !target?.closest?.(
+          "a[href], button, input, select, textarea, [tabindex]",
+        )
+      ) {
+        window.setTimeout(() => {
+          const active =
+            document.activeElement;
+
+          if (
+            active &&
+            active !== document.body
+          ) {
+            return;
+          }
+
+          const spin =
+            spinButtonRef.current;
+
+          (spin && !spin.disabled
+            ? spin
+            : (closeButtonRef.current ??
+              fullscreenButtonRef.current)
+          )?.focus();
+        }, 0);
+      }
+
+      onContinueRef.current?.();
+    }
+
+    function handlePointerDown(
+      event: PointerEvent,
+    ) {
+      if (
+        event.pointerType === "touch"
+      ) {
+        touchStart = isOutside(event)
+          ? {
+              id: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+            }
+          : null;
+
+        return;
+      }
+
+      if (isOutside(event)) {
+        closeFromOutside(event);
+      }
+    }
+
+    function handlePointerUp(
+      event: PointerEvent,
+    ) {
+      if (
+        event.pointerType !== "touch" ||
+        !touchStart ||
+        touchStart.id !== event.pointerId
+      ) {
+        return;
+      }
+
+      const start = touchStart;
+
+      touchStart = null;
+
+      if (
+        Math.hypot(
+          event.clientX - start.x,
+          event.clientY - start.y,
+        ) < TAP_MOVE_LIMIT &&
+        isOutside(event)
+      ) {
+        closeFromOutside(event);
+      }
+    }
+
+    function handlePointerCancel(
+      event: PointerEvent,
+    ) {
+      if (
+        touchStart?.id ===
+        event.pointerId
+      ) {
+        touchStart = null;
+      }
+    }
+
+    document.addEventListener(
+      "pointerdown",
+      handlePointerDown,
+    );
+
+    document.addEventListener(
+      "pointerup",
+      handlePointerUp,
+    );
+
+    document.addEventListener(
+      "pointercancel",
+      handlePointerCancel,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        handlePointerDown,
+      );
+
+      document.removeEventListener(
+        "pointerup",
+        handlePointerUp,
+      );
+
+      document.removeEventListener(
+        "pointercancel",
+        handlePointerCancel,
+      );
+    };
+  }, [boxOpen]);
+
+  /* Focus starts on Continue when the box appears. */
+  useEffect(() => {
+    if (boxOpen) {
+      continueButtonRef.current?.focus();
+    }
+  }, [boxOpen]);
+
+  const spinDisabled =
+    !canSpin ||
+    spinning ||
+    visibleEntries.length <
+      minSpinEntries;
+
+  /*
+   * After Continue, Remove or Escape closes the box, focus
+   * goes back to Spin. If Spin cannot be used (a Remove that
+   * left too few entries), it goes to the full screen button
+   * or Close.
+   */
+  useEffect(() => {
+    if (boxOpen || !returnFocusRef.current) {
+      return;
+    }
+
+    returnFocusRef.current = false;
+
+    const target = spinDisabled
+      ? (closeButtonRef.current ??
+        fullscreenButtonRef.current)
+      : spinButtonRef.current;
+
+    target?.focus();
+  }, [boxOpen, spinDisabled]);
+
+  const lastFocusRequestRef =
+    useRef(focusSpinRequest);
+
+  useEffect(() => {
+    if (
+      focusSpinRequest ===
+      lastFocusRequestRef.current
+    ) {
+      return;
+    }
+
+    lastFocusRequestRef.current =
+      focusSpinRequest;
+
+    const target = spinDisabled
+      ? (closeButtonRef.current ??
+        fullscreenButtonRef.current)
+      : spinButtonRef.current;
+
+    target?.focus();
+  }, [focusSpinRequest, spinDisabled]);
+
+  function continueFromBox() {
+    returnFocusRef.current = true;
+
+    onContinueRef.current?.();
+  }
+
+  function anotherSpinFromBox() {
+    returnFocusRef.current = true;
+
+    onAnotherSpin?.();
+  }
+
+  function removeFromBox() {
+    if (removeDisabled) {
+      return;
+    }
+
+    returnFocusRef.current = true;
+
+    onRemove?.();
+  }
+
   useEffect(() => {
     function handleFullscreenChange() {
       setFullscreen(
@@ -1221,6 +1690,15 @@ export default function Wheel({
       event: KeyboardEvent,
     ) {
       if (event.key === "Escape") {
+        /* The winner box closes first, then the view. */
+        if (boxOpenRef.current) {
+          returnFocusRef.current = true;
+
+          onContinueRef.current?.();
+
+          return;
+        }
+
         closeInPageView();
       }
     }
@@ -1692,6 +2170,7 @@ export default function Wheel({
         }
       >
       <div
+        ref={wheelBoxRef}
         className={`relative flex items-center justify-center ${
           expanded
             ? "wheel-fit"
@@ -1985,6 +2464,275 @@ export default function Wheel({
             </div>
           </div>
         ) : null}
+
+        {quizOpen && quiz ? (
+          <div
+            ref={winnerBoxRef}
+            role="dialog"
+            aria-modal="false"
+            aria-label="Quiz answer"
+            aria-describedby={`${boxId}-answer`}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+
+                /* The in-page view must not also see this Escape. */
+                event.stopPropagation();
+
+                continueFromBox();
+              }
+            }}
+            className={`winner-box absolute left-1/2 top-1/2 z-30 flex max-w-[94%] -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl border p-3 text-center shadow-xl ${
+              theme
+                ? `${theme.borderClass} ${theme.surfaceClass}`
+                : "border-slate-600 bg-slate-900"
+            }`}
+            style={{
+              width: Math.min(
+                440,
+                Math.max(
+                  200,
+                  Math.round(
+                    (wheelPx ?? 0) *
+                      0.8,
+                  ),
+                ),
+              ),
+              /*
+               * With a picture the label row is taller, so the
+               * cap grows by the same amount and the scrolling
+               * area for long text stays the same size.
+               */
+              maxHeight:
+                Math.round(
+                  (wheelPx ?? 0) * 0.82,
+                ) +
+                (quiz.image
+                  ? (wheelPx ?? 0) < 300
+                    ? 16
+                    : 28
+                  : 0),
+            }}
+          >
+            <div className="flex shrink-0 items-center justify-center gap-2">
+              {quiz.image ? (
+                <BoxPicture
+                  src={quiz.image}
+                  id={`${boxId}-image`}
+                  small={(wheelPx ?? 0) < 300}
+                />
+              ) : null}
+
+              <p
+                title={quiz.label}
+                className={`min-w-0 truncate text-xs font-bold ${
+                  theme?.textPrimaryClass ??
+                  "text-slate-50"
+                }`}
+              >
+                {quiz.emoji ? (
+                  <span aria-hidden="true">
+                    {quiz.emoji}{" "}
+                  </span>
+                ) : null}
+                {quiz.label}
+              </p>
+            </div>
+
+            <div
+              tabIndex={0}
+              aria-label="Question and answer"
+              className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+            >
+              <p
+                className={`text-[10px] font-semibold uppercase tracking-widest ${
+                  theme?.textMutedClass ??
+                  "text-slate-400"
+                }`}
+              >
+                Question
+              </p>
+
+              <p
+                className={`break-words text-sm leading-5 ${
+                  theme?.textPrimaryClass ??
+                  "text-slate-50"
+                }`}
+              >
+                {quiz.question}
+              </p>
+
+              <p
+                className={`mt-2 text-[10px] font-semibold uppercase tracking-widest ${
+                  theme?.textMutedClass ??
+                  "text-slate-400"
+                }`}
+              >
+                Answer
+              </p>
+
+              <p
+                id={`${boxId}-answer`}
+                className={`break-words text-sm font-semibold leading-5 ${
+                  theme?.textPrimaryClass ??
+                  "text-slate-50"
+                }`}
+              >
+                {quiz.answer}
+              </p>
+            </div>
+
+            <div className="mt-2 flex shrink-0 gap-2">
+              <button
+                ref={continueButtonRef}
+                type="button"
+                onClick={continueFromBox}
+                className={`min-h-9 min-w-0 flex-1 rounded-lg px-1 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${accentClass} ${accentHoverClass}`}
+              >
+                Hide Answer
+              </button>
+
+              {quiz.canSpinAgain ? (
+                <button
+                  type="button"
+                  onClick={anotherSpinFromBox}
+                  disabled={anotherSpinDisabled}
+                  className={`min-h-9 min-w-0 py-1 flex-1 rounded-lg border px-1 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+                    theme
+                      ? `${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`
+                      : "border-slate-600 text-slate-200"
+                  }`}
+                >
+                  Give it another spin 😉
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {winnerOpen && result ? (
+          <div
+            ref={winnerBoxRef}
+            role="dialog"
+            aria-modal="false"
+            aria-label="Winner"
+            aria-describedby={`${boxId}-name${
+              removeDisabled && reason
+                ? ` ${boxId}-reason`
+                : ""
+            }`}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+
+                /*
+                 * Stops here, so the in-page view does not also
+                 * see this Escape and close.
+                 */
+                event.stopPropagation();
+
+                continueFromBox();
+              }
+            }}
+            className={`winner-box absolute left-1/2 top-1/2 z-30 flex max-w-[92%] -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-2xl border p-3 text-center shadow-xl ${
+              theme
+                ? `${theme.borderClass} ${theme.surfaceClass}`
+                : "border-slate-600 bg-slate-900"
+            }`}
+            style={{
+              width: Math.min(
+                340,
+                Math.max(
+                  180,
+                  Math.round(
+                    (wheelPx ?? 0) *
+                      0.62,
+                  ),
+                ),
+              ),
+            }}
+          >
+            <p
+              aria-hidden="true"
+              className={`text-[10px] font-semibold uppercase tracking-widest ${
+                theme?.textMutedClass ??
+                "text-slate-400"
+              }`}
+            >
+              Winner
+            </p>
+
+            <div className="mt-1 flex w-full items-center justify-center gap-2">
+              {result.image ? (
+                <BoxPicture
+                  src={result.image}
+                  id={`${boxId}-image`}
+                  small={(wheelPx ?? 0) < 300}
+                />
+              ) : null}
+
+              <p
+                id={`${boxId}-name`}
+                title={result.label}
+                className={`line-clamp-3 min-w-0 break-words font-bold leading-tight ${
+                  result.image
+                    ? "text-left"
+                    : "w-full"
+                } ${
+                  (wheelPx ?? 0) < 300
+                    ? "text-sm"
+                    : "text-xl"
+                } ${
+                  theme?.textPrimaryClass ??
+                  "text-slate-50"
+                }`}
+              >
+                {result.emoji ? (
+                  <span aria-hidden="true">
+                    {result.emoji}{" "}
+                  </span>
+                ) : null}
+                {result.label}
+              </p>
+            </div>
+
+            <div className="mt-2 flex w-full gap-2">
+              <button
+                ref={continueButtonRef}
+                type="button"
+                onClick={continueFromBox}
+                className={`h-9 min-w-0 flex-1 rounded-lg px-1 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${accentClass} ${accentHoverClass}`}
+              >
+                Continue
+              </button>
+
+              <button
+                type="button"
+                onClick={removeFromBox}
+                disabled={removeDisabled}
+                className={`h-9 min-w-0 flex-1 rounded-lg border px-1 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+                  theme
+                    ? `${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`
+                    : "border-slate-600 text-slate-200"
+                }`}
+              >
+                Remove
+              </button>
+            </div>
+
+            {removeDisabled && reason ? (
+              <p
+                id={`${boxId}-reason`}
+                className={`mt-2 text-xs leading-4 ${
+                  theme?.textMutedClass ??
+                  "text-slate-400"
+                }`}
+              >
+                {reason}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       </div>
 
@@ -1995,14 +2743,10 @@ export default function Wheel({
       ) : null}
 
       <button
+        ref={spinButtonRef}
         type="button"
         onClick={handleSpin}
-        disabled={
-          !canSpin ||
-          spinning ||
-          visibleEntries.length <
-            minSpinEntries
-        }
+        disabled={spinDisabled}
         className={`wheel-spin mt-6 min-w-32 shrink-0 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
       >
         {spinning

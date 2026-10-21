@@ -47,6 +47,10 @@ export default function Home() {
     const [selectedEntry, setSelectedEntry,] = useState<WheelEntry | null>(null);
     const [showAnswer, setShowAnswer,] = useState(false);
     const [wheelExpanded, setWheelExpanded,] = useState(false);
+    const [winnerBoxFits, setWinnerBoxFits,] = useState(true);
+    const [spinFocusRequest, setSpinFocusRequest,] = useState(0);
+    /* True once any spin has started since the page was opened. Not saved. */
+    const [hasSpun, setHasSpun,] = useState(false);
     const [settingsOpen, setSettingsOpen,] = useState(false);
     const [settingsTab, setSettingsTab,] = useState<SettingsTab>("main");
     const [historyOpen, setHistoryOpen,] = useState(false);
@@ -220,6 +224,23 @@ export default function Home() {
             quizEntries: resolveStateValue(next, wheel.quizEntries),
         })));
     };
+    /*
+     * In Standard Mode the winner shows in a box on the wheel when
+     * the wheel's winner display is Popup. The result panel is
+     * shown instead when it is not, and as the fallback when the
+     * wheel is too small for the box. Either way the drawn entry is
+     * locked in the list while its result is showing, and the box
+     * shows the entry as it was drawn.
+     */
+    const winnerPopup = activeWheel.settings.winnerDisplay === "popup";
+    const standardResultExists = mode === "standard" &&
+        selectedEntry !== null &&
+        standardEntries.some((entry) => entry.id === selectedEntry.id);
+    const winnerEntryExists = winnerPopup && standardResultExists;
+    const winnerBoxShown = winnerEntryExists && winnerBoxFits;
+    const lockedEntryId = standardResultExists && selectedEntry
+        ? selectedEntry.id
+        : null;
     const wheelTitle = activeWheel.title;
     const wheelDescription = activeWheel.description;
     function handleSettingsChange(changes: Partial<PanelWheelSettings>) {
@@ -717,7 +738,8 @@ export default function Home() {
         setShowAnswer(false);
     }
     function updateEntry(id: string, changes: Partial<WheelEntry>) {
-        if (spinning) {
+        if (spinning ||
+            id === lockedEntryId) {
             return;
         }
         if (quizTextLocked) {
@@ -753,7 +775,8 @@ export default function Home() {
         }
     }
     function duplicateEntry(id: string) {
-        if (spinning) {
+        if (spinning ||
+            id === lockedEntryId) {
             return;
         }
         if (mode === "quiz" &&
@@ -791,7 +814,8 @@ export default function Home() {
         setShowAnswer(false);
     }
     function deleteEntry(id: string) {
-        if (spinning) {
+        if (spinning ||
+            id === lockedEntryId) {
             return;
         }
         if (mode === "quiz" &&
@@ -990,6 +1014,7 @@ export default function Home() {
         setShowAnswer(false);
         answerConfettiFiredRef.current = false;
         setSpinning(true);
+        setHasSpun(true);
         setRotation(targetRotation);
         /*
          * Wait for the actual wheel animation
@@ -1051,6 +1076,53 @@ export default function Home() {
                 ]);
             }
         }, spinDuration * 1000);
+    }
+    /*
+     * The winner box. Continue closes it. Remove hides the drawn
+     * entry the same way its eye does, then closes it.
+     */
+    function closeWinnerBox() {
+        if (spinning) {
+            return;
+        }
+        setSelectedEntry(null);
+    }
+    function removeWinner() {
+        if (spinning ||
+            mode !== "standard" ||
+            !selectedEntry ||
+            standardEntries.filter((entry) => !entry.hidden).length <= 2) {
+            return;
+        }
+        /*
+         * The drawn entry is locked while the box is open, so this
+         * hides it directly instead of going through updateEntry.
+         */
+        const removedId = selectedEntry.id;
+        setStandardEntries((current) => current.map((entry) => entry.id === removedId
+            ? {
+                ...entry,
+                hidden: true,
+                hiddenByHideAll: undefined,
+            }
+            : entry));
+        setSelectedEntry(null);
+        setShowAnswer(false);
+    }
+    /*
+     * Clear result, on the result panel: closes the result like
+     * Continue does, never hides the entry, and sends focus to Spin.
+     */
+    /* The quiz box's Hide Answer: hides the answer in the card too. */
+    function hideQuizAnswer() {
+        setShowAnswer(false);
+    }
+    function clearResult() {
+        if (spinning) {
+            return;
+        }
+        setSelectedEntry(null);
+        setSpinFocusRequest((current) => current + 1);
     }
     function nextSpin() {
         if (spinning ||
@@ -1320,6 +1392,7 @@ export default function Home() {
             setConfettiRun((current) => current + 1);
         }
     }
+    const winnerRemoveDisabled = standardEntries.filter((entry) => !entry.hidden).length <= 2;
     function renderStandardResult(inView: boolean) {
         if (!selectedEntry) {
             return null;
@@ -1332,6 +1405,9 @@ export default function Home() {
             {selectedEntry.emoji && (<span aria-hidden="true">{selectedEntry.emoji}{" "}</span>)}
             {selectedEntry.label}
           </p>
+          <button type="button" onClick={clearResult} className={`mt-1 min-h-11 rounded-lg px-3 text-xs font-semibold underline-offset-4 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current ${theme.textMutedClass}`}>
+            Clear result
+          </button>
         </div>);
     }
     function renderQuizCard(inView: boolean) {
@@ -1363,7 +1439,7 @@ export default function Home() {
               </p>
             </div>)}
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <button type="button" onClick={toggleAnswer} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
+            <button type="button" data-keep-quiz-box="" onClick={toggleAnswer} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
               {showAnswer
             ? "Hide Answer"
             : "Show Answer"}
@@ -1532,16 +1608,38 @@ export default function Home() {
                     ...wheel.settings,
                     wheelSize: size,
                 },
-            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} expandedResult={mode === "standard"
-                ? (<div role="status" className="min-h-14">
+            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} result={winnerEntryExists && selectedEntry
+                ? { label: selectedEntry.label, emoji: selectedEntry.emoji, image: selectedEntry.image }
+                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} quiz={mode === "quiz" && quizStarted && displayedQuizEntry && showAnswer
+                ? {
+                    label: displayedQuizEntry.label,
+                    emoji: displayedQuizEntry.emoji,
+                    image: displayedQuizEntry.image,
+                    question: displayedQuizEntry.question ?? "",
+                    answer: displayedQuizEntry.answer ?? "",
+                    canSpinAgain: !quizComplete && !remainingQuizEntriesHidden,
+                }
+                : null} onHideAnswer={hideQuizAnswer} onAnotherSpin={nextSpin} anotherSpinDisabled={spinning || remainingVisibleQuizCount < 1} expandedResult={mode === "standard"
+                ? (winnerBoxShown
+                    ? undefined
+                    : (<div role="status" className="min-h-14">
                   {renderStandardResult(true)}
-                </div>)
+                </div>))
                 : (<div role="status">
                   {quizStarted && displayedQuizEntry
                     ? renderQuizCard(true)
                     : null}
                 </div>)}/>
           </div>
+          {mode === "standard" &&
+            !hasSpun && (<div inert={wheelExpanded} aria-hidden={wheelExpanded || undefined} className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
+              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
+                Standard Mode
+              </h2>
+              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
+                Add your options in the list, then press Spin. Change a name, colour or weight with the entry&apos;s ... menu, and hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.
+              </p>
+            </div>)}
           {mode === "quiz" &&
             !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
               <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
@@ -1580,7 +1678,7 @@ export default function Home() {
               </p>
             </div>)}
           {mode === "standard" &&
-            selectedEntry && renderStandardResult(false)}
+            selectedEntry && !winnerBoxShown && renderStandardResult(false)}
         </div>
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -1642,7 +1740,7 @@ export default function Home() {
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
                 quizStarted} deletionsDisabled={mode === "quiz" &&
-                quizStarted} textLocked={quizTextLocked} disabled={spinning} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
+                quizStarted} textLocked={quizTextLocked} disabled={spinning} lockedId={lockedEntryId} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button ref={entriesResetButtonRef} type="button" onClick={openResetEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
                   Reset Entries

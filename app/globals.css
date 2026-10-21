@@ -255,3 +255,24 @@ body {
     min-height: 10rem;
   }
 }
+
+/*
+ * The winner box fades in. It only changes opacity, so it
+ * does not fight the centring transform. Reduced motion
+ * shows it at once.
+ */
+@keyframes winner-box-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.winner-box {
+  animation: winner-box-in 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .winner-box {
+    animation: none;
+  }
+}

@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- When the wheel stops in Standard Mode, the winner appears in a box in the middle of the wheel with Continue and Remove buttons. Continue keeps every option. Remove hides the winner like the eye icon. Clicking outside the box closes it.
+- In Quiz Mode, Show Answer opens a box in the middle of the wheel with the question and answer, so the answer is no longer cut off on small screens.
+- A Winner display setting in Settings lets you choose Popup or Result panel.
+- A Clear result button on the Result panel.
+- A short instruction card in Standard Mode before the first spin.
+
+### Changed
+
+- The winner's entry is locked while its result is showing, so it cannot be edited after being drawn.
+- New wheels and wheels reset with Restore defaults use the Popup display. Wheels you already saved keep the Result panel until you switch.
+
 ## [2.6.0] - 2026-10-21
 
 ### Added

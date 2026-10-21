@@ -191,11 +191,9 @@ function appWinnerToPanelWinner(
     case "popup":
       return "popup";
 
-    case "wheel":
-      return "highlight";
-
     case "banner":
     case "none":
+    case "wheel":
     default:
       return "panel";
   }
@@ -336,11 +334,21 @@ export function panelSettingsToWheelSettings(
       ),
 
     /*
-     * The panel no longer shows a Display method control, so
-     * the saved value is kept exactly as it is.
+     * The saved value is only written when the user picks a
+     * different choice. An untouched wheel keeps its raw value,
+     * even one the panel shows as Result panel (banner, none or
+     * wheel).
      */
     winnerDisplay:
-      currentSettings.winnerDisplay,
+      panelSettings.winnerDisplayMethod ===
+      appWinnerToPanelWinner(
+        currentSettings.winnerDisplay,
+      )
+        ? currentSettings.winnerDisplay
+        : panelSettings.winnerDisplayMethod ===
+            "popup"
+          ? "popup"
+          : "banner",
 
     maxEntries:
       panelSettings.numberOfEntries,

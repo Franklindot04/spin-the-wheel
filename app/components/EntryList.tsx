@@ -28,6 +28,8 @@ type EntryListProps = {
   deletionsDisabled?: boolean;
   textLocked?: boolean;
   disabled?: boolean;
+  /* The entry whose result is showing in the winner box. */
+  lockedId?: string | null;
   maxEntries?: number;
   accentClass: string;
   accentHoverClass: string;
@@ -91,6 +93,7 @@ export default function EntryList({
   deletionsDisabled = false,
   textLocked = false,
   disabled = false,
+  lockedId = null,
   maxEntries,
   accentClass,
   accentHoverClass,
@@ -100,6 +103,17 @@ export default function EntryList({
     openMenuId,
     setOpenMenuId,
   ] = useState<string | null>(null);
+
+  /*
+   * A menu left open on the locked entry closes when the lock
+   * starts.
+   */
+  if (
+    lockedId !== null &&
+    openMenuId === lockedId
+  ) {
+    setOpenMenuId(null);
+  }
 
   const atLimit =
     maxEntries !== undefined &&
@@ -259,6 +273,14 @@ export default function EntryList({
                 ? "opacity-65"
                 : "";
 
+            const rowLocked =
+              entry.id === lockedId;
+
+            const rowDisabled =
+              disabled || rowLocked;
+
+            const lockNoteId = `entry-lock-${entry.id}`;
+
             return (
               <div
                 key={entry.id}
@@ -315,7 +337,12 @@ export default function EntryList({
                           )
                         }
                         disabled={
-                          disabled
+                          rowDisabled
+                        }
+                        aria-describedby={
+                          rowLocked
+                            ? lockNoteId
+                            : undefined
                         }
                         readOnly={
                           textLocked
@@ -373,7 +400,7 @@ export default function EntryList({
                         !entry.hidden
                       }
                       disabled={
-                        disabled
+                        rowDisabled
                       }
                       title={
                         entry.hidden
@@ -396,7 +423,7 @@ export default function EntryList({
                         openMenuId ===
                         entry.id
                       }
-                      spinning={disabled}
+                      spinning={rowDisabled}
                       textLocked={
                         textLocked
                       }
@@ -463,7 +490,7 @@ export default function EntryList({
                         )
                       }
                       disabled={
-                        disabled ||
+                        rowDisabled ||
                         deletionsDisabled ||
                         !canDeleteEntry(
                           entries,
@@ -504,7 +531,7 @@ export default function EntryList({
                         )
                       }
                       disabled={
-                        disabled ||
+                        rowDisabled ||
                         weight <= 1
                       }
                       aria-label="Decrease slice weight"
@@ -528,7 +555,7 @@ export default function EntryList({
                         )
                       }
                       disabled={
-                        disabled
+                        rowDisabled
                       }
                       aria-label="Increase slice weight"
                       className={`flex h-7 w-8 items-center justify-center text-sm font-bold transition ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-35`}
@@ -537,6 +564,15 @@ export default function EntryList({
                     </button>
                   </div>
                 </div>
+
+                {rowLocked && (
+                  <p
+                    id={lockNoteId}
+                    className={`mt-2 text-xs leading-4 ${theme.textMutedClass}`}
+                  >
+                    Locked while this result is showing.
+                  </p>
+                )}
 
                 {mode ===
                   "quiz" &&
