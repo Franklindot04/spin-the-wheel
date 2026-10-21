@@ -7,6 +7,7 @@ import {
   DEFAULT_WHEEL_DESCRIPTION,
   DEFAULT_WHEEL_TITLE,
   createDefaultWheelSettings,
+  LEGACY_WINNER_DISPLAY,
   normalizeEntries,
   normalizeWheel,
 } from "./wheel-defaults";
@@ -114,8 +115,11 @@ export function migrateStoredData(
   }
 
   if (isLegacyStoredData(value)) {
-    const legacySettings =
-      createDefaultWheelSettings();
+    const legacySettings = {
+      ...createDefaultWheelSettings(),
+      winnerDisplay:
+        LEGACY_WINNER_DISPLAY,
+    };
 
     const wheel: Wheel = {
       id: crypto.randomUUID(),

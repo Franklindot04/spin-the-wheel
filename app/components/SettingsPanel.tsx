@@ -20,8 +20,7 @@ export type SettingsTab =
 
 export type WinnerDisplayMethod =
   | "popup"
-  | "panel"
-  | "highlight";
+  | "panel";
 
 export type ConfettiStyle =
   | "burst"
@@ -240,6 +239,14 @@ function SelectField({
     </label>
   );
 }
+
+const WINNER_DISPLAY_OPTIONS: Array<{
+  value: WinnerDisplayMethod;
+  label: string;
+}> = [
+  { value: "panel", label: "Result panel" },
+  { value: "popup", label: "Popup" },
+];
 
 const SPIN_SOUND_OPTIONS = [
   { value: "tick", label: "Tick" },
@@ -701,12 +708,21 @@ export default function SettingsPanel({
               />
             </div>
 
-            {/*
-              * The Display method control is hidden until the
-              * winner box (issue #57) exists. Only the result
-              * panel works today. The saved value is kept as it
-              * is.
-              */}
+            <SelectField
+              label="Winner display"
+              value={
+                settings.winnerDisplayMethod
+              }
+              onChange={(value) =>
+                updateSettings({
+                  winnerDisplayMethod:
+                    value as WinnerDisplayMethod,
+                })
+              }
+              options={
+                WINNER_DISPLAY_OPTIONS
+              }
+            />
 
             <div>
               <SectionTitle

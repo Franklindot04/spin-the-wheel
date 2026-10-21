@@ -70,7 +70,18 @@ export const DEFAULT_CONFETTI_ENABLED =
 export const DEFAULT_CONFETTI_EFFECT: ConfettiEffect =
   "celebration";
 
+/*
+ * New wheels and Restore defaults show the winner in a box on
+ * the wheel.
+ */
 export const DEFAULT_WINNER_DISPLAY: WinnerDisplay =
+  "popup";
+
+/*
+ * A saved wheel that has no valid winner display keeps showing
+ * the result panel, as it did before the box existed.
+ */
+export const LEGACY_WINNER_DISPLAY: WinnerDisplay =
   "banner";
 
 export const DEFAULT_MAX_ENTRIES = 50;
@@ -581,7 +592,7 @@ function normalizeWinnerDisplay(
     return value;
   }
 
-  return DEFAULT_WINNER_DISPLAY;
+  return LEGACY_WINNER_DISPLAY;
 }
 
 export function normalizeWheelSettings(

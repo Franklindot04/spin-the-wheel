@@ -227,7 +227,9 @@ export default function Home() {
      * the box. The box shows the entry as it was drawn, and that
      * entry is locked in the list while the box is open.
      */
-    const winnerEntryExists = mode === "standard" &&
+    const winnerPopup = activeWheel.settings.winnerDisplay === "popup";
+    const winnerEntryExists = winnerPopup &&
+        mode === "standard" &&
         selectedEntry !== null &&
         standardEntries.some((entry) => entry.id === selectedEntry.id);
     const winnerBoxShown = winnerEntryExists && winnerBoxFits;
