@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-10-21
+
 ### Added
 
 - Sound and confetti now work. The wheel ticks while it spins, and plays a winner sound and confetti when a winner is drawn. You can choose the sounds and confetti style in Settings.
@@ -21,6 +23,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Fixed
 
 - The spin sound and winner sound you choose in Settings are now kept after a reload.
+- New wheels, wheels made with "+ Wheel" and wheels reset with Restore defaults now start with the Tick spin sound and Success winner sound.
+- Confetti stays in place when the screen size changes, and stops when you switch mode or wheel.
 
 ## [2.5.0] - 2026-10-18
 
@@ -279,7 +283,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.2.0...v2.3.0
