@@ -47,6 +47,7 @@ export default function Home() {
     const [selectedEntry, setSelectedEntry,] = useState<WheelEntry | null>(null);
     const [showAnswer, setShowAnswer,] = useState(false);
     const [wheelExpanded, setWheelExpanded,] = useState(false);
+    const [winnerBoxFits, setWinnerBoxFits,] = useState(true);
     const [settingsOpen, setSettingsOpen,] = useState(false);
     const [settingsTab, setSettingsTab,] = useState<SettingsTab>("main");
     const [historyOpen, setHistoryOpen,] = useState(false);
@@ -1052,6 +1053,29 @@ export default function Home() {
             }
         }, spinDuration * 1000);
     }
+    /*
+     * The winner box. Continue closes it. Remove hides the drawn
+     * entry the same way its eye does, then closes it.
+     */
+    function closeWinnerBox() {
+        if (spinning) {
+            return;
+        }
+        setSelectedEntry(null);
+    }
+    function removeWinner() {
+        if (spinning ||
+            mode !== "standard" ||
+            !selectedEntry ||
+            standardEntries.filter((entry) => !entry.hidden).length <= 2) {
+            return;
+        }
+        updateEntry(selectedEntry.id, {
+            hidden: true,
+            hiddenByHideAll: undefined,
+        });
+        setSelectedEntry(null);
+    }
     function nextSpin() {
         if (spinning ||
             !selectedEntry ||
@@ -1320,6 +1344,16 @@ export default function Home() {
             setConfettiRun((current) => current + 1);
         }
     }
+    /*
+     * In Standard Mode the winner shows in a box on the wheel. The
+     * result panel is the fallback when the wheel is too small for
+     * the box. The box reads the live entry, so a rename shows.
+     */
+    const winnerEntry = mode === "standard" && selectedEntry
+        ? standardEntries.find((entry) => entry.id === selectedEntry.id) ?? null
+        : null;
+    const winnerBoxShown = winnerEntry !== null && winnerBoxFits;
+    const winnerRemoveDisabled = standardEntries.filter((entry) => !entry.hidden).length <= 2;
     function renderStandardResult(inView: boolean) {
         if (!selectedEntry) {
             return null;
@@ -1532,10 +1566,14 @@ export default function Home() {
                     ...wheel.settings,
                     wheelSize: size,
                 },
-            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} expandedResult={mode === "standard"
-                ? (<div role="status" className="min-h-14">
+            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} result={mode === "standard" && winnerEntry
+                ? { label: winnerEntry.label, emoji: winnerEntry.emoji }
+                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} expandedResult={mode === "standard"
+                ? (winnerBoxShown
+                    ? undefined
+                    : (<div role="status" className="min-h-14">
                   {renderStandardResult(true)}
-                </div>)
+                </div>))
                 : (<div role="status">
                   {quizStarted && displayedQuizEntry
                     ? renderQuizCard(true)
@@ -1580,7 +1618,7 @@ export default function Home() {
               </p>
             </div>)}
           {mode === "standard" &&
-            selectedEntry && renderStandardResult(false)}
+            selectedEntry && !winnerBoxShown && renderStandardResult(false)}
         </div>
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center gap-2">
