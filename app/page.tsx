@@ -1614,6 +1614,7 @@ export default function Home() {
                 ? {
                     label: displayedQuizEntry.label,
                     emoji: displayedQuizEntry.emoji,
+                    image: displayedQuizEntry.image,
                     question: displayedQuizEntry.question ?? "",
                     answer: displayedQuizEntry.answer ?? "",
                     canSpinAgain: !quizComplete && !remainingQuizEntriesHidden,

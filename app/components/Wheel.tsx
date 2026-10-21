@@ -97,6 +97,7 @@ type WheelProps = {
 export type QuizBoxData = {
   label: string;
   emoji?: string;
+  image?: string;
   question: string;
   answer: string;
   /* False on the last question, where there is no other spin. */
@@ -731,6 +732,62 @@ function PlusIcon() {
     >
       <path d="M12 5v14" />
       <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+/*
+ * The round picture in the winner box and the quiz box. It is
+ * clipped to a circle the same way the slice pictures are. It is
+ * decoration: the name and text say everything, so it is hidden
+ * from screen readers.
+ */
+function BoxPicture({
+  src,
+  id,
+  small,
+}: {
+  src: string;
+  id: string;
+  small: boolean;
+}) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      className={`shrink-0 ${
+        small ? "h-8 w-8" : "h-11 w-11"
+      }`}
+    >
+      <defs>
+        <clipPath
+          id={id}
+          clipPathUnits="userSpaceOnUse"
+        >
+          <circle
+            cx="50"
+            cy="50"
+            r="50"
+          />
+        </clipPath>
+      </defs>
+
+      <image
+        href={src}
+        width="100"
+        height="100"
+        preserveAspectRatio="xMidYMid slice"
+        clipPath={`url(#${id})`}
+      />
+
+      <circle
+        cx="50"
+        cy="50"
+        r="48"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="4"
+      />
     </svg>
   );
 }
@@ -2441,25 +2498,46 @@ export default function Wheel({
                   ),
                 ),
               ),
-              maxHeight: Math.round(
-                (wheelPx ?? 0) * 0.82,
-              ),
+              /*
+               * With a picture the label row is taller, so the
+               * cap grows by the same amount and the scrolling
+               * area for long text stays the same size.
+               */
+              maxHeight:
+                Math.round(
+                  (wheelPx ?? 0) * 0.82,
+                ) +
+                (quiz.image
+                  ? (wheelPx ?? 0) < 300
+                    ? 16
+                    : 28
+                  : 0),
             }}
           >
-            <p
-              title={quiz.label}
-              className={`shrink-0 truncate text-xs font-bold ${
-                theme?.textPrimaryClass ??
-                "text-slate-50"
-              }`}
-            >
-              {quiz.emoji ? (
-                <span aria-hidden="true">
-                  {quiz.emoji}{" "}
-                </span>
+            <div className="flex shrink-0 items-center justify-center gap-2">
+              {quiz.image ? (
+                <BoxPicture
+                  src={quiz.image}
+                  id={`${boxId}-image`}
+                  small={(wheelPx ?? 0) < 300}
+                />
               ) : null}
-              {quiz.label}
-            </p>
+
+              <p
+                title={quiz.label}
+                className={`min-w-0 truncate text-xs font-bold ${
+                  theme?.textPrimaryClass ??
+                  "text-slate-50"
+                }`}
+              >
+                {quiz.emoji ? (
+                  <span aria-hidden="true">
+                    {quiz.emoji}{" "}
+                  </span>
+                ) : null}
+                {quiz.label}
+              </p>
+            </div>
 
             <div
               tabIndex={0}
@@ -2586,50 +2664,11 @@ export default function Wheel({
 
             <div className="mt-1 flex w-full items-center justify-center gap-2">
               {result.image ? (
-                /*
-                 * Clipped to a circle the same way the slice
-                 * pictures are. It is decoration: the name
-                 * says who won.
-                 */
-                <svg
-                  viewBox="0 0 100 100"
-                  aria-hidden="true"
-                  className={`shrink-0 ${
-                    (wheelPx ?? 0) < 300
-                      ? "h-8 w-8"
-                      : "h-11 w-11"
-                  }`}
-                >
-                  <defs>
-                    <clipPath
-                      id={`${boxId}-image`}
-                      clipPathUnits="userSpaceOnUse"
-                    >
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="50"
-                      />
-                    </clipPath>
-                  </defs>
-
-                  <image
-                    href={result.image}
-                    width="100"
-                    height="100"
-                    preserveAspectRatio="xMidYMid slice"
-                    clipPath={`url(#${boxId}-image)`}
-                  />
-
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="48"
-                    fill="none"
-                    stroke="#ffffff"
-                    strokeWidth="4"
-                  />
-                </svg>
+                <BoxPicture
+                  src={result.image}
+                  id={`${boxId}-image`}
+                  small={(wheelPx ?? 0) < 300}
+                />
               ) : null}
 
               <p
