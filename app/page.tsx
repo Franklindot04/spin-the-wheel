@@ -222,19 +222,20 @@ export default function Home() {
         })));
     };
     /*
-     * In Standard Mode the winner shows in a box on the wheel. The
-     * result panel is the fallback when the wheel is too small for
-     * the box. The box shows the entry as it was drawn, and that
-     * entry is locked in the list while the box is open.
+     * In Standard Mode the winner shows in a box on the wheel when
+     * the wheel's winner display is Popup. The result panel is
+     * shown instead when it is not, and as the fallback when the
+     * wheel is too small for the box. Either way the drawn entry is
+     * locked in the list while its result is showing, and the box
+     * shows the entry as it was drawn.
      */
     const winnerPopup = activeWheel.settings.winnerDisplay === "popup";
-    const winnerEntryExists = winnerPopup &&
-        mode === "standard" &&
+    const standardResultExists = mode === "standard" &&
         selectedEntry !== null &&
         standardEntries.some((entry) => entry.id === selectedEntry.id);
+    const winnerEntryExists = winnerPopup && standardResultExists;
     const winnerBoxShown = winnerEntryExists && winnerBoxFits;
-    /* The drawn entry is locked in the list while its box is open. */
-    const lockedEntryId = winnerBoxShown && selectedEntry
+    const lockedEntryId = standardResultExists && selectedEntry
         ? selectedEntry.id
         : null;
     const wheelTitle = activeWheel.title;
