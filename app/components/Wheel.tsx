@@ -2187,7 +2187,7 @@ export default function Wheel({
               width: Math.min(
                 340,
                 Math.max(
-                  168,
+                  180,
                   Math.round(
                     (wheelPx ?? 0) *
                       0.62,
@@ -2206,32 +2206,85 @@ export default function Wheel({
               Winner
             </p>
 
-            <p
-              id={`${boxId}-name`}
-              title={result.label}
-              className={`mt-1 line-clamp-3 w-full break-words font-bold leading-tight ${
-                (wheelPx ?? 0) < 300
-                  ? "text-sm"
-                  : "text-xl"
-              } ${
-                theme?.textPrimaryClass ??
-                "text-slate-50"
-              }`}
-            >
-              {result.emoji ? (
-                <span aria-hidden="true">
-                  {result.emoji}{" "}
-                </span>
+            <div className="mt-1 flex w-full items-center justify-center gap-2">
+              {result.image ? (
+                /*
+                 * Clipped to a circle the same way the slice
+                 * pictures are. It is decoration: the name
+                 * says who won.
+                 */
+                <svg
+                  viewBox="0 0 100 100"
+                  aria-hidden="true"
+                  className={`shrink-0 ${
+                    (wheelPx ?? 0) < 300
+                      ? "h-8 w-8"
+                      : "h-11 w-11"
+                  }`}
+                >
+                  <defs>
+                    <clipPath
+                      id={`${boxId}-image`}
+                      clipPathUnits="userSpaceOnUse"
+                    >
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="50"
+                      />
+                    </clipPath>
+                  </defs>
+
+                  <image
+                    href={result.image}
+                    width="100"
+                    height="100"
+                    preserveAspectRatio="xMidYMid slice"
+                    clipPath={`url(#${boxId}-image)`}
+                  />
+
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="48"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="4"
+                  />
+                </svg>
               ) : null}
-              {result.label}
-            </p>
+
+              <p
+                id={`${boxId}-name`}
+                title={result.label}
+                className={`line-clamp-3 min-w-0 break-words font-bold leading-tight ${
+                  result.image
+                    ? "text-left"
+                    : "w-full"
+                } ${
+                  (wheelPx ?? 0) < 300
+                    ? "text-sm"
+                    : "text-xl"
+                } ${
+                  theme?.textPrimaryClass ??
+                  "text-slate-50"
+                }`}
+              >
+                {result.emoji ? (
+                  <span aria-hidden="true">
+                    {result.emoji}{" "}
+                  </span>
+                ) : null}
+                {result.label}
+              </p>
+            </div>
 
             <div className="mt-2 flex w-full gap-2">
               <button
                 ref={continueButtonRef}
                 type="button"
                 onClick={continueFromBox}
-                className={`h-9 flex-1 rounded-lg px-2 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${accentClass} ${accentHoverClass}`}
+                className={`h-9 min-w-0 flex-1 rounded-lg px-1 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${accentClass} ${accentHoverClass}`}
               >
                 Continue
               </button>
@@ -2240,7 +2293,7 @@ export default function Wheel({
                 type="button"
                 onClick={removeFromBox}
                 disabled={removeDisabled}
-                className={`h-9 flex-1 rounded-lg border px-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+                className={`h-9 min-w-0 flex-1 rounded-lg border px-1 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
                   theme
                     ? `${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`
                     : "border-slate-600 text-slate-200"
