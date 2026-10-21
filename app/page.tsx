@@ -49,6 +49,8 @@ export default function Home() {
     const [wheelExpanded, setWheelExpanded,] = useState(false);
     const [winnerBoxFits, setWinnerBoxFits,] = useState(true);
     const [spinFocusRequest, setSpinFocusRequest,] = useState(0);
+    /* True once any spin has started since the page was opened. Not saved. */
+    const [hasSpun, setHasSpun,] = useState(false);
     const [settingsOpen, setSettingsOpen,] = useState(false);
     const [settingsTab, setSettingsTab,] = useState<SettingsTab>("main");
     const [historyOpen, setHistoryOpen,] = useState(false);
@@ -1012,6 +1014,7 @@ export default function Home() {
         setShowAnswer(false);
         answerConfettiFiredRef.current = false;
         setSpinning(true);
+        setHasSpun(true);
         setRotation(targetRotation);
         /*
          * Wait for the actual wheel animation
@@ -1615,6 +1618,15 @@ export default function Home() {
                     : null}
                 </div>)}/>
           </div>
+          {mode === "standard" &&
+            !hasSpun && (<div inert={wheelExpanded} aria-hidden={wheelExpanded || undefined} className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
+              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
+                Standard Mode
+              </h2>
+              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
+                Add your options in the list, then press Spin. Change a name, colour or weight with the entry&apos;s ... menu, and hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.
+              </p>
+            </div>)}
           {mode === "quiz" &&
             !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
               <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
