@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-10-21
+
 ### Added
 
 - When the wheel stops in Standard Mode, the winner appears in a box in the middle of the wheel with Continue and Remove buttons. Continue keeps every option. Remove hides the winner like the eye icon. Clicking outside the box closes it.
@@ -296,7 +298,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.3.0...v2.4.0
