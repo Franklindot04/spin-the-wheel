@@ -48,6 +48,7 @@ export default function Home() {
     const [showAnswer, setShowAnswer,] = useState(false);
     const [wheelExpanded, setWheelExpanded,] = useState(false);
     const [winnerBoxFits, setWinnerBoxFits,] = useState(true);
+    const [spinFocusRequest, setSpinFocusRequest,] = useState(0);
     const [settingsOpen, setSettingsOpen,] = useState(false);
     const [settingsTab, setSettingsTab,] = useState<SettingsTab>("main");
     const [historyOpen, setHistoryOpen,] = useState(false);
@@ -1105,6 +1106,17 @@ export default function Home() {
         setSelectedEntry(null);
         setShowAnswer(false);
     }
+    /*
+     * Clear result, on the result panel: closes the result like
+     * Continue does, never hides the entry, and sends focus to Spin.
+     */
+    function clearResult() {
+        if (spinning) {
+            return;
+        }
+        setSelectedEntry(null);
+        setSpinFocusRequest((current) => current + 1);
+    }
     function nextSpin() {
         if (spinning ||
             !selectedEntry ||
@@ -1386,6 +1398,9 @@ export default function Home() {
             {selectedEntry.emoji && (<span aria-hidden="true">{selectedEntry.emoji}{" "}</span>)}
             {selectedEntry.label}
           </p>
+          <button type="button" onClick={clearResult} className={`mt-1 min-h-11 rounded-lg px-3 text-xs font-semibold underline-offset-4 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current ${theme.textMutedClass}`}>
+            Clear result
+          </button>
         </div>);
     }
     function renderQuizCard(inView: boolean) {
@@ -1588,7 +1603,7 @@ export default function Home() {
                 },
             })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} result={winnerEntryExists && selectedEntry
                 ? { label: selectedEntry.label, emoji: selectedEntry.emoji, image: selectedEntry.image }
-                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} expandedResult={mode === "standard"
+                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} expandedResult={mode === "standard"
                 ? (winnerBoxShown
                     ? undefined
                     : (<div role="status" className="min-h-14">

@@ -77,6 +77,11 @@ type WheelProps = {
   removeDisabled?: boolean;
   reason?: string;
   onBoxFitChange?: (fits: boolean) => void;
+  /*
+   * Each time this number goes up, focus moves to Spin (or to
+   * Close or the full screen button if Spin cannot be used).
+   */
+  focusSpinRequest?: number;
 };
 
 export type WinnerBoxResult = {
@@ -742,6 +747,7 @@ export default function Wheel({
   removeDisabled = false,
   reason,
   onBoxFitChange,
+  focusSpinRequest = 0,
 }: WheelProps) {
   const imageClipPrefix = `slice-image-${toIdPart(
     useId(),
@@ -1508,6 +1514,28 @@ export default function Wheel({
 
     target?.focus();
   }, [boxOpen, spinDisabled]);
+
+  const lastFocusRequestRef =
+    useRef(focusSpinRequest);
+
+  useEffect(() => {
+    if (
+      focusSpinRequest ===
+      lastFocusRequestRef.current
+    ) {
+      return;
+    }
+
+    lastFocusRequestRef.current =
+      focusSpinRequest;
+
+    const target = spinDisabled
+      ? (closeButtonRef.current ??
+        fullscreenButtonRef.current)
+      : spinButtonRef.current;
+
+    target?.focus();
+  }, [focusSpinRequest, spinDisabled]);
 
   function continueFromBox() {
     returnFocusRef.current = true;
