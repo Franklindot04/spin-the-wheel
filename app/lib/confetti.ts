@@ -60,6 +60,12 @@ type Piece = {
   delay: number;
   life: number;
   age: number;
+  /*
+   * True for pieces that start from the middle of the wheel,
+   * so one that has not started yet can follow the wheel
+   * when the canvas changes size.
+   */
+  anchored: boolean;
 };
 
 function between(
@@ -104,6 +110,7 @@ function makePiece(
     delay: 0,
     life: between(2, 2.6),
     age: 0,
+    anchored: false,
     ...options,
   };
 }
@@ -171,6 +178,7 @@ function buildPieces(
           size: between(6, 10),
           gravity: 55,
           drag: 1.2,
+          anchored: true,
           ...options,
         },
       );
@@ -210,7 +218,12 @@ function buildPieces(
         between(0, Math.PI * 2),
         reach * size * 1.4,
         Math.random() < 0.25 ? "dot" : "paper",
-        { gravity: 40, drag: 1.4, ...options },
+        {
+          gravity: 40,
+          drag: 1.4,
+          anchored: true,
+          ...options,
+        },
       );
 
     /*
@@ -404,6 +417,7 @@ function buildPieces(
             {
               color,
               delay,
+              anchored: burst === 0,
               gravity: 40,
               drag: 1.2,
               size: between(2.5, 4),
@@ -436,7 +450,7 @@ function prefersReducedMotion(): boolean {
 export function startConfetti(
   canvas: HTMLCanvasElement,
   style: ConfettiEffect,
-  focus?: ConfettiFocus,
+  getFocus?: () => ConfettiFocus | undefined,
 ): ConfettiShow | null {
   if (
     style === "none" ||
@@ -473,11 +487,29 @@ export function startConfetti(
     return null;
   }
 
+  /*
+   * The middle of the wheel, in canvas pixels. It is asked
+   * for again when the canvas changes size, because the
+   * wheel moves with the layout.
+   */
+  function currentFocus(): ConfettiFocus {
+    return (
+      getFocus?.() ?? {
+        x: width / 2,
+        y: height * 0.45,
+      }
+    );
+  }
+
+  let focus = currentFocus();
+  let sizedWidth = width;
+  let sizedHeight = height;
+
   const pieces = buildPieces(
     style,
     width,
     height,
-    focus ?? { x: width / 2, y: height * 0.45 },
+    focus,
   );
 
   let frame = 0;
@@ -531,19 +563,11 @@ export function startConfetti(
     context!.restore();
   }
 
-  function step(now: number) {
-    if (stopped) {
-      return;
-    }
-
-    const seconds =
-      last === null
-        ? 0
-        : Math.min(0.05, (now - last) / 1000);
-
-    last = now;
-    elapsed += seconds;
-
+  /*
+   * Draws every piece once and moves it on by the given time.
+   * Returns how many pieces are still alive.
+   */
+  function render(seconds: number): number {
     context!.setTransform(ratio, 0, 0, ratio, 0, 0);
     context!.clearRect(0, 0, width, height);
 
@@ -584,13 +608,82 @@ export function startConfetti(
 
     context!.globalAlpha = 1;
 
-    if (alive === 0) {
+    return alive;
+  }
+
+  function step(now: number) {
+    if (stopped) {
+      return;
+    }
+
+    const seconds =
+      last === null
+        ? 0
+        : Math.min(0.05, (now - last) / 1000);
+
+    last = now;
+    elapsed += seconds;
+
+    if (render(seconds) === 0) {
       stop();
 
       return;
     }
 
     frame = window.requestAnimationFrame(step);
+  }
+
+  /*
+   * When the canvas changes size (full screen, the in-page
+   * view, a window resize or a rotation) every piece moves
+   * by the same ratio, so the show keeps its place instead
+   * of staying at the old pixel positions. A piece that has
+   * not started yet also follows the wheel's new middle.
+   */
+  function handleResize() {
+    resize();
+
+    /*
+     * A canvas with no size (hidden for a moment) keeps the
+     * last real size, so the pieces are scaled once it comes
+     * back.
+     */
+    if (width < 1 || height < 1) {
+      return;
+    }
+
+    if (width === sizedWidth && height === sizedHeight) {
+      render(0);
+
+      return;
+    }
+
+    const scaleX = width / sizedWidth;
+    const scaleY = height / sizedHeight;
+
+    sizedWidth = width;
+    sizedHeight = height;
+    const next = currentFocus();
+    const moveX = next.x - focus.x * scaleX;
+    const moveY = next.y - focus.y * scaleY;
+
+    for (const piece of pieces) {
+      piece.x *= scaleX;
+      piece.y *= scaleY;
+
+      if (piece.anchored && piece.age === 0) {
+        piece.x += moveX;
+        piece.y += moveY;
+      }
+    }
+
+    focus = next;
+
+    /*
+     * Setting the canvas size clears it, so draw again now
+     * rather than leave it empty until the next frame.
+     */
+    render(0);
   }
 
   function handleVisibility() {
@@ -604,7 +697,7 @@ export function startConfetti(
       ? null
       : new ResizeObserver(() => {
           if (!stopped) {
-            resize();
+            handleResize();
           }
         });
 

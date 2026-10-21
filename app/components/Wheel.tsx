@@ -957,16 +957,19 @@ export default function Wheel({
       return;
     }
 
-    const wheel = canvas.parentElement?.querySelector(
-      'svg[aria-label="Spin the wheel"]',
-    );
-    const wheelBox = wheel?.getBoundingClientRect();
-    const canvasBox = canvas.getBoundingClientRect();
+    /*
+     * The middle of the wheel in canvas pixels. It is read
+     * again if the canvas changes size during the show.
+     */
+    const getWheelCentre = () => {
+      const wheelBox = canvas.parentElement
+        ?.querySelector(
+          'svg[aria-label="Spin the wheel"]',
+        )
+        ?.getBoundingClientRect();
+      const canvasBox = canvas.getBoundingClientRect();
 
-    confettiShowRef.current = startConfetti(
-      canvas,
-      confettiStyle,
-      wheelBox
+      return wheelBox
         ? {
             x:
               wheelBox.left +
@@ -977,7 +980,13 @@ export default function Wheel({
               wheelBox.height / 2 -
               canvasBox.top,
           }
-        : undefined,
+        : undefined;
+    };
+
+    confettiShowRef.current = startConfetti(
+      canvas,
+      confettiStyle,
+      getWheelCentre,
     );
   }, [confettiRun, confettiStyle]);
 
