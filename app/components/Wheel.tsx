@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 
 import type {
   AppearanceThemeConfig,
+  ConfettiEffect,
   WheelEntry,
 } from "../lib/wheel-types";
 import {
@@ -22,6 +23,16 @@ import {
   MAX_WHEEL_SIZE,
   MIN_WHEEL_SIZE,
 } from "../lib/wheel-defaults";
+import {
+  startConfetti,
+  type ConfettiShow,
+} from "../lib/confetti";
+import {
+  playSpinTick,
+  stopWinnerSound,
+  unlock,
+} from "../lib/sound-engine";
+import { createTickTracker } from "../lib/spin-ticks";
 import {
   getEntryWeight,
   truncateGraphemes,
@@ -39,6 +50,13 @@ type WheelProps = {
   emptyTitle?: string;
   emptyMessage?: string;
   spinDuration?: number;
+  spinSound?: string;
+  soundActive?: boolean;
+  confettiStyle?: ConfettiEffect;
+  confettiRun?: number;
+  confettiStop?: number;
+  soundEnabled?: boolean;
+  onSoundToggle?: () => void;
   pointerMatchSliceColor?: boolean;
   wheelSize?: number;
   onWheelSizeChange?: (size: number) => void;
@@ -445,6 +463,42 @@ function clampSize(value: number) {
 
 const DEFAULT_POINTER_FALLBACK = "#0f172a";
 
+/*
+ * The wheel's real rotation in degrees, read from
+ * the turning group while the CSS transition runs.
+ * Returns null when the browser gives no matrix.
+ */
+function readRotation(
+  element: Element,
+): number | null {
+  const transform =
+    window.getComputedStyle(element)
+      .transform;
+  const match = /^matrix(3d)?\(([^)]+)\)$/.exec(
+    transform,
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const values = match[2]
+    .split(",")
+    .map((value) => Number(value));
+
+  const cos = values[0];
+  const sin = values[1];
+
+  if (
+    !Number.isFinite(cos) ||
+    !Number.isFinite(sin)
+  ) {
+    return null;
+  }
+
+  return (Math.atan2(sin, cos) * 180) / Math.PI;
+}
+
 function getInitialPointerColor(
   entries: WheelEntry[],
   rotation: number,
@@ -571,6 +625,39 @@ function FullscreenIcon({
   );
 }
 
+function SpeakerIcon({
+  muted,
+}: {
+  muted: boolean;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 5 6 9H3v6h3l5 4z" />
+
+      {muted ? (
+        <>
+          <path d="M16 9.5l5 5" />
+          <path d="M21 9.5l-5 5" />
+        </>
+      ) : (
+        <>
+          <path d="M15.5 9a4 4 0 0 1 0 6" />
+          <path d="M18.5 6.5a8 8 0 0 1 0 11" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function MinusIcon() {
   return (
     <svg
@@ -614,6 +701,13 @@ export default function Wheel({
   emptyTitle = "No visible entries",
   emptyMessage = "Add entries or show hidden ones to spin the wheel.",
   spinDuration = 4.5,
+  spinSound = "tick",
+  soundActive = false,
+  confettiStyle = "none",
+  confettiRun = 0,
+  confettiStop = 0,
+  soundEnabled = true,
+  onSoundToggle,
   pointerMatchSliceColor = true,
   wheelSize,
   onWheelSizeChange,
@@ -704,6 +798,21 @@ export default function Wheel({
 
   const rotationRef =
     useRef(rotation);
+
+  const rotatingGroupRef =
+    useRef<SVGGElement | null>(null);
+
+  const confettiCanvasRef =
+    useRef<HTMLCanvasElement | null>(null);
+
+  const confettiShowRef =
+    useRef<ConfettiShow | null>(null);
+
+  const lastConfettiRunRef =
+    useRef(confettiRun);
+
+  const lastConfettiStopRef =
+    useRef(confettiStop);
 
   const [
     availableWidth,
@@ -826,6 +935,180 @@ export default function Wheel({
     rotationRef.current =
       rotation;
   }, [rotation]);
+
+  /*
+   * Draws confetti when the run counter goes up, which the
+   * page does at the moment a winner is set. The canvas is
+   * inside this container so it also shows in both full
+   * screen views.
+   */
+  useEffect(() => {
+    if (confettiRun === lastConfettiRunRef.current) {
+      return;
+    }
+
+    lastConfettiRunRef.current = confettiRun;
+
+    const canvas = confettiCanvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    confettiShowRef.current?.stop();
+    confettiShowRef.current = null;
+
+    if (confettiStyle === "none") {
+      return;
+    }
+
+    /*
+     * The middle of the wheel in canvas pixels. It is read
+     * again if the canvas changes size during the show.
+     */
+    const getWheelCentre = () => {
+      const wheelBox = canvas.parentElement
+        ?.querySelector(
+          'svg[aria-label="Spin the wheel"]',
+        )
+        ?.getBoundingClientRect();
+      const canvasBox = canvas.getBoundingClientRect();
+
+      return wheelBox
+        ? {
+            x:
+              wheelBox.left +
+              wheelBox.width / 2 -
+              canvasBox.left,
+            y:
+              wheelBox.top +
+              wheelBox.height / 2 -
+              canvasBox.top,
+          }
+        : undefined;
+    };
+
+    confettiShowRef.current = startConfetti(
+      canvas,
+      confettiStyle,
+      getWheelCentre,
+    );
+  }, [confettiRun, confettiStyle]);
+
+  /*
+   * The page raises the stop counter when what the confetti
+   * belongs to goes away: a mode switch, another wheel, a
+   * quiz starting or going back to setup, or a reset. It runs
+   * before the screen is painted, so no piece is left behind.
+   * Stopping also clears the canvas.
+   */
+  useLayoutEffect(() => {
+    if (confettiStop === lastConfettiStopRef.current) {
+      return;
+    }
+
+    lastConfettiStopRef.current = confettiStop;
+    confettiShowRef.current?.stop();
+    confettiShowRef.current = null;
+  }, [confettiStop]);
+
+  /*
+   * A new spin, or leaving the page, ends the confetti.
+   */
+  useEffect(() => {
+    if (spinning) {
+      confettiShowRef.current?.stop();
+      confettiShowRef.current = null;
+    }
+  }, [spinning]);
+
+  useEffect(() => {
+    return () => {
+      confettiShowRef.current?.stop();
+    };
+  }, []);
+
+  /*
+   * Plays a sound each time a slice edge passes the
+   * pointer. It follows the real rotation, so the
+   * sounds slow down with the wheel and stop when it
+   * stops. The loop also stops when sound is turned
+   * off or muted, and while the page is hidden.
+   */
+  useEffect(() => {
+    const group = rotatingGroupRef.current;
+
+    if (
+      !spinning ||
+      !soundActive ||
+      spinSound === "none" ||
+      !group
+    ) {
+      return;
+    }
+
+    const starts = slices.map(
+      (slice) => slice.start,
+    );
+
+    let tracker = createTickTracker(starts);
+    let frame = 0;
+
+    function step(now: number) {
+      const angle = readRotation(
+        group as SVGGElement,
+      );
+
+      if (angle !== null) {
+        const edges = tracker.update(
+          angle,
+          now,
+        );
+
+        if (edges > 0) {
+          playSpinTick(
+            spinSound,
+            1 + Math.min(edges - 1, 4) * 0.125,
+          );
+        }
+      }
+
+      frame = window.requestAnimationFrame(step);
+    }
+
+    function start() {
+      tracker = createTickTracker(starts);
+      frame = window.requestAnimationFrame(step);
+    }
+
+    function stop() {
+      window.cancelAnimationFrame(frame);
+    }
+
+    function handleVisibility() {
+      stop();
+
+      if (document.visibilityState !== "hidden") {
+        start();
+      }
+    }
+
+    start();
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility,
+    );
+
+    return () => {
+      stop();
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility,
+      );
+    };
+  }, [spinning, soundActive, spinSound, slices]);
 
   useLayoutEffect(() => {
     /*
@@ -1078,6 +1361,19 @@ export default function Wheel({
      * The pointer must remain the same
      * color throughout the entire spin.
      */
+    /*
+     * Runs inside the tap so iPhone allows sound.
+     */
+    unlock();
+
+    confettiShowRef.current?.stop();
+    confettiShowRef.current = null;
+
+    /*
+     * A winner sound from the last spin ends here.
+     */
+    stopWinnerSound();
+
     onSpin();
 
     spinTimerRef.current =
@@ -1207,7 +1503,7 @@ export default function Wheel({
       }
       className={
         expanded
-          ? `wheel-expanded flex w-full flex-col items-center overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:pt-[max(2rem,env(safe-area-inset-top))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] sm:pl-[max(2rem,env(safe-area-inset-left))] ${
+          ? `wheel-expanded relative flex w-full flex-col items-center overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:pt-[max(2rem,env(safe-area-inset-top))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] sm:pl-[max(2rem,env(safe-area-inset-left))] ${
               inPageView
                 ? "h-full"
                 : "h-dvh"
@@ -1215,7 +1511,7 @@ export default function Wheel({
               theme?.pageClass ??
               "bg-white"
             }`
-          : "flex w-full flex-col items-center"
+          : "relative flex w-full flex-col items-center"
       }
     >
       <div
@@ -1298,6 +1594,31 @@ export default function Wheel({
               : ""
           }`}
         >
+          {onSoundToggle ? (
+            <button
+              type="button"
+              onClick={onSoundToggle}
+              aria-pressed={!soundEnabled}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+                theme
+                  ? `${theme.controlClass} ${theme.controlHoverClass}`
+                  : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+              }`}
+              aria-label={
+                soundEnabled
+                  ? "Mute sound"
+                  : "Unmute sound"
+              }
+              title={
+                soundEnabled
+                  ? "Mute sound"
+                  : "Unmute sound"
+              }
+            >
+              <SpeakerIcon muted={!soundEnabled} />
+            </button>
+          ) : null}
+
           {inPageView ? (
             <button
               ref={closeButtonRef}
@@ -1391,6 +1712,7 @@ export default function Wheel({
           role="img"
         >
           <g
+            ref={rotatingGroupRef}
             style={{
               transform: `rotate(${rotation}deg)`,
               transformOrigin: `${CENTER}px ${CENTER}px`,
@@ -1687,6 +2009,12 @@ export default function Wheel({
           ? "Spinning…"
           : "Spin"}
       </button>
+
+      <canvas
+        ref={confettiCanvasRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-20 h-full w-full"
+      />
     </div>
     </div>
   );

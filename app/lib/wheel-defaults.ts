@@ -82,6 +82,24 @@ export const DEFAULT_SOUND_ENABLED =
 
 export const DEFAULT_VOLUME = 80;
 
+export const SPIN_SOUNDS = [
+  "tick",
+  "click",
+  "pop",
+  "none",
+] as const;
+
+export const WINNER_SOUNDS = [
+  "success",
+  "chime",
+  "applause",
+  "none",
+] as const;
+
+export const DEFAULT_SPIN_SOUND = "tick";
+
+export const DEFAULT_WINNER_SOUND = "success";
+
 export function createDefaultWheelSettings(): WheelSettings {
   return {
     appearanceTheme: "classic",
@@ -93,6 +111,12 @@ export function createDefaultWheelSettings(): WheelSettings {
 
     volume:
       DEFAULT_VOLUME,
+
+    spinSound:
+      DEFAULT_SPIN_SOUND,
+
+    winnerSound:
+      DEFAULT_WINNER_SOUND,
 
     spinSpeed:
       DEFAULT_SPIN_SPEED,
@@ -462,6 +486,21 @@ function normalizeVolume(
   );
 }
 
+function normalizeSoundChoice(
+  value: unknown,
+  allowed: readonly string[],
+  fallback: string,
+): string {
+  if (
+    typeof value === "string" &&
+    allowed.includes(value)
+  ) {
+    return value;
+  }
+
+  return fallback;
+}
+
 function normalizeSpinSpeed(
   value: unknown,
 ): SpinSpeed {
@@ -573,6 +612,20 @@ export function normalizeWheelSettings(
     volume:
       normalizeVolume(
         settings?.volume,
+      ),
+
+    spinSound:
+      normalizeSoundChoice(
+        settings?.spinSound,
+        SPIN_SOUNDS,
+        DEFAULT_SPIN_SOUND,
+      ),
+
+    winnerSound:
+      normalizeSoundChoice(
+        settings?.winnerSound,
+        WINNER_SOUNDS,
+        DEFAULT_WINNER_SOUND,
       ),
 
     spinSpeed:

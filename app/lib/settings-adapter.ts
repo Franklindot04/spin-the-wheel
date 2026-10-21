@@ -24,7 +24,6 @@ import {
   DEFAULT_SPIN_SPEED,
   DEFAULT_VOLUME,
   DEFAULT_WHEEL_SIZE,
-  DEFAULT_WINNER_DISPLAY,
   MAX_SPIN_DURATION,
   MAX_SPIN_SPEED,
   MIN_SPIN_DURATION,
@@ -185,24 +184,6 @@ function appConfettiToPanelStyle(
   }
 }
 
-function panelWinnerToAppWinner(
-  method: WinnerDisplayMethod,
-): WinnerDisplay {
-  switch (method) {
-    case "popup":
-      return "popup";
-
-    case "panel":
-      return "banner";
-
-    case "highlight":
-      return "wheel";
-
-    default:
-      return DEFAULT_WINNER_DISPLAY;
-  }
-}
-
 function appWinnerToPanelWinner(
   winner?: WinnerDisplay,
 ): WinnerDisplayMethod {
@@ -354,10 +335,12 @@ export function panelSettingsToWheelSettings(
         panelSettings.confettiStyle,
       ),
 
+    /*
+     * The panel no longer shows a Display method control, so
+     * the saved value is kept exactly as it is.
+     */
     winnerDisplay:
-      panelWinnerToAppWinner(
-        panelSettings.winnerDisplayMethod,
-      ),
+      currentSettings.winnerDisplay,
 
     maxEntries:
       panelSettings.numberOfEntries,

@@ -1,5 +1,17 @@
 "use client";
 
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  startSpinPreview,
+  startWinnerPreview,
+  stopPreview,
+} from "../lib/sound-preview";
+
 export type SettingsTab =
   | "main"
   | "sound"
@@ -229,6 +241,132 @@ function SelectField({
   );
 }
 
+const SPIN_SOUND_OPTIONS = [
+  { value: "tick", label: "Tick" },
+  { value: "click", label: "Click" },
+  { value: "pop", label: "Pop" },
+  { value: "none", label: "None" },
+];
+
+const WINNER_SOUND_OPTIONS = [
+  { value: "success", label: "Success" },
+  { value: "chime", label: "Chime" },
+  { value: "applause", label: "Applause" },
+  { value: "none", label: "None" },
+];
+
+type PreviewKind = "spin" | "winner";
+
+function PreviewIcon({
+  playing,
+}: {
+  playing: boolean;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="currentColor"
+    >
+      {playing ? (
+        <rect x="6" y="6" width="12" height="12" rx="1.5" />
+      ) : (
+        <path d="M8 5.5v13l11-6.5z" />
+      )}
+    </svg>
+  );
+}
+
+function SoundField({
+  id,
+  label,
+  kind,
+  value,
+  options,
+  playing,
+  onChange,
+  onPreview,
+  accentClass,
+}: {
+  id: string;
+  label: string;
+  kind: PreviewKind;
+  value: string;
+  options: Array<{
+    value: string;
+    label: string;
+  }>;
+  playing: boolean;
+  onChange: (value: string) => void;
+  onPreview: () => void;
+  accentClass: string;
+}) {
+  const soundLabel =
+    options.find((option) => option.value === value)
+      ?.label ?? value;
+  const none = value === "none";
+
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="mb-2 block text-sm font-semibold text-slate-800"
+      >
+        {label}
+      </label>
+
+      <div className="flex items-stretch gap-2">
+        <select
+          id={id}
+          value={value}
+          onChange={(event) =>
+            onChange(event.target.value)
+          }
+          className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+        >
+          {options.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        <button
+          type="button"
+          onClick={onPreview}
+          disabled={none}
+          aria-label={
+            none
+              ? `No ${kind} sound to play`
+              : playing
+                ? "Stop sound"
+                : `Play ${soundLabel} sound`
+          }
+          title={
+            none
+              ? `No ${kind} sound to play`
+              : playing
+                ? "Stop sound"
+                : `Play ${soundLabel} sound`
+          }
+          className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-40 ${
+            playing
+              ? `border-transparent ${accentClass} text-white`
+              : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+          }`}
+        >
+          <PreviewIcon playing={playing} />
+          {playing ? "Stop" : "Play"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const TABS: Array<{
   id: SettingsTab;
   label: string;
@@ -320,24 +458,6 @@ const CONFETTI_OPTIONS: Array<{
   },
 ];
 
-const WINNER_DISPLAY_OPTIONS: Array<{
-  value: WinnerDisplayMethod;
-  label: string;
-}> = [
-  {
-    value: "popup",
-    label: "Popup",
-  },
-  {
-    value: "panel",
-    label: "Result panel",
-  },
-  {
-    value: "highlight",
-    label: "Highlight on wheel",
-  },
-];
-
 const AUTO_GENERATE_OPTIONS = [
   {
     value: "names",
@@ -380,6 +500,83 @@ export default function SettingsPanel({
     onSettingsChange(changes);
   }
 
+  const [preview, setPreview] =
+    useState<PreviewKind | null>(null);
+
+  const lastSoundEnabled = useRef(
+    settings.soundEnabled,
+  );
+
+  function stopPreviewNow() {
+    stopPreview();
+    setPreview(null);
+  }
+
+  /*
+   * Play starts a preview, and a tap on Stop (the same
+   * button while it plays) ends it.
+   */
+  function togglePreview(kind: PreviewKind) {
+    if (preview === kind) {
+      stopPreviewNow();
+
+      return;
+    }
+
+    const sound =
+      kind === "spin"
+        ? settings.spinSound
+        : settings.winnerSound;
+
+    if (sound === "none") {
+      return;
+    }
+
+    const over = () =>
+      setPreview((current) =>
+        current === kind ? null : current,
+      );
+
+    setPreview(kind);
+
+    if (kind === "spin") {
+      startSpinPreview(
+        sound,
+        settings.soundEnabled,
+        over,
+      );
+    } else {
+      startWinnerPreview(
+        sound,
+        settings.soundEnabled,
+        over,
+      );
+    }
+  }
+
+  /*
+   * A preview ends when Settings closes. It also ends when
+   * Enable sound changes, for example with the speaker
+   * button.
+   */
+  useEffect(() => {
+    return () => {
+      stopPreview();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      lastSoundEnabled.current !==
+      settings.soundEnabled
+    ) {
+      lastSoundEnabled.current =
+        settings.soundEnabled;
+      stopPreview();
+      setPreview(null);
+    }
+  }, [settings.soundEnabled]);
+
   return (
     <section className="w-full rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
@@ -412,9 +609,13 @@ export default function SettingsPanel({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() =>
-                  onActiveTabChange(tab.id)
-                }
+                onClick={() => {
+                  if (tab.id !== "sound") {
+                    stopPreviewNow();
+                  }
+
+                  onActiveTabChange(tab.id);
+                }}
                 className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition sm:px-4 sm:py-2.5 ${
                   active
                     ? `${accentClass} text-white`
@@ -500,27 +701,12 @@ export default function SettingsPanel({
               />
             </div>
 
-            <div>
-              <SectionTitle
-                title="Winner display"
-              />
-
-              <SelectField
-                label="Display method"
-                value={
-                  settings.winnerDisplayMethod
-                }
-                onChange={(value) =>
-                  updateSettings({
-                    winnerDisplayMethod:
-                      value as WinnerDisplayMethod,
-                  })
-                }
-                options={
-                  WINNER_DISPLAY_OPTIONS
-                }
-              />
-            </div>
+            {/*
+              * The Display method control is hidden until the
+              * winner box (issue #57) exists. Only the result
+              * panel works today. The saved value is kept as it
+              * is.
+              */}
 
             <div>
               <SectionTitle
@@ -621,69 +807,62 @@ export default function SettingsPanel({
                   })
                 }
                 label="Enable sound"
+                description="On iPhone, the ringer switch can silence web sounds."
                 accentClass={accentClass}
               />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <SelectField
+              <SoundField
+                id="spin-sound"
                 label="Spin sound"
+                kind="spin"
                 value={settings.spinSound}
-                onChange={(value) =>
+                options={SPIN_SOUND_OPTIONS}
+                playing={preview === "spin"}
+                accentClass={accentClass}
+                onChange={(value) => {
+                  stopPreviewNow();
                   updateSettings({
                     spinSound: value,
-                  })
+                  });
+                }}
+                onPreview={() =>
+                  togglePreview("spin")
                 }
-                options={[
-                  {
-                    value: "tick",
-                    label: "Tick",
-                  },
-                  {
-                    value: "click",
-                    label: "Click",
-                  },
-                  {
-                    value: "pop",
-                    label: "Pop",
-                  },
-                  {
-                    value: "none",
-                    label: "None",
-                  },
-                ]}
               />
 
-              <SelectField
+              <SoundField
+                id="winner-sound"
                 label="Winner sound"
-                value={
-                  settings.winnerSound
-                }
-                onChange={(value) =>
+                kind="winner"
+                value={settings.winnerSound}
+                options={WINNER_SOUND_OPTIONS}
+                playing={preview === "winner"}
+                accentClass={accentClass}
+                onChange={(value) => {
+                  stopPreviewNow();
                   updateSettings({
                     winnerSound: value,
-                  })
+                  });
+                }}
+                onPreview={() =>
+                  togglePreview("winner")
                 }
-                options={[
-                  {
-                    value: "success",
-                    label: "Success",
-                  },
-                  {
-                    value: "chime",
-                    label: "Chime",
-                  },
-                  {
-                    value: "applause",
-                    label: "Applause",
-                  },
-                  {
-                    value: "none",
-                    label: "None",
-                  },
-                ]}
               />
             </div>
+
+            {settings.volume === 0 ? (
+              <p className="-mt-2 text-xs leading-5 text-slate-500">
+                Volume is at 0, so previews are silent.
+                Turn it up to hear them.
+              </p>
+            ) : !settings.soundEnabled ? (
+              <p className="-mt-2 text-xs leading-5 text-slate-500">
+                Sound is off. Previews still play here, but
+                spins and winners stay silent.
+              </p>
+            ) : null}
 
             <div>
               <label

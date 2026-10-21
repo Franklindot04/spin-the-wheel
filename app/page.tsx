@@ -8,7 +8,8 @@ import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, THEME_STORAGE_KEY, } from "./lib/appearance-themes";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
-import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, } from "./lib/wheel-defaults";
+import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, DEFAULT_CONFETTI_ENABLED, DEFAULT_CONFETTI_EFFECT, } from "./lib/wheel-defaults";
+import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/sound-engine";
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
@@ -39,6 +40,9 @@ export default function Home() {
     const [askedQuizIds, setAskedQuizIds,] = useState<string[]>([]);
     const [quizStarted, setQuizStarted,] = useState(false);
     const [rotation, setRotation,] = useState(0);
+    const [confettiRun, setConfettiRun,] = useState(0);
+    const [confettiStop, setConfettiStop,] = useState(0);
+    const answerConfettiFiredRef = useRef(false);
     const [spinning, setSpinning,] = useState(false);
     const [selectedEntry, setSelectedEntry,] = useState<WheelEntry | null>(null);
     const [showAnswer, setShowAnswer,] = useState(false);
@@ -91,12 +95,20 @@ export default function Home() {
                 : wheel),
         }));
     }
+    /*
+     * Ends any confetti that is still running. Called whenever the
+     * thing it was celebrating goes away.
+     */
+    function stopConfetti() {
+        setConfettiStop((current) => current + 1);
+    }
     function switchWheel(id: string) {
         if (spinning ||
             id ===
                 appData.activeWheelId) {
             return;
         }
+        stopConfetti();
         setAppData((current) => ({
             ...current,
             activeWheelId: id,
@@ -113,6 +125,7 @@ export default function Home() {
         if (spinning) {
             return;
         }
+        stopConfetti();
         const wheel = createWheel(appData.wheels.length + 1);
         setAppData((current) => ({
             ...current,
@@ -177,6 +190,7 @@ export default function Home() {
         if (!window.confirm(`Delete ${activeWheel.name}?`)) {
             return;
         }
+        stopConfetti();
         setAppData((current) => {
             const remaining = current.wheels.filter((wheel) => wheel.id !==
                 current.activeWheelId);
@@ -217,6 +231,32 @@ export default function Home() {
         })));
     }
     const panelSettings = wheelSettingsToPanelSettings(activeWheel.settings);
+    const soundEnabled = activeWheel.settings.soundEnabled ?? DEFAULT_SOUND_ENABLED;
+    const soundVolume = activeWheel.settings.volume ?? DEFAULT_VOLUME;
+    useEffect(() => {
+        setSoundSettings({
+            enabled: soundEnabled,
+            volume: soundVolume,
+        });
+    }, [soundEnabled, soundVolume]);
+    function toggleSound() {
+        const next = !soundEnabled;
+        /*
+         * Tell the sound engine right away so ticks and a
+         * winner sound that is playing stop at once, without
+         * waiting for the next render.
+         */
+        setSoundSettings({
+            enabled: next,
+            volume: soundVolume,
+        });
+        setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
+            settings: {
+                ...wheel.settings,
+                soundEnabled: next,
+            },
+        })));
+    }
     const standardHistory = activeWheel.standardHistory;
     const setStandardHistory = (next: SetStateAction<SpinHistoryItem[]>) => {
         setAppData((current) => updateActiveWheelOf(current, (wheel) => ({
@@ -781,6 +821,7 @@ export default function Home() {
         if (spinning) {
             return;
         }
+        stopConfetti();
         setMode(nextMode);
         setSelectedEntry(null);
         setShowAnswer(false);
@@ -794,6 +835,7 @@ export default function Home() {
             spinning) {
             return;
         }
+        stopConfetti();
         setAskedQuizIds([]);
         setSelectedEntry(null);
         setShowAnswer(false);
@@ -804,6 +846,7 @@ export default function Home() {
         if (spinning) {
             return;
         }
+        stopConfetti();
         setAskedQuizIds([]);
         setSelectedEntry(null);
         setShowAnswer(false);
@@ -903,6 +946,7 @@ export default function Home() {
                     360;
         }
         const selected = entriesForSpin[selectedIndex];
+        prepareEntrySound(selected.winnerSound);
         const selectedAngle = (getEntryWeight(selected) /
             totalWeight) *
             360;
@@ -944,6 +988,7 @@ export default function Home() {
          */
         setSelectedEntry(null);
         setShowAnswer(false);
+        answerConfettiFiredRef.current = false;
         setSpinning(true);
         setRotation(targetRotation);
         /*
@@ -989,6 +1034,15 @@ export default function Home() {
             }
             setSelectedEntry(finalEntry);
             setSpinning(false);
+            /*
+             * In Quiz Mode the winner sound and the confetti wait
+             * for Show Answer.
+             */
+            answerConfettiFiredRef.current = false;
+            if (mode !== "quiz") {
+                playWinnerSound(activeWheel.settings.winnerSound ?? "success", finalEntry.winnerSound);
+                setConfettiRun((current) => current + 1);
+            }
             addHistoryItem(finalEntry, mode);
             if (mode === "quiz") {
                 setAskedQuizIds((current) => [
@@ -1011,6 +1065,7 @@ export default function Home() {
         if (spinning) {
             return;
         }
+        stopConfetti();
         updateActiveWheel({
             standardEntries: createInitialEntries(),
             quizEntries: createInitialQuizEntries(),
@@ -1038,6 +1093,7 @@ export default function Home() {
         if (spinning) {
             return;
         }
+        stopConfetti();
         if (mode === "standard") {
             setStandardEntries(createInitialEntries());
         }
@@ -1152,6 +1208,7 @@ export default function Home() {
             spinning) {
             return;
         }
+        stopConfetti();
         setAppData(pendingImport);
         setMode("standard");
         setAskedQuizIds([]);
@@ -1248,6 +1305,21 @@ export default function Home() {
      * and once inside the view (inView). Only the copy in the view is
      * reachable, and it leaves out Back to Setup and Done.
      */
+    /*
+     * Show Answer plays the winner sound and fires the
+     * confetti once for each drawn question. Hiding the
+     * answer and showing it again does not repeat them. A
+     * new draw resets this.
+     */
+    function toggleAnswer() {
+        const reveal = !showAnswer;
+        setShowAnswer(reveal);
+        if (reveal && !answerConfettiFiredRef.current) {
+            answerConfettiFiredRef.current = true;
+            playWinnerSound(activeWheel.settings.winnerSound ?? "success", selectedEntry?.winnerSound);
+            setConfettiRun((current) => current + 1);
+        }
+    }
     function renderStandardResult(inView: boolean) {
         if (!selectedEntry) {
             return null;
@@ -1291,7 +1363,7 @@ export default function Home() {
               </p>
             </div>)}
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <button type="button" onClick={() => setShowAnswer((current) => !current)} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
+            <button type="button" onClick={toggleAnswer} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
               {showAnswer
             ? "Hide Answer"
             : "Show Answer"}
@@ -1451,7 +1523,7 @@ export default function Home() {
           <div className={mode === "quiz"
             ? "flex min-h-0 items-center justify-center sm:min-h-[560px]"
             : "flex min-h-0 items-center justify-center sm:min-h-[620px]"}>
-            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
+            <WheelComponent entries={wheelEntries} spinning={spinning} rotation={rotation} onSpin={spinWheel} spinSound={activeWheel.settings.spinSound} soundActive={soundEnabled && soundVolume > 0} confettiStyle={(activeWheel.settings.confettiEnabled ?? DEFAULT_CONFETTI_ENABLED) ? (activeWheel.settings.confettiEffect ?? DEFAULT_CONFETTI_EFFECT) : "none"} confettiRun={confettiRun} confettiStop={confettiStop} soundEnabled={soundEnabled} onSoundToggle={toggleSound} canSpin={spinAllowed} minSpinEntries={minSpinEntries} emptyTitle={wheelEmptyTitle} emptyMessage={wheelEmptyMessage} spinDuration={activeWheel
             .settings
             .spinDuration} pointerMatchSliceColor={activeWheel
             .settings
