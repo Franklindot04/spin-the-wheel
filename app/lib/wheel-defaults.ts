@@ -112,6 +112,12 @@ export function createDefaultWheelSettings(): WheelSettings {
     volume:
       DEFAULT_VOLUME,
 
+    spinSound:
+      DEFAULT_SPIN_SOUND,
+
+    winnerSound:
+      DEFAULT_WINNER_SOUND,
+
     spinSpeed:
       DEFAULT_SPIN_SPEED,
 

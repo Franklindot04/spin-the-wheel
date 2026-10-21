@@ -700,7 +700,7 @@ export default function Wheel({
   emptyTitle = "No visible entries",
   emptyMessage = "Add entries or show hidden ones to spin the wheel.",
   spinDuration = 4.5,
-  spinSound = "none",
+  spinSound = "tick",
   soundActive = false,
   confettiStyle = "none",
   confettiRun = 0,
