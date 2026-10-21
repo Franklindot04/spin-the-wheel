@@ -58,6 +58,7 @@ Create interactive question-and-answer quizzes directly on the wheel.
 - Slice visibility controls
 - Import and export wheel data as JSON
 - Share the app from the header: the share sheet on phones, or a copied link elsewhere.
+- Send feedback from Settings: the link opens the Feedback form on GitHub.
 
 ### 📜 History
 
@@ -141,6 +142,10 @@ The current release establishes the core foundation for:
 - JSON data import and export
 
 Further improvements and refinements are planned for future releases.
+
+## Feedback and Issues
+
+To report a bug or ask for a feature, [open an issue](https://github.com/Franklindot04/spin-the-wheel/issues/new/choose) and pick the matching form.
 
 ## License
 
