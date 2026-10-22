@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useRef, useState, } from "react";
+import { useCallback, useEffect, useRef, useState, } from "react";
 import type { ChangeEvent, CSSProperties, SetStateAction, } from "react";
 import EntryList from "./components/EntryList";
 import FeedbackDialog from "./components/FeedbackDialog";
+import MobileTopBar from "./components/MobileTopBar";
 import SettingsPanel, { type SettingsTab, type WheelSettings as PanelWheelSettings, } from "./components/SettingsPanel";
 import WheelComponent from "./components/Wheel";
 import type { WheelEntry, } from "./lib/wheel-types";
@@ -62,6 +63,14 @@ export default function Home() {
     /* What was typed in the feedback form. Kept in memory only, never saved. */
     const feedbackDraftRef = useRef<FeedbackDraft>(EMPTY_FEEDBACK_DRAFT);
     const feedbackRowRef = useRef<HTMLButtonElement>(null);
+    /*
+     * Where the feedback form was opened from: the app menu on a phone
+     * (true) or the Settings dialog (false). It decides where focus goes
+     * on close, and whether Settings comes back.
+     */
+    const feedbackFromMenuRef = useRef(false);
+    const [menuOpen, setMenuOpen,] = useState(false);
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
     const [entriesResetOpen, setEntriesResetOpen,] = useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -1235,13 +1244,49 @@ export default function Home() {
         if (spinning) {
             return;
         }
+        feedbackFromMenuRef.current = false;
         setSettingsOpen(false);
+        setFeedbackOpen(true);
+    }
+    function openFeedbackFromMenu() {
+        if (spinning) {
+            return;
+        }
+        feedbackFromMenuRef.current = true;
         setFeedbackOpen(true);
     }
     function closeFeedback() {
         setFeedbackOpen(false);
-        setSettingsOpen(true);
+        if (!feedbackFromMenuRef.current) {
+            setSettingsOpen(true);
+        }
     }
+    const closeMenu = useCallback((restoreFocus: boolean) => {
+        setMenuOpen(false);
+        if (restoreFocus) {
+            menuButtonRef.current?.focus();
+        }
+    }, []);
+    /* The menu belongs to the narrow layout. Leaving it closes the menu. */
+    useEffect(() => {
+        const wide = window.matchMedia("(min-width: 768px)");
+        function handleChange(event: MediaQueryListEvent) {
+            if (event.matches) {
+                setMenuOpen(false);
+            }
+        }
+        wide.addEventListener("change", handleChange);
+        return () => {
+            wide.removeEventListener("change", handleChange);
+        };
+    }, []);
+    /* Full screen hides the page behind it, so the menu closes. */
+    const handleExpandedChange = useCallback((expanded: boolean) => {
+        setWheelExpanded(expanded);
+        if (expanded) {
+            setMenuOpen(false);
+        }
+    }, []);
     function exportData() {
         const blob = new Blob([
             serializeAppData(appData),
@@ -1518,8 +1563,10 @@ export default function Home() {
     if (!storageLoaded) {
         return (<main key="loading-shell" className="shell-page min-h-screen" aria-busy="true">
         <header className="shell-header border-b">
-          <div className="mx-auto h-[101px] max-w-7xl px-4 sm:px-6"/>
+          <div className="mx-auto h-[63px] max-w-7xl px-4 sm:px-6 md:h-[100px]"/>
+          <div className="mx-auto h-[116px] max-w-7xl px-4 sm:h-[70px] sm:px-6 md:hidden"/>
         </header>
+        <div className="hidden h-[70px] md:block"/>
         <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <div className="shell-panel min-h-[560px] rounded-2xl border shadow-sm" role="status">
             <span className="sr-only">Loading saved wheels…</span>
@@ -1531,9 +1578,10 @@ export default function Home() {
             "--wheel-accent": theme.accentHex,
             "--wheel-accent-hover": theme.accentHoverHex,
         } as CSSProperties}>
+      <MobileTopBar title={wheelTitle.trim() || DEFAULT_WHEEL_TITLE} mode={mode} onModeChange={changeMode} spinning={spinning} theme={theme} accentClass={actionAccentClass} headerSurfaceClass={headerSurfaceClass} headerBorderClass={headerBorderClass} headerHoverClass={headerHoverClass} headerTextColor={headerTextColor} headerMutedColor={headerMutedColor} menuOpen={menuOpen} onMenuToggle={() => setMenuOpen((open) => !open)} onMenuClose={closeMenu} menuButtonRef={menuButtonRef} onEditTitle={editWheelTitle} onEditDescription={editWheelDescription} onDeleteWheel={deleteActiveWheel} onSendFeedback={openFeedbackFromMenu} canDeleteWheel={appData.wheels.length > 1}/>
       <header className={`border-b ${headerBorderClass} ${headerSurfaceClass}`}>
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
-          <div className="min-w-0">
+          <div className="hidden min-w-0 md:block">
             <div className="flex items-center gap-2">
               <h1 className={`truncate text-2xl font-extrabold tracking-tight ${headerTextClass}`} style={{ color: headerTextColor }}>
                 {wheelTitle.trim() || DEFAULT_WHEEL_TITLE}
@@ -1646,7 +1694,7 @@ export default function Home() {
             </button>
           </div>)}
       </div>
-      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+      <div className="mx-auto hidden max-w-7xl px-4 pt-6 sm:px-6 md:block">
         <div className={`flex w-fit rounded-xl border p-1 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
           <button type="button" onClick={() => changeMode("standard")} disabled={spinning} className={`rounded-lg px-5 py-2 text-sm font-medium transition ${mode === "standard"
             ? `${actionAccentClass} text-white`
@@ -1674,7 +1722,7 @@ export default function Home() {
                     ...wheel.settings,
                     wheelSize: size,
                 },
-            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} result={winnerEntryExists && selectedEntry
+            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={handleExpandedChange} result={winnerEntryExists && selectedEntry
                 ? { label: selectedEntry.label, emoji: selectedEntry.emoji, image: selectedEntry.image }
                 : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} quiz={mode === "quiz" && quizStarted && displayedQuizEntry && showAnswer
                 ? {
@@ -2003,7 +2051,7 @@ export default function Home() {
         </div>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
-            }} onClose={closeFeedback} getReturnFocus={() => feedbackRowRef.current}/>)}
+            }} onClose={closeFeedback} getReturnFocus={() => feedbackFromMenuRef.current ? menuButtonRef.current : feedbackRowRef.current}/>)}
       {entriesResetOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
           <div ref={entriesResetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Reset entries" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
             <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
