@@ -1,8 +1,14 @@
 "use client";
-import { useEffect, useRef, useState, } from "react";
-import type { ChangeEvent, CSSProperties, SetStateAction, } from "react";
+import { useCallback, useEffect, useRef, useState, } from "react";
+import type { ChangeEvent, CSSProperties, MouseEvent as ReactMouseEvent, SetStateAction, } from "react";
 import EntryList from "./components/EntryList";
 import FeedbackDialog from "./components/FeedbackDialog";
+import ConfirmDialog from "./components/ConfirmDialog";
+import HowItWorksDialog from "./components/HowItWorksDialog";
+import TextDialog from "./components/TextDialog";
+import WheelChip from "./components/WheelChip";
+import MobileToolbar from "./components/MobileToolbar";
+import MobileTopBar from "./components/MobileTopBar";
 import SettingsPanel, { type SettingsTab, type WheelSettings as PanelWheelSettings, } from "./components/SettingsPanel";
 import WheelComponent from "./components/Wheel";
 import type { WheelEntry, } from "./lib/wheel-types";
@@ -28,6 +34,9 @@ function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partia
             : wheel),
     };
 }
+/* Shown in the Standard Mode card, and in the How it works dialog on phones. */
+const STANDARD_MODE_HELP = "Add your options in the list, then press Spin. Change a name, colour or weight with the entry's ... menu, and hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.";
+type TextDialogKind = "name" | "title" | "description";
 const QUIZ_LOCKED_TEXT_KEYS: string[] = [
     "label",
     "question",
@@ -62,9 +71,30 @@ export default function Home() {
     /* What was typed in the feedback form. Kept in memory only, never saved. */
     const feedbackDraftRef = useRef<FeedbackDraft>(EMPTY_FEEDBACK_DRAFT);
     const feedbackRowRef = useRef<HTMLButtonElement>(null);
+    /*
+     * Where the feedback form was opened from: the app menu on a phone
+     * (true) or the Settings dialog (false). It decides where focus goes
+     * on close, and whether Settings comes back.
+     */
+    const feedbackFromMenuRef = useRef(false);
+    /* Only one of the phone popovers is open at a time. */
+    const [popover, setPopover,] = useState<"app" | "wheel" | "more" | null>(null);
+    const openPopoverRef = useRef<"app" | "wheel" | "more" | null>(null);
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
+    const chipButtonRef = useRef<HTMLButtonElement>(null);
+    const moreButtonRef = useRef<HTMLButtonElement>(null);
+    const [howOpen, setHowOpen,] = useState(false);
+    /* The text dialog (rename, title, description) and the delete confirm. */
+    const [textDialog, setTextDialog,] = useState<TextDialogKind | null>(null);
+    const [deleteWheelOpen, setDeleteWheelOpen,] = useState(false);
+    const dialogOpenerRef = useRef<HTMLElement | null>(null);
     const [entriesResetOpen, setEntriesResetOpen,] = useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
+    /* The Settings button in the phone toolbar. The other one is in the wide header. */
+    const mobileSettingsButtonRef = useRef<HTMLButtonElement>(null);
+    /* The Settings button that opened the dialog last. */
+    const settingsOpenerRef = useRef<HTMLButtonElement | null>(null);
     const settingsDialogRef = useRef<HTMLDivElement>(null);
     const resetDialogRef = useRef<HTMLDivElement>(null);
     const entriesResetDialogRef = useRef<HTMLDivElement>(null);
@@ -188,51 +218,150 @@ export default function Home() {
         setQuizStarted(false);
         setHistoryOpen(false);
     }
-    function renameActiveWheel() {
-        if (spinning) {
-            return;
-        }
-        const next = window.prompt("Wheel name", activeWheel.name);
-        if (next === null) {
-            return;
-        }
-        updateActiveWheel({
-            name: next.trim() ||
-                activeWheel.name,
-        });
+    /*
+     * Changing the name, title or description, and deleting a wheel,
+     * ask in a dialog of the app. The browser prompt and confirm are
+     * not used: some phone browsers switch them off for the rest of
+     * the session after "Suppress dialogs".
+     */
+    function anyDialogOpen() {
+        return (settingsOpen ||
+            feedbackOpen ||
+            howOpen ||
+            resetConfirmOpen ||
+            entriesResetOpen ||
+            deleteCopyOpen ||
+            pendingImport !== null ||
+            textDialog !== null ||
+            deleteWheelOpen);
     }
-    function editWheelTitle() {
-        if (spinning) {
-            return;
-        }
-        const next = window.prompt("Wheel title", wheelTitle);
-        if (next === null) {
-            return;
-        }
-        updateActiveWheel({
-            title: next.trim() ||
-                DEFAULT_WHEEL_TITLE,
-        });
+    /* The popovers close before a dialog opens. */
+    function closePopoversForDialog(opener?: HTMLElement | null) {
+        dialogOpenerRef.current = opener ??
+            (document.activeElement instanceof HTMLElement
+                ? document.activeElement
+                : null);
+        openPopoverRef.current = null;
+        setPopover(null);
     }
-    function editWheelDescription() {
-        if (spinning) {
+    function openTextDialog(kind: TextDialogKind, opener?: HTMLElement | null) {
+        if (spinning || anyDialogOpen()) {
             return;
         }
-        const next = window.prompt("Wheel description", wheelDescription);
-        if (next === null) {
-            return;
-        }
-        updateActiveWheel({
-            description: next.trim() ||
-                DEFAULT_WHEEL_DESCRIPTION,
-        });
+        closePopoversForDialog(opener);
+        setTextDialog(kind);
     }
-    function deleteActiveWheel() {
+    function renameActiveWheel(event?: ReactMouseEvent<HTMLElement>) {
+        openTextDialog("name", event?.currentTarget);
+    }
+    function editWheelTitle(event?: ReactMouseEvent<HTMLElement>) {
+        openTextDialog("title", event?.currentTarget);
+    }
+    function editWheelDescription(event?: ReactMouseEvent<HTMLElement>) {
+        openTextDialog("description", event?.currentTarget);
+    }
+    /*
+     * Focus goes back to the control that opened the dialog. If that
+     * control is hidden by now (the window was resized across 768 px),
+     * it goes to the menu button or the Settings button that is shown.
+     */
+    function returnFocusAfterDialog() {
+        const opener = dialogOpenerRef.current;
+        dialogOpenerRef.current = null;
+        /*
+         * One step later, after the page has been drawn again: the
+         * control may be gone by then (the Delete wheel button of the
+         * wide header goes away with the second-to-last wheel).
+         */
+        window.setTimeout(() => {
+            const shown = [
+                opener,
+                menuButtonRef.current,
+                settingsOpenerRef.current,
+                settingsButtonRef.current,
+                mobileSettingsButtonRef.current,
+            ].find((element) => element !== null &&
+                element !== undefined &&
+                element.isConnected &&
+                element.getClientRects().length > 0);
+            shown?.focus();
+        }, 0);
+    }
+    function closeTextDialog() {
+        setTextDialog(null);
+        returnFocusAfterDialog();
+    }
+    /*
+     * The same rules as the old prompts: the text is trimmed. An empty
+     * title or description goes back to the default one. An empty name
+     * is refused with a message. Text that did not change saves nothing.
+     */
+    const TEXT_DIALOGS: Record<TextDialogKind, {
+        title: string;
+        label: string;
+        current: string;
+        multiline: boolean;
+        hint?: string;
+        validate?: (text: string) => string | null;
+        apply: (text: string) => void;
+    }> = {
+        name: {
+            title: "Rename wheel",
+            label: "Wheel name",
+            current: activeWheel.name,
+            multiline: false,
+            validate: (text) => text === "" ? "Enter a name for the wheel." : null,
+            apply: (text) => {
+                if (text !== activeWheel.name) {
+                    updateActiveWheel({ name: text });
+                }
+            },
+        },
+        title: {
+            title: "Edit title",
+            label: "Wheel title",
+            current: activeWheel.title,
+            multiline: false,
+            hint: `Leave it empty to use "${DEFAULT_WHEEL_TITLE}".`,
+            apply: (text) => {
+                const next = text || DEFAULT_WHEEL_TITLE;
+                if (next !== activeWheel.title) {
+                    updateActiveWheel({ title: next });
+                }
+            },
+        },
+        description: {
+            title: "Edit description",
+            label: "Wheel description",
+            current: activeWheel.description,
+            multiline: true,
+            hint: `Leave it empty to use "${DEFAULT_WHEEL_DESCRIPTION}".`,
+            apply: (text) => {
+                const next = text || DEFAULT_WHEEL_DESCRIPTION;
+                if (next !== activeWheel.description) {
+                    updateActiveWheel({ description: next });
+                }
+            },
+        },
+    };
+    function deleteActiveWheel(event?: ReactMouseEvent<HTMLElement>) {
+        if (spinning ||
+            appData.wheels.length <= 1 ||
+            anyDialogOpen()) {
+            return;
+        }
+        closePopoversForDialog(event?.currentTarget);
+        setDeleteWheelOpen(true);
+    }
+    function closeDeleteWheel() {
+        setDeleteWheelOpen(false);
+        returnFocusAfterDialog();
+    }
+    function confirmDeleteWheel() {
+        setDeleteWheelOpen(false);
         if (spinning ||
             appData.wheels.length <= 1) {
-            return;
-        }
-        if (!window.confirm(`Delete ${activeWheel.name}?`)) {
+            returnFocusAfterDialog();
             return;
         }
         stopConfetti();
@@ -252,6 +381,7 @@ export default function Home() {
         setAskedQuizIds([]);
         setQuizStarted(false);
         setHistoryOpen(false);
+        returnFocusAfterDialog();
     }
     const standardEntries = activeWheel.standardEntries;
     const setStandardEntries = (next: SetStateAction<WheelEntry[]>) => {
@@ -448,11 +578,25 @@ export default function Home() {
         setPendingImport(null);
         setSettingsOpen(false);
     }
+    /*
+     * Two Settings buttons exist, one in the wide header and one in the
+     * phone toolbar. Focus goes back to the one that opened the dialog,
+     * or to whichever one is shown if that one is gone (for example after
+     * the window was resized while the dialog was open). It is looked up
+     * when the dialog closes, not when it opened.
+     */
+    function focusSettingsButton() {
+        const shown = [
+            settingsOpenerRef.current,
+            settingsButtonRef.current,
+            mobileSettingsButtonRef.current,
+        ].find((button) => button !== null && button.isConnected && button.getClientRects().length > 0);
+        shown?.focus();
+    }
     useEffect(() => {
         if (!settingsOpen) {
             return;
         }
-        const settingsButton = settingsButtonRef.current;
         const dialog = settingsDialogRef.current;
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key ===
@@ -495,14 +639,13 @@ export default function Home() {
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
             document.body.style.overflow = previousBodyOverflow;
-            settingsButton?.focus();
+            focusSettingsButton();
         };
     }, [settingsOpen]);
     useEffect(() => {
         if (!resetConfirmOpen) {
             return;
         }
-        const settingsButton = settingsButtonRef.current;
         const dialog = resetDialogRef.current;
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key ===
@@ -542,7 +685,7 @@ export default function Home() {
         dialog?.focus();
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
-            settingsButton?.focus();
+            focusSettingsButton();
         };
     }, [resetConfirmOpen]);
     useEffect(() => {
@@ -597,7 +740,6 @@ export default function Home() {
             return;
         }
         const deleteCopyButton = deleteCopyButtonRef.current;
-        const settingsButton = settingsButtonRef.current;
         const dialog = deleteCopyDialogRef.current;
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key ===
@@ -642,7 +784,7 @@ export default function Home() {
                 deleteCopyButton.focus();
             }
             else {
-                settingsButton?.focus();
+                focusSettingsButton();
             }
         };
     }, [deleteCopyOpen]);
@@ -1235,12 +1377,82 @@ export default function Home() {
         if (spinning) {
             return;
         }
+        feedbackFromMenuRef.current = false;
         setSettingsOpen(false);
+        setFeedbackOpen(true);
+    }
+    function openFeedbackFromMenu() {
+        if (spinning) {
+            return;
+        }
+        feedbackFromMenuRef.current = true;
         setFeedbackOpen(true);
     }
     function closeFeedback() {
         setFeedbackOpen(false);
-        setSettingsOpen(true);
+        if (!feedbackFromMenuRef.current) {
+            setSettingsOpen(true);
+        }
+    }
+    const closePopover = useCallback((restoreFocus: boolean) => {
+        const open = openPopoverRef.current;
+        openPopoverRef.current = null;
+        setPopover(null);
+        if (restoreFocus) {
+            const button = open === "app"
+                ? menuButtonRef.current
+                : open === "wheel"
+                    ? chipButtonRef.current
+                    : open === "more"
+                        ? moreButtonRef.current
+                        : null;
+            button?.focus();
+        }
+    }, []);
+    function togglePopover(which: "app" | "wheel" | "more") {
+        if (openPopoverRef.current === which) {
+            closePopover(true);
+            return;
+        }
+        openPopoverRef.current = which;
+        setPopover(which);
+    }
+    /* The popovers belong to the narrow layout. Leaving it closes them. */
+    useEffect(() => {
+        const wide = window.matchMedia("(min-width: 768px)");
+        function handleChange(event: MediaQueryListEvent) {
+            if (event.matches) {
+                openPopoverRef.current = null;
+                setPopover(null);
+            }
+        }
+        wide.addEventListener("change", handleChange);
+        return () => {
+            wide.removeEventListener("change", handleChange);
+        };
+    }, []);
+    /* Full screen hides the page behind it, so an open popover closes. */
+    const handleExpandedChange = useCallback((expanded: boolean) => {
+        setWheelExpanded(expanded);
+        if (expanded) {
+            openPopoverRef.current = null;
+            setPopover(null);
+        }
+    }, []);
+    function closeHowItWorks() {
+        setHowOpen(false);
+        const menuButton = menuButtonRef.current;
+        if (menuButton && menuButton.getClientRects().length > 0) {
+            menuButton.focus();
+        }
+        else {
+            /* The window was widened while the dialog was open. */
+            focusSettingsButton();
+        }
+    }
+    function openImportPicker() {
+        setImportError("");
+        importInputRef.current?.click();
     }
     function exportData() {
         const blob = new Blob([
@@ -1518,8 +1730,9 @@ export default function Home() {
     if (!storageLoaded) {
         return (<main key="loading-shell" className="shell-page min-h-screen" aria-busy="true">
         <header className="shell-header border-b">
-          <div className="mx-auto h-[101px] max-w-7xl px-4 sm:px-6"/>
+          <div className="mx-auto h-[66px] max-w-7xl px-4 sm:px-6 md:h-[100px]"/>
         </header>
+        <div className="hidden h-[70px] md:block"/>
         <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <div className="shell-panel min-h-[560px] rounded-2xl border shadow-sm" role="status">
             <span className="sr-only">Loading saved wheels…</span>
@@ -1531,9 +1744,10 @@ export default function Home() {
             "--wheel-accent": theme.accentHex,
             "--wheel-accent-hover": theme.accentHoverHex,
         } as CSSProperties}>
-      <header className={`border-b ${headerBorderClass} ${headerSurfaceClass}`}>
+      <MobileTopBar title={wheelTitle.trim() || DEFAULT_WHEEL_TITLE} mode={mode} onModeChange={changeMode} spinning={spinning} theme={theme} accentClass={actionAccentClass} headerSurfaceClass={headerSurfaceClass} headerBorderClass={headerBorderClass} headerHoverClass={headerHoverClass} headerTextColor={headerTextColor} menuOpen={popover === "app"} onMenuToggle={() => togglePopover("app")} onMenuClose={closePopover} menuButtonRef={menuButtonRef} onEditTitle={editWheelTitle} onEditDescription={editWheelDescription} onHowItWorks={() => setHowOpen(true)} onSendFeedback={openFeedbackFromMenu}/>
+      <header className={`hidden border-b md:block ${headerBorderClass} ${headerSurfaceClass}`}>
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
-          <div className="min-w-0">
+          <div className="hidden min-w-0 md:block">
             <div className="flex items-center gap-2">
               <h1 className={`truncate text-2xl font-extrabold tracking-tight ${headerTextClass}`} style={{ color: headerTextColor }}>
                 {wheelTitle.trim() || DEFAULT_WHEEL_TITLE}
@@ -1573,7 +1787,13 @@ export default function Home() {
             <button type="button" onClick={renameActiveWheel} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
               Rename
             </button>
-            <button ref={settingsButtonRef} type="button" onClick={() => setSettingsOpen(true)} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
+            <button ref={settingsButtonRef} type="button" onClick={() => {
+                if (anyDialogOpen()) {
+                    return;
+                }
+                settingsOpenerRef.current = settingsButtonRef.current;
+                setSettingsOpen(true);
+            }} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
               Settings
             </button>
             <button type="button" onClick={handleShare} aria-label="Share Spin the Wheel" title="Share" className={`relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border transition before:absolute before:-inset-1 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass}`} style={{ color: headerTextColor }}>
@@ -1646,7 +1866,7 @@ export default function Home() {
             </button>
           </div>)}
       </div>
-      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+      <div className="mx-auto hidden max-w-7xl px-4 pt-6 sm:px-6 md:block">
         <div className={`flex w-fit rounded-xl border p-1 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
           <button type="button" onClick={() => changeMode("standard")} disabled={spinning} className={`rounded-lg px-5 py-2 text-sm font-medium transition ${mode === "standard"
             ? `${actionAccentClass} text-white`
@@ -1674,7 +1894,7 @@ export default function Home() {
                     ...wheel.settings,
                     wheelSize: size,
                 },
-            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={setWheelExpanded} result={winnerEntryExists && selectedEntry
+            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} controlsStart={<WheelChip theme={theme} open={popover === "wheel"} onToggle={() => togglePopover("wheel")} onClose={closePopover} buttonRef={chipButtonRef} wheels={appData.wheels} activeWheelId={appData.activeWheelId} spinning={spinning} onSwitch={switchWheel} onAdd={addWheel} onRename={renameActiveWheel} onDelete={deleteActiveWheel}/>} onExpandedChange={handleExpandedChange} result={winnerEntryExists && selectedEntry
                 ? { label: selectedEntry.label, emoji: selectedEntry.emoji, image: selectedEntry.image }
                 : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} quiz={mode === "quiz" && quizStarted && displayedQuizEntry && showAnswer
                 ? {
@@ -1697,30 +1917,12 @@ export default function Home() {
                     : null}
                 </div>)}/>
           </div>
-          {mode === "standard" &&
-            !hasSpun && (<div inert={wheelExpanded} aria-hidden={wheelExpanded || undefined} className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
-              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-                Standard Mode
-              </h2>
-              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
-                Add your options in the list, then press Spin. Change a name, colour or weight with the entry&apos;s ... menu, and hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.
-              </p>
-            </div>)}
-          {mode === "quiz" &&
-            !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
-              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-                Quiz Mode
-              </h2>
-              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
-                Configure your questions and answers, then start the quiz before handing the wheel to the contestant.
-              </p>
-              {!quizEntriesComplete && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
-                  Every question needs both a question and an answer before the quiz can start.
-                </div>)}
-              {!enoughVisibleQuizEntries && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
-                  Show at least 2 questions to start the quiz.
-                </div>)}
-            </div>)}
+          {/*
+            * The result blocks come before the phone toolbar in the page, so on
+            * a phone they sit directly under Spin. They are never visible
+            * together with the instruction and setup cards below, so the wide
+            * layout looks the same.
+            */}
           {mode === "quiz" &&
             quizStarted &&
             displayedQuizEntry && renderQuizCard(false)}
@@ -1745,9 +1947,40 @@ export default function Home() {
             </div>)}
           {mode === "standard" &&
             selectedEntry && !winnerBoxShown && renderStandardResult(false)}
+          <MobileToolbar theme={theme} accentClass={actionAccentClass} spinning={spinning} historyOpen={historyOpen} historyCount={(mode === "standard" ? standardHistory : quizHistory).length} onShowEntries={() => setHistoryOpen(false)} onShowHistory={() => setHistoryOpen(true)} allEntriesHidden={allEntriesHidden} hideAllDisabled={spinning || currentSetupEntries.length === 0} onToggleAllEntriesHidden={toggleAllEntriesHidden} importDisabled={spinning || storageStale} importTitle={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"} onImport={openImportPicker} onExport={exportData} onShare={handleShare} onOpenSettings={() => {
+                if (anyDialogOpen()) {
+                    return;
+                }
+                settingsOpenerRef.current = mobileSettingsButtonRef.current;
+                setSettingsOpen(true);
+            }} settingsButtonRef={mobileSettingsButtonRef} moreOpen={popover === "more"} onMoreToggle={() => togglePopover("more")} onMoreClose={closePopover} moreButtonRef={moreButtonRef}/>
+          {mode === "standard" &&
+            !hasSpun && (<div inert={wheelExpanded} aria-hidden={wheelExpanded || undefined} className={`mx-auto mt-6 hidden max-w-2xl rounded-2xl border p-6 shadow-sm md:block ${theme.borderClass} ${theme.surfaceClass}`}>
+              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
+                Standard Mode
+              </h2>
+              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
+                {STANDARD_MODE_HELP}
+              </p>
+            </div>)}
+          {mode === "quiz" &&
+            !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
+              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
+                Quiz Mode
+              </h2>
+              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
+                Configure your questions and answers, then start the quiz before handing the wheel to the contestant.
+              </p>
+              {!quizEntriesComplete && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
+                  Every question needs both a question and an answer before the quiz can start.
+                </div>)}
+              {!enoughVisibleQuizEntries && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
+                  Show at least 2 questions to start the quiz.
+                </div>)}
+            </div>)}
         </div>
         <div className="min-w-0">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="mb-4 hidden flex-wrap items-center gap-2 md:flex">
             <button type="button" onClick={() => setHistoryOpen(false)} className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition ${!historyOpen
             ? `${actionAccentClass} text-white shadow-sm`
             : `${theme.borderClass} ${theme.surfaceClass} ${theme.textMutedClass} ${theme.controlHoverClass}`}`} aria-label="Show entries" title="Entries">
@@ -1788,10 +2021,7 @@ export default function Home() {
                 <path d="M5 21h14"/>
               </svg>
             </button>
-            <button type="button" onClick={() => {
-                setImportError("");
-                importInputRef.current?.click();
-            }} disabled={spinning || storageStale} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"}>
+            <button type="button" onClick={openImportPicker} disabled={spinning || storageStale} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"}>
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 21V9"/>
                 <path d="m7 14 5-5 5 5"/>
@@ -1800,7 +2030,7 @@ export default function Home() {
             </button>
             <input ref={importInputRef} type="file" accept=".json,application/json" onChange={handleImportFile} className="hidden"/>
           </div>
-          {quizTextLocked && (<p className={`-mt-2 mb-4 text-xs leading-5 ${theme.textMutedClass}`}>
+          {quizTextLocked && (<p className={`mb-4 text-xs leading-5 md:-mt-2 ${theme.textMutedClass}`}>
               Exports include all questions and answers.
             </p>)}
           {!historyOpen && (<>
@@ -2001,9 +2231,15 @@ export default function Home() {
             </div>
           </div>
         </div>)}
+      {textDialog !== null && (<TextDialog key={textDialog} theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={TEXT_DIALOGS[textDialog].title} label={TEXT_DIALOGS[textDialog].label} initialValue={TEXT_DIALOGS[textDialog].current} multiline={TEXT_DIALOGS[textDialog].multiline} hint={TEXT_DIALOGS[textDialog].hint} validate={TEXT_DIALOGS[textDialog].validate} onSubmit={(text) => {
+                TEXT_DIALOGS[textDialog].apply(text);
+                closeTextDialog();
+            }} onClose={closeTextDialog}/>)}
+      {deleteWheelOpen && (<ConfirmDialog theme={theme} title="Delete wheel?" message={`Delete "${activeWheel.name}"? Its entries, quiz questions, settings and history are removed. This cannot be undone.`} confirmLabel="Delete wheel" onConfirm={confirmDeleteWheel} onClose={closeDeleteWheel}/>)}
+      {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={STANDARD_MODE_HELP} onClose={closeHowItWorks}/>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
-            }} onClose={closeFeedback} getReturnFocus={() => feedbackRowRef.current}/>)}
+            }} onClose={closeFeedback} getReturnFocus={() => feedbackFromMenuRef.current ? menuButtonRef.current : feedbackRowRef.current}/>)}
       {entriesResetOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
           <div ref={entriesResetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Reset entries" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
             <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
