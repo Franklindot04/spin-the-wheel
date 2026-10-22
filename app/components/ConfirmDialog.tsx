@@ -97,7 +97,7 @@ export default function ConfirmDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-slate-950/60 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] sm:items-center sm:p-4">
       <div
         ref={panelRef}
         role="dialog"
@@ -105,7 +105,7 @@ export default function ConfirmDialog({
         aria-labelledby={titleId}
         aria-describedby={messageId}
         onKeyDown={handleKeyDown}
-        className={`max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl p-5 shadow-2xl sm:p-6 ${theme.surfaceClass}`}
+        className={`max-h-[calc(100dvh-max(1rem,env(safe-area-inset-top))-1rem)] w-full max-w-md overflow-y-auto sm:max-h-[90dvh] rounded-2xl p-5 shadow-2xl sm:p-6 ${theme.surfaceClass}`}
       >
         <h2
           id={titleId}

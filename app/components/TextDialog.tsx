@@ -5,6 +5,12 @@ import type { FormEvent, KeyboardEvent, RefObject } from "react";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
 import { usePopover } from "../lib/use-popover";
 
+/*
+ * A name and an id that do not look like a contact field, so that
+ * Safari does not offer AutoFill Contact for it.
+ */
+const FIELD_ID = "wheel-label-field";
+
 type TextDialogProps = {
   theme: AppearanceThemeConfig;
   accentClass: string;
@@ -46,7 +52,6 @@ export default function TextDialog({
   onClose,
 }: TextDialogProps) {
   const titleId = useId();
-  const fieldId = useId();
   const messageId = useId();
   const panelRef =
     useRef<HTMLDivElement>(null);
@@ -172,14 +177,14 @@ export default function TextDialog({
       .join(" ");
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-slate-950/60 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] sm:items-center sm:p-4">
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         onKeyDown={handleKeyDown}
-        className={`max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl p-5 shadow-2xl sm:p-6 ${theme.surfaceClass}`}
+        className={`max-h-[calc(100dvh-max(1rem,env(safe-area-inset-top))-1rem)] w-full max-w-md overflow-y-auto sm:max-h-[90dvh] rounded-2xl p-5 shadow-2xl sm:p-6 ${theme.surfaceClass}`}
       >
         <form noValidate onSubmit={handleSubmit}>
           <h2
@@ -190,7 +195,7 @@ export default function TextDialog({
           </h2>
 
           <label
-            htmlFor={fieldId}
+            htmlFor={FIELD_ID}
             className={`mt-4 block text-sm font-medium ${theme.textSecondaryClass}`}
           >
             {label}
@@ -198,7 +203,10 @@ export default function TextDialog({
 
           {multiline ? (
             <textarea
-              id={fieldId}
+              id={FIELD_ID}
+              name={FIELD_ID}
+              autoComplete="off"
+              autoCorrect="off"
               ref={
                 fieldRef as RefObject<HTMLTextAreaElement>
               }
@@ -224,7 +232,8 @@ export default function TextDialog({
             />
           ) : (
             <input
-              id={fieldId}
+              id={FIELD_ID}
+              name={FIELD_ID}
               ref={
                 fieldRef as RefObject<HTMLInputElement>
               }
@@ -237,6 +246,7 @@ export default function TextDialog({
               aria-invalid={error ? true : undefined}
               aria-describedby={describedBy}
               autoComplete="off"
+              autoCorrect="off"
               className={`mt-1 ${fieldClass}`}
             />
           )}
