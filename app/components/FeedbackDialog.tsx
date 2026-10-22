@@ -836,9 +836,11 @@ export default function FeedbackDialog({
                 includes the app version and what you
                 type, and your email if you add one.
                 It&apos;s used only to fix problems and
-                to reply, and reports are kept for up to
-                6 months. Don&apos;t include personal or
-                sensitive information.
+                to reply. Reports are kept for up to 6
+                months, then deleted by hand. A security
+                check from Cloudflare runs when you send.
+                Don&apos;t include personal or sensitive
+                information.
               </p>
             </div>
 

@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- A Send feedback form in Settings sends a report to the developer without needing a GitHub account. The Report on GitHub link is still there.
+
 ## [2.9.0] - 2026-10-22
 
 ### Added
