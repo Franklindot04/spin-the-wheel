@@ -15,16 +15,14 @@ type MobileTopBarProps = {
   headerBorderClass: string;
   headerHoverClass: string;
   headerTextColor: string;
-  headerMutedColor: string;
   menuOpen: boolean;
   onMenuToggle: () => void;
   onMenuClose: (restoreFocus: boolean) => void;
   menuButtonRef: RefObject<HTMLButtonElement | null>;
   onEditTitle: () => void;
   onEditDescription: () => void;
-  onDeleteWheel: () => void;
+  onHowItWorks: () => void;
   onSendFeedback: () => void;
-  canDeleteWheel: boolean;
 };
 
 /*
@@ -42,19 +40,17 @@ export default function MobileTopBar({
   headerBorderClass,
   headerHoverClass,
   headerTextColor,
-  headerMutedColor,
   menuOpen,
   onMenuToggle,
   onMenuClose,
   menuButtonRef,
   onEditTitle,
   onEditDescription,
-  onDeleteWheel,
+  onHowItWorks,
   onSendFeedback,
-  canDeleteWheel,
 }: MobileTopBarProps) {
   const modeClass = (value: Mode) =>
-    `rounded-lg px-3 py-2 text-sm font-medium transition ${
+    `min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition ${
       mode === value
         ? `${accentClass} text-white`
         : `${theme.textSecondaryClass} ${theme.controlHoverClass}`
@@ -73,7 +69,7 @@ export default function MobileTopBar({
         </h1>
 
         <div
-          className={`flex shrink-0 rounded-xl border p-1 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}
+          className={`flex shrink-0 rounded-xl border p-0.5 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}
         >
           <button
             type="button"
@@ -104,15 +100,13 @@ export default function MobileTopBar({
           buttonRef={menuButtonRef}
           onEditTitle={onEditTitle}
           onEditDescription={onEditDescription}
-          onDeleteWheel={onDeleteWheel}
+          onHowItWorks={onHowItWorks}
           onSendFeedback={onSendFeedback}
           spinning={spinning}
-          canDeleteWheel={canDeleteWheel}
           surfaceClass={headerSurfaceClass}
           borderClass={headerBorderClass}
           hoverClass={headerHoverClass}
           textColor={headerTextColor}
-          mutedColor={headerMutedColor}
         />
       </div>
     </div>

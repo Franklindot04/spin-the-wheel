@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState, } from "react";
 import type { ChangeEvent, CSSProperties, SetStateAction, } from "react";
 import EntryList from "./components/EntryList";
 import FeedbackDialog from "./components/FeedbackDialog";
+import HowItWorksDialog from "./components/HowItWorksDialog";
+import WheelChip from "./components/WheelChip";
 import MobileToolbar from "./components/MobileToolbar";
 import MobileTopBar from "./components/MobileTopBar";
 import SettingsPanel, { type SettingsTab, type WheelSettings as PanelWheelSettings, } from "./components/SettingsPanel";
@@ -30,6 +32,8 @@ function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partia
             : wheel),
     };
 }
+/* Shown in the Standard Mode card, and in the How it works dialog on phones. */
+const STANDARD_MODE_HELP = "Add your options in the list, then press Spin. Change a name, colour or weight with the entry's ... menu, and hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.";
 const QUIZ_LOCKED_TEXT_KEYS: string[] = [
     "label",
     "question",
@@ -70,8 +74,13 @@ export default function Home() {
      * on close, and whether Settings comes back.
      */
     const feedbackFromMenuRef = useRef(false);
-    const [menuOpen, setMenuOpen,] = useState(false);
+    /* Only one of the phone popovers is open at a time. */
+    const [popover, setPopover,] = useState<"app" | "wheel" | "more" | null>(null);
+    const openPopoverRef = useRef<"app" | "wheel" | "more" | null>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
+    const chipButtonRef = useRef<HTMLButtonElement>(null);
+    const moreButtonRef = useRef<HTMLButtonElement>(null);
+    const [howOpen, setHowOpen,] = useState(false);
     const [entriesResetOpen, setEntriesResetOpen,] = useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -1278,18 +1287,36 @@ export default function Home() {
             setSettingsOpen(true);
         }
     }
-    const closeMenu = useCallback((restoreFocus: boolean) => {
-        setMenuOpen(false);
+    const closePopover = useCallback((restoreFocus: boolean) => {
+        const open = openPopoverRef.current;
+        openPopoverRef.current = null;
+        setPopover(null);
         if (restoreFocus) {
-            menuButtonRef.current?.focus();
+            const button = open === "app"
+                ? menuButtonRef.current
+                : open === "wheel"
+                    ? chipButtonRef.current
+                    : open === "more"
+                        ? moreButtonRef.current
+                        : null;
+            button?.focus();
         }
     }, []);
-    /* The menu belongs to the narrow layout. Leaving it closes the menu. */
+    function togglePopover(which: "app" | "wheel" | "more") {
+        if (openPopoverRef.current === which) {
+            closePopover(true);
+            return;
+        }
+        openPopoverRef.current = which;
+        setPopover(which);
+    }
+    /* The popovers belong to the narrow layout. Leaving it closes them. */
     useEffect(() => {
         const wide = window.matchMedia("(min-width: 768px)");
         function handleChange(event: MediaQueryListEvent) {
             if (event.matches) {
-                setMenuOpen(false);
+                openPopoverRef.current = null;
+                setPopover(null);
             }
         }
         wide.addEventListener("change", handleChange);
@@ -1297,13 +1324,25 @@ export default function Home() {
             wide.removeEventListener("change", handleChange);
         };
     }, []);
-    /* Full screen hides the page behind it, so the menu closes. */
+    /* Full screen hides the page behind it, so an open popover closes. */
     const handleExpandedChange = useCallback((expanded: boolean) => {
         setWheelExpanded(expanded);
         if (expanded) {
-            setMenuOpen(false);
+            openPopoverRef.current = null;
+            setPopover(null);
         }
     }, []);
+    function closeHowItWorks() {
+        setHowOpen(false);
+        const menuButton = menuButtonRef.current;
+        if (menuButton && menuButton.getClientRects().length > 0) {
+            menuButton.focus();
+        }
+        else {
+            /* The window was widened while the dialog was open. */
+            focusSettingsButton();
+        }
+    }
     function openImportPicker() {
         setImportError("");
         importInputRef.current?.click();
@@ -1584,7 +1623,7 @@ export default function Home() {
     if (!storageLoaded) {
         return (<main key="loading-shell" className="shell-page min-h-screen" aria-busy="true">
         <header className="shell-header border-b">
-          <div className="mx-auto h-[62px] max-w-7xl px-4 sm:px-6 md:h-[100px]"/>
+          <div className="mx-auto h-[66px] max-w-7xl px-4 sm:px-6 md:h-[100px]"/>
         </header>
         <div className="hidden h-[70px] md:block"/>
         <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
@@ -1598,7 +1637,7 @@ export default function Home() {
             "--wheel-accent": theme.accentHex,
             "--wheel-accent-hover": theme.accentHoverHex,
         } as CSSProperties}>
-      <MobileTopBar title={wheelTitle.trim() || DEFAULT_WHEEL_TITLE} mode={mode} onModeChange={changeMode} spinning={spinning} theme={theme} accentClass={actionAccentClass} headerSurfaceClass={headerSurfaceClass} headerBorderClass={headerBorderClass} headerHoverClass={headerHoverClass} headerTextColor={headerTextColor} headerMutedColor={headerMutedColor} menuOpen={menuOpen} onMenuToggle={() => setMenuOpen((open) => !open)} onMenuClose={closeMenu} menuButtonRef={menuButtonRef} onEditTitle={editWheelTitle} onEditDescription={editWheelDescription} onDeleteWheel={deleteActiveWheel} onSendFeedback={openFeedbackFromMenu} canDeleteWheel={appData.wheels.length > 1}/>
+      <MobileTopBar title={wheelTitle.trim() || DEFAULT_WHEEL_TITLE} mode={mode} onModeChange={changeMode} spinning={spinning} theme={theme} accentClass={actionAccentClass} headerSurfaceClass={headerSurfaceClass} headerBorderClass={headerBorderClass} headerHoverClass={headerHoverClass} headerTextColor={headerTextColor} menuOpen={popover === "app"} onMenuToggle={() => togglePopover("app")} onMenuClose={closePopover} menuButtonRef={menuButtonRef} onEditTitle={editWheelTitle} onEditDescription={editWheelDescription} onHowItWorks={() => setHowOpen(true)} onSendFeedback={openFeedbackFromMenu}/>
       <header className={`hidden border-b md:block ${headerBorderClass} ${headerSurfaceClass}`}>
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="hidden min-w-0 md:block">
@@ -1745,7 +1784,7 @@ export default function Home() {
                     ...wheel.settings,
                     wheelSize: size,
                 },
-            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} onExpandedChange={handleExpandedChange} result={winnerEntryExists && selectedEntry
+            })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} controlsStart={<WheelChip theme={theme} open={popover === "wheel"} onToggle={() => togglePopover("wheel")} onClose={closePopover} buttonRef={chipButtonRef} wheels={appData.wheels} activeWheelId={appData.activeWheelId} spinning={spinning} onSwitch={switchWheel} onAdd={addWheel} onRename={renameActiveWheel} onDelete={deleteActiveWheel}/>} onExpandedChange={handleExpandedChange} result={winnerEntryExists && selectedEntry
                 ? { label: selectedEntry.label, emoji: selectedEntry.emoji, image: selectedEntry.image }
                 : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} quiz={mode === "quiz" && quizStarted && displayedQuizEntry && showAnswer
                 ? {
@@ -1768,34 +1807,12 @@ export default function Home() {
                     : null}
                 </div>)}/>
           </div>
-          <MobileToolbar theme={theme} accentClass={actionAccentClass} spinning={spinning} historyOpen={historyOpen} historyCount={(mode === "standard" ? standardHistory : quizHistory).length} onShowEntries={() => setHistoryOpen(false)} onShowHistory={() => setHistoryOpen(true)} allEntriesHidden={allEntriesHidden} hideAllDisabled={spinning || currentSetupEntries.length === 0} onToggleAllEntriesHidden={toggleAllEntriesHidden} importDisabled={spinning || storageStale} importTitle={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"} onImport={openImportPicker} onExport={exportData} wheels={appData.wheels} activeWheelId={appData.activeWheelId} onSwitchWheel={switchWheel} onAddWheel={addWheel} onRename={renameActiveWheel} onShare={handleShare} onOpenSettings={() => {
-                settingsOpenerRef.current = mobileSettingsButtonRef.current;
-                setSettingsOpen(true);
-            }} settingsButtonRef={mobileSettingsButtonRef}/>
-          {mode === "standard" &&
-            !hasSpun && (<div inert={wheelExpanded} aria-hidden={wheelExpanded || undefined} className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
-              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-                Standard Mode
-              </h2>
-              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
-                Add your options in the list, then press Spin. Change a name, colour or weight with the entry&apos;s ... menu, and hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.
-              </p>
-            </div>)}
-          {mode === "quiz" &&
-            !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
-              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-                Quiz Mode
-              </h2>
-              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
-                Configure your questions and answers, then start the quiz before handing the wheel to the contestant.
-              </p>
-              {!quizEntriesComplete && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
-                  Every question needs both a question and an answer before the quiz can start.
-                </div>)}
-              {!enoughVisibleQuizEntries && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
-                  Show at least 2 questions to start the quiz.
-                </div>)}
-            </div>)}
+          {/*
+            * The result blocks come before the phone toolbar in the page, so on
+            * a phone they sit directly under Spin. They are never visible
+            * together with the instruction and setup cards below, so the wide
+            * layout looks the same.
+            */}
           {mode === "quiz" &&
             quizStarted &&
             displayedQuizEntry && renderQuizCard(false)}
@@ -1820,6 +1837,34 @@ export default function Home() {
             </div>)}
           {mode === "standard" &&
             selectedEntry && !winnerBoxShown && renderStandardResult(false)}
+          <MobileToolbar theme={theme} accentClass={actionAccentClass} spinning={spinning} historyOpen={historyOpen} historyCount={(mode === "standard" ? standardHistory : quizHistory).length} onShowEntries={() => setHistoryOpen(false)} onShowHistory={() => setHistoryOpen(true)} allEntriesHidden={allEntriesHidden} hideAllDisabled={spinning || currentSetupEntries.length === 0} onToggleAllEntriesHidden={toggleAllEntriesHidden} importDisabled={spinning || storageStale} importTitle={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"} onImport={openImportPicker} onExport={exportData} onShare={handleShare} onOpenSettings={() => {
+                settingsOpenerRef.current = mobileSettingsButtonRef.current;
+                setSettingsOpen(true);
+            }} settingsButtonRef={mobileSettingsButtonRef} moreOpen={popover === "more"} onMoreToggle={() => togglePopover("more")} onMoreClose={closePopover} moreButtonRef={moreButtonRef}/>
+          {mode === "standard" &&
+            !hasSpun && (<div inert={wheelExpanded} aria-hidden={wheelExpanded || undefined} className={`mx-auto mt-6 hidden max-w-2xl rounded-2xl border p-6 shadow-sm md:block ${theme.borderClass} ${theme.surfaceClass}`}>
+              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
+                Standard Mode
+              </h2>
+              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
+                {STANDARD_MODE_HELP}
+              </p>
+            </div>)}
+          {mode === "quiz" &&
+            !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
+              <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
+                Quiz Mode
+              </h2>
+              <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
+                Configure your questions and answers, then start the quiz before handing the wheel to the contestant.
+              </p>
+              {!quizEntriesComplete && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
+                  Every question needs both a question and an answer before the quiz can start.
+                </div>)}
+              {!enoughVisibleQuizEntries && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
+                  Show at least 2 questions to start the quiz.
+                </div>)}
+            </div>)}
         </div>
         <div className="min-w-0">
           <div className="mb-4 hidden flex-wrap items-center gap-2 md:flex">
@@ -2073,6 +2118,7 @@ export default function Home() {
             </div>
           </div>
         </div>)}
+      {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={STANDARD_MODE_HELP} onClose={closeHowItWorks}/>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
             }} onClose={closeFeedback} getReturnFocus={() => feedbackFromMenuRef.current ? menuButtonRef.current : feedbackRowRef.current}/>)}

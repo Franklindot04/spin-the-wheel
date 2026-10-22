@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useId, useRef } from "react";
 import type { RefObject } from "react";
 import { flushSync } from "react-dom";
 import { FEEDBACK_URL } from "../lib/feedback";
+import { usePopover } from "../lib/use-popover";
 
 type AppMenuProps = {
   open: boolean;
@@ -13,27 +14,14 @@ type AppMenuProps = {
   buttonRef: RefObject<HTMLButtonElement | null>;
   onEditTitle: () => void;
   onEditDescription: () => void;
-  onDeleteWheel: () => void;
+  onHowItWorks: () => void;
   onSendFeedback: () => void;
   spinning: boolean;
-  canDeleteWheel: boolean;
   surfaceClass: string;
   borderClass: string;
   hoverClass: string;
   textColor: string;
-  mutedColor: string;
 };
-
-/*
- * A touch that starts a page scroll ends in pointercancel, so a
- * touch only closes the menu when it is a tap: released outside
- * the menu, close to where it started. Mouse and pen close on
- * pointerdown. Same rule as the entry menu.
- */
-const TAP_MOVE_LIMIT = 10;
-
-const FIRST_ITEM =
-  "[data-menu-item]:not(:disabled)";
 
 export default function AppMenu({
   open,
@@ -42,15 +30,13 @@ export default function AppMenu({
   buttonRef,
   onEditTitle,
   onEditDescription,
-  onDeleteWheel,
+  onHowItWorks,
   onSendFeedback,
   spinning,
-  canDeleteWheel,
   surfaceClass,
   borderClass,
   hoverClass,
   textColor,
-  mutedColor,
 }: AppMenuProps) {
   const menuId = useId();
   const wrapperRef =
@@ -58,143 +44,19 @@ export default function AppMenu({
   const menuRef =
     useRef<HTMLDivElement>(null);
 
-  const onCloseRef = useRef(onClose);
-
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    menuRef.current
-      ?.querySelector<HTMLElement>(
-        FIRST_ITEM,
-      )
-      ?.focus();
-
-    let touchStart: {
-      id: number;
-      x: number;
-      y: number;
-    } | null = null;
-
-    function isOutside(
-      event: PointerEvent,
-    ) {
-      return (
-        wrapperRef.current !== null &&
-        !wrapperRef.current.contains(
-          event.target as Node,
-        )
-      );
-    }
-
-    function handlePointerDown(
-      event: PointerEvent,
-    ) {
-      if (event.pointerType === "touch") {
-        touchStart = isOutside(event)
-          ? {
-              id: event.pointerId,
-              x: event.clientX,
-              y: event.clientY,
-            }
-          : null;
-
-        return;
-      }
-
-      if (isOutside(event)) {
-        onCloseRef.current(false);
-      }
-    }
-
-    function handlePointerUp(
-      event: PointerEvent,
-    ) {
-      if (
-        event.pointerType !== "touch" ||
-        !touchStart ||
-        touchStart.id !== event.pointerId
-      ) {
-        return;
-      }
-
-      const start = touchStart;
-
-      touchStart = null;
-
-      if (
-        Math.hypot(
-          event.clientX - start.x,
-          event.clientY - start.y,
-        ) < TAP_MOVE_LIMIT &&
-        isOutside(event)
-      ) {
-        onCloseRef.current(false);
-      }
-    }
-
-    function handlePointerCancel(
-      event: PointerEvent,
-    ) {
-      if (touchStart?.id === event.pointerId) {
-        touchStart = null;
-      }
-    }
-
-    function handleKeyDown(
-      event: KeyboardEvent,
-    ) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseRef.current(true);
-      }
-    }
-
-    document.addEventListener(
-      "pointerdown",
-      handlePointerDown,
-    );
-    document.addEventListener(
-      "pointerup",
-      handlePointerUp,
-    );
-    document.addEventListener(
-      "pointercancel",
-      handlePointerCancel,
-    );
-    document.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
-
-    return () => {
-      document.removeEventListener(
-        "pointerdown",
-        handlePointerDown,
-      );
-      document.removeEventListener(
-        "pointerup",
-        handlePointerUp,
-      );
-      document.removeEventListener(
-        "pointercancel",
-        handlePointerCancel,
-      );
-      document.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
-    };
-  }, [open]);
+  const handleBlur = usePopover(
+    open,
+    onClose,
+    wrapperRef,
+    () =>
+      menuRef.current?.querySelector<HTMLElement>(
+        "[data-menu-item]:not(:disabled)",
+      ),
+  );
 
   /*
    * The menu closes first, so an item that opens a browser
-   * prompt does not leave the menu showing behind it.
+   * prompt or a dialog does not leave the menu showing.
    */
   function activate(action: () => void) {
     flushSync(() => {
@@ -206,28 +68,15 @@ export default function AppMenu({
 
   const itemClass = `flex min-h-11 w-full items-center gap-3 px-4 py-2 text-left text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current disabled:cursor-not-allowed disabled:opacity-50 ${hoverClass}`;
 
-  const deleteReason = spinning
+  const spinTitle = spinning
     ? "Wait for the spin to finish."
-    : !canDeleteWheel
-      ? "Needs at least two wheels."
-      : "";
+    : undefined;
 
   return (
     <div
       ref={wrapperRef}
       className="relative shrink-0"
-      onBlur={(event) => {
-        const next =
-          event.relatedTarget as Node | null;
-
-        if (
-          open &&
-          next &&
-          !wrapperRef.current?.contains(next)
-        ) {
-          onClose(false);
-        }
-      }}
+      onBlur={handleBlur}
     >
       <button
         ref={buttonRef}
@@ -269,11 +118,7 @@ export default function AppMenu({
               activate(onEditTitle)
             }
             disabled={spinning}
-            title={
-              spinning
-                ? "Wait for the spin to finish."
-                : undefined
-            }
+            title={spinTitle}
             className={itemClass}
           >
             Edit title
@@ -286,11 +131,7 @@ export default function AppMenu({
               activate(onEditDescription)
             }
             disabled={spinning}
-            title={
-              spinning
-                ? "Wait for the spin to finish."
-                : undefined
-            }
+            title={spinTitle}
             className={itemClass}
           >
             Edit description
@@ -300,23 +141,11 @@ export default function AppMenu({
             type="button"
             data-menu-item=""
             onClick={() =>
-              activate(onDeleteWheel)
+              activate(onHowItWorks)
             }
-            disabled={
-              spinning || !canDeleteWheel
-            }
-            title={deleteReason || undefined}
-            className={`${itemClass} flex-col items-start gap-0`}
+            className={itemClass}
           >
-            <span>Delete wheel</span>
-            {deleteReason ? (
-              <span
-                className="text-xs font-normal"
-                style={{ color: mutedColor }}
-              >
-                {deleteReason}
-              </span>
-            ) : null}
+            How it works
           </button>
 
           <div
@@ -331,11 +160,7 @@ export default function AppMenu({
               activate(onSendFeedback)
             }
             disabled={spinning}
-            title={
-              spinning
-                ? "Wait for the spin to finish."
-                : undefined
-            }
+            title={spinTitle}
             className={itemClass}
           >
             Send feedback

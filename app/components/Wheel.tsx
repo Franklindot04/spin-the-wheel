@@ -64,6 +64,11 @@ type WheelProps = {
   accentHoverClass: string;
   theme?: AppearanceThemeConfig;
   expandedResult?: ReactNode;
+  /*
+   * Shown at the left of the controls row on phones (below md),
+   * and not while the wheel is full screen.
+   */
+  controlsStart?: ReactNode;
   onExpandedChange?: (expanded: boolean) => void;
   /*
    * The winner box. It shows when result is set and the
@@ -816,6 +821,7 @@ export default function Wheel({
   accentHoverClass,
   theme,
   expandedResult,
+  controlsStart,
   onExpandedChange,
   result = null,
   onContinue,
@@ -2018,7 +2024,7 @@ export default function Wheel({
                 MIN_WHEEL_SIZE ||
               spinning
             }
-            className={`flex h-9 w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`flex h-11 w-11 md:h-9 md:w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
               theme?.controlHoverClass ??
               "text-slate-700 hover:bg-slate-100"
             }`}
@@ -2029,7 +2035,7 @@ export default function Wheel({
           </button>
 
           <div
-            className={`flex h-9 min-w-16 items-center justify-center border-x px-2 text-xs font-bold tabular-nums ${
+            className={`flex h-11 md:h-9 min-w-16 items-center justify-center border-x px-2 text-xs font-bold tabular-nums ${
               theme?.borderClass ??
               "border-slate-200 text-slate-800"
             }`}
@@ -2054,7 +2060,7 @@ export default function Wheel({
                   availableWidth) ||
               spinning
             }
-            className={`flex h-9 w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`flex h-11 w-11 md:h-9 md:w-9 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
               theme?.controlHoverClass ??
               "text-slate-700 hover:bg-slate-100"
             }`}
@@ -2064,6 +2070,12 @@ export default function Wheel({
             <PlusIcon />
           </button>
         </div>
+
+        {!expanded && controlsStart ? (
+          <div className="min-w-0 flex-1 md:hidden">
+            {controlsStart}
+          </div>
+        ) : null}
 
         <div
           className={`flex items-center gap-2 ${
@@ -2077,7 +2089,7 @@ export default function Wheel({
               type="button"
               onClick={onSoundToggle}
               aria-pressed={!soundEnabled}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+              className={`flex ${expanded ? "h-9 w-9" : "h-11 w-11 md:h-9 md:w-9"} items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
                 theme
                   ? `${theme.controlClass} ${theme.controlHoverClass}`
                   : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
@@ -2136,7 +2148,7 @@ export default function Wheel({
                 toggleFullscreen
               }
               disabled={spinning}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
+              className={`flex ${expanded ? "h-9 w-9" : "h-11 w-11 md:h-9 md:w-9"} items-center justify-center rounded-xl border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
                 theme
                   ? `${theme.controlClass} ${theme.controlHoverClass}`
                   : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"

@@ -810,7 +810,7 @@ export default function SettingsPanel({
               />
             </div>
 
-            <div>
+            <div className="hidden md:block">
               <SectionTitle title="Feedback" />
 
               <button
