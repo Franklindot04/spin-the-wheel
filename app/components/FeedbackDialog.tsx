@@ -12,7 +12,7 @@ import { FEEDBACK_URL } from "../lib/feedback";
 import {
   EMPTY_FEEDBACK_DRAFT,
   FEEDBACK_LIMITS,
-  sendFeedbackStub,
+  submitFeedback,
   type FeedbackDraft,
 } from "../lib/feedback-client";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
@@ -29,7 +29,17 @@ type FeedbackDialogProps = {
   getReturnFocus: () => HTMLElement | null;
 };
 
-type Status = "idle" | "sending" | "success" | "error";
+/*
+ * offline, limited and failed are the three ways a send
+ * can end without the report being stored.
+ */
+type Status =
+  | "idle"
+  | "sending"
+  | "success"
+  | "offline"
+  | "limited"
+  | "failed";
 
 type FieldErrors = {
   happened?: string;
@@ -196,8 +206,6 @@ export default function FeedbackDialog({
   const [status, setStatus] =
     useState<Status>("idle");
 
-  const [offline, setOffline] = useState(false);
-
   const [errors, setErrors] =
     useState<FieldErrors>({});
 
@@ -209,6 +217,7 @@ export default function FeedbackDialog({
   const getReturnFocusRef = useRef(getReturnFocus);
   const sendingRef = useRef(false);
   const aliveRef = useRef(true);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -220,6 +229,9 @@ export default function FeedbackDialog({
 
     return () => {
       aliveRef.current = false;
+
+      // Closing the dialog while sending cancels the request.
+      abortRef.current?.abort();
     };
   }, []);
 
@@ -305,9 +317,8 @@ export default function FeedbackDialog({
   // Back online: the offline message no longer applies.
   useEffect(() => {
     function handleOnline() {
-      setOffline(false);
       setStatus((current) =>
-        current === "error" ? "idle" : current,
+        current === "offline" ? "idle" : current,
       );
     }
 
@@ -400,42 +411,58 @@ export default function FeedbackDialog({
     }
 
     if (!navigator.onLine) {
-      setOffline(true);
-      setStatus("error");
+      setStatus("offline");
 
       return;
     }
 
     sendingRef.current = true;
-    setOffline(false);
     setStatus("sending");
+
+    const controller = new AbortController();
+
+    abortRef.current = controller;
 
     try {
       // A filled honeypot means a bot. It gets the same
       // answer as a person, and nothing is sent.
-      if (!honeypot.trim()) {
-        await sendFeedbackStub({
-          ...report,
-          version: APP_VERSION,
-        });
+      const result = honeypot.trim()
+        ? "ok"
+        : await submitFeedback(
+            { ...report, version: APP_VERSION },
+            controller.signal,
+          );
+
+      if (result === "ok") {
+        onDraftChange(EMPTY_FEEDBACK_DRAFT);
       }
 
-      onDraftChange(EMPTY_FEEDBACK_DRAFT);
-
       if (aliveRef.current) {
-        setValues(EMPTY_FEEDBACK_DRAFT);
-        setStatus("success");
+        if (result === "ok") {
+          setValues(EMPTY_FEEDBACK_DRAFT);
+          setStatus("success");
+        } else if (result === "rate-limited") {
+          setStatus("limited");
+        } else {
+          setStatus(result);
+        }
       }
     } catch {
       if (aliveRef.current) {
-        setStatus("error");
+        setStatus("failed");
       }
     } finally {
+      abortRef.current = null;
       sendingRef.current = false;
     }
   }
 
   const sending = status === "sending";
+
+  const failed =
+    status === "offline" ||
+    status === "limited" ||
+    status === "failed";
 
   const inputClass = theme.inputClass;
   const labelClass = theme.textPrimaryClass;
@@ -640,15 +667,21 @@ export default function FeedbackDialog({
             <div
               className={`border-t px-6 py-4 ${theme.borderClass}`}
             >
-              {status === "error" ? (
+              {failed ? (
                 <div
                   role="alert"
                   className="mb-3 rounded-lg border border-red-300/40 bg-red-950/50 px-3 py-2.5 text-sm leading-6 text-red-100"
                 >
-                  {offline ? (
+                  {status === "offline" ? (
                     <>
                       You&apos;re offline. Try again
                       when you&apos;re back, or{" "}
+                      {githubLink("use GitHub")}.
+                    </>
+                  ) : status === "limited" ? (
+                    <>
+                      Too many reports right now. Try
+                      again later, or{" "}
                       {githubLink("use GitHub")}.
                     </>
                   ) : (
@@ -669,7 +702,7 @@ export default function FeedbackDialog({
                 >
                   {sending
                     ? "Sending…"
-                    : status === "error"
+                    : failed
                       ? "Retry"
                       : "Send"}
                 </button>
