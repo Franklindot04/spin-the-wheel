@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.11.0] - 2026-10-22
+
+### Added
+
+- On phones, a slim top bar with the title, the Standard/Quiz switch and a menu, a wheel chip above the wheel for switching, adding, renaming and deleting wheels, and a one-line toolbar under Spin. The result and the quiz question now sit directly under Spin.
+- A How it works dialog in the menu on phones explains Standard Mode.
+
+### Changed
+
+- Rename, Edit title, Edit description and Delete wheel now use in-app dialogs instead of browser prompts, which Chrome can silence. An empty wheel name now shows a message instead of being ignored.
+- On phones, the Send feedback form's security check uses the wide size from 356 px up.
+- The loading screen now matches the real page height, so the page no longer jumps when it loads.
+
 ## [2.10.0] - 2026-10-22
 
 ### Added
@@ -316,7 +329,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.10.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.11.0...HEAD
+[2.11.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.7.0...v2.8.0
