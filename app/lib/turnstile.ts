@@ -13,15 +13,9 @@ export const TURNSTILE_SCRIPT_URL =
 const ALWAYS_PASS_TEST_SITEKEY = "1x00000000000000000000AA";
 
 /*
- * REPLACE THIS with the real sitekey from the Turnstile widget
- * in the Cloudflare dashboard before the form goes live.
- *
- * While it is still the test key:
- * - a build on Cloudflare Pages fails (see below), and
- * - the form refuses to send from any host other than
- *   localhost, so the test key cannot ship quietly.
+ * The public sitekey from the Turnstile widget.
  */
-const PRODUCTION_SITEKEY: string = ALWAYS_PASS_TEST_SITEKEY;
+const PRODUCTION_SITEKEY: string = "0x4AAAAAAFf9jxUjMT2YBE9_";
 
 export const TURNSTILE_SITEKEY =
   process.env.NODE_ENV === "development"
