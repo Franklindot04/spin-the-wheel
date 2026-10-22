@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, } from "react";
 import type { ChangeEvent, CSSProperties, SetStateAction, } from "react";
 import EntryList from "./components/EntryList";
 import FeedbackDialog from "./components/FeedbackDialog";
+import MobileToolbar from "./components/MobileToolbar";
 import MobileTopBar from "./components/MobileTopBar";
 import SettingsPanel, { type SettingsTab, type WheelSettings as PanelWheelSettings, } from "./components/SettingsPanel";
 import WheelComponent from "./components/Wheel";
@@ -74,6 +75,10 @@ export default function Home() {
     const [entriesResetOpen, setEntriesResetOpen,] = useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
+    /* The Settings button in the phone toolbar. The other one is in the wide header. */
+    const mobileSettingsButtonRef = useRef<HTMLButtonElement>(null);
+    /* The Settings button that opened the dialog last. */
+    const settingsOpenerRef = useRef<HTMLButtonElement | null>(null);
     const settingsDialogRef = useRef<HTMLDivElement>(null);
     const resetDialogRef = useRef<HTMLDivElement>(null);
     const entriesResetDialogRef = useRef<HTMLDivElement>(null);
@@ -457,11 +462,25 @@ export default function Home() {
         setPendingImport(null);
         setSettingsOpen(false);
     }
+    /*
+     * Two Settings buttons exist, one in the wide header and one in the
+     * phone toolbar. Focus goes back to the one that opened the dialog,
+     * or to whichever one is shown if that one is gone (for example after
+     * the window was resized while the dialog was open). It is looked up
+     * when the dialog closes, not when it opened.
+     */
+    function focusSettingsButton() {
+        const shown = [
+            settingsOpenerRef.current,
+            settingsButtonRef.current,
+            mobileSettingsButtonRef.current,
+        ].find((button) => button !== null && button.isConnected && button.getClientRects().length > 0);
+        shown?.focus();
+    }
     useEffect(() => {
         if (!settingsOpen) {
             return;
         }
-        const settingsButton = settingsButtonRef.current;
         const dialog = settingsDialogRef.current;
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key ===
@@ -504,14 +523,13 @@ export default function Home() {
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
             document.body.style.overflow = previousBodyOverflow;
-            settingsButton?.focus();
+            focusSettingsButton();
         };
     }, [settingsOpen]);
     useEffect(() => {
         if (!resetConfirmOpen) {
             return;
         }
-        const settingsButton = settingsButtonRef.current;
         const dialog = resetDialogRef.current;
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key ===
@@ -551,7 +569,7 @@ export default function Home() {
         dialog?.focus();
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
-            settingsButton?.focus();
+            focusSettingsButton();
         };
     }, [resetConfirmOpen]);
     useEffect(() => {
@@ -606,7 +624,6 @@ export default function Home() {
             return;
         }
         const deleteCopyButton = deleteCopyButtonRef.current;
-        const settingsButton = settingsButtonRef.current;
         const dialog = deleteCopyDialogRef.current;
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key ===
@@ -651,7 +668,7 @@ export default function Home() {
                 deleteCopyButton.focus();
             }
             else {
-                settingsButton?.focus();
+                focusSettingsButton();
             }
         };
     }, [deleteCopyOpen]);
@@ -1287,6 +1304,10 @@ export default function Home() {
             setMenuOpen(false);
         }
     }, []);
+    function openImportPicker() {
+        setImportError("");
+        importInputRef.current?.click();
+    }
     function exportData() {
         const blob = new Blob([
             serializeAppData(appData),
@@ -1621,7 +1642,10 @@ export default function Home() {
             <button type="button" onClick={renameActiveWheel} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
               Rename
             </button>
-            <button ref={settingsButtonRef} type="button" onClick={() => setSettingsOpen(true)} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
+            <button ref={settingsButtonRef} type="button" onClick={() => {
+                settingsOpenerRef.current = settingsButtonRef.current;
+                setSettingsOpen(true);
+            }} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
               Settings
             </button>
             <button type="button" onClick={handleShare} aria-label="Share Spin the Wheel" title="Share" className={`relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border transition before:absolute before:-inset-1 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass}`} style={{ color: headerTextColor }}>
@@ -1745,6 +1769,10 @@ export default function Home() {
                     : null}
                 </div>)}/>
           </div>
+          <MobileToolbar theme={theme} accentClass={actionAccentClass} spinning={spinning} historyOpen={historyOpen} historyCount={(mode === "standard" ? standardHistory : quizHistory).length} onShowEntries={() => setHistoryOpen(false)} onShowHistory={() => setHistoryOpen(true)} allEntriesHidden={allEntriesHidden} hideAllDisabled={spinning || currentSetupEntries.length === 0} onToggleAllEntriesHidden={toggleAllEntriesHidden} importDisabled={spinning || storageStale} importTitle={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"} onImport={openImportPicker} onExport={exportData} wheels={appData.wheels} activeWheelId={appData.activeWheelId} onSwitchWheel={switchWheel} onAddWheel={addWheel} onRename={renameActiveWheel} onShare={handleShare} onOpenSettings={() => {
+                settingsOpenerRef.current = mobileSettingsButtonRef.current;
+                setSettingsOpen(true);
+            }} settingsButtonRef={mobileSettingsButtonRef}/>
           {mode === "standard" &&
             !hasSpun && (<div inert={wheelExpanded} aria-hidden={wheelExpanded || undefined} className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
               <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
@@ -1836,10 +1864,7 @@ export default function Home() {
                 <path d="M5 21h14"/>
               </svg>
             </button>
-            <button type="button" onClick={() => {
-                setImportError("");
-                importInputRef.current?.click();
-            }} disabled={spinning || storageStale} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"}>
+            <button type="button" onClick={openImportPicker} disabled={spinning || storageStale} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"}>
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 21V9"/>
                 <path d="m7 14 5-5 5 5"/>
