@@ -1584,8 +1584,7 @@ export default function Home() {
     if (!storageLoaded) {
         return (<main key="loading-shell" className="shell-page min-h-screen" aria-busy="true">
         <header className="shell-header border-b">
-          <div className="mx-auto h-[63px] max-w-7xl px-4 sm:px-6 md:h-[100px]"/>
-          <div className="mx-auto h-[116px] max-w-7xl px-4 sm:h-[70px] sm:px-6 md:hidden"/>
+          <div className="mx-auto h-[62px] max-w-7xl px-4 sm:px-6 md:h-[100px]"/>
         </header>
         <div className="hidden h-[70px] md:block"/>
         <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
@@ -1600,7 +1599,7 @@ export default function Home() {
             "--wheel-accent-hover": theme.accentHoverHex,
         } as CSSProperties}>
       <MobileTopBar title={wheelTitle.trim() || DEFAULT_WHEEL_TITLE} mode={mode} onModeChange={changeMode} spinning={spinning} theme={theme} accentClass={actionAccentClass} headerSurfaceClass={headerSurfaceClass} headerBorderClass={headerBorderClass} headerHoverClass={headerHoverClass} headerTextColor={headerTextColor} headerMutedColor={headerMutedColor} menuOpen={menuOpen} onMenuToggle={() => setMenuOpen((open) => !open)} onMenuClose={closeMenu} menuButtonRef={menuButtonRef} onEditTitle={editWheelTitle} onEditDescription={editWheelDescription} onDeleteWheel={deleteActiveWheel} onSendFeedback={openFeedbackFromMenu} canDeleteWheel={appData.wheels.length > 1}/>
-      <header className={`border-b ${headerBorderClass} ${headerSurfaceClass}`}>
+      <header className={`hidden border-b md:block ${headerBorderClass} ${headerSurfaceClass}`}>
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="hidden min-w-0 md:block">
             <div className="flex items-center gap-2">
@@ -1823,7 +1822,7 @@ export default function Home() {
             selectedEntry && !winnerBoxShown && renderStandardResult(false)}
         </div>
         <div className="min-w-0">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="mb-4 hidden flex-wrap items-center gap-2 md:flex">
             <button type="button" onClick={() => setHistoryOpen(false)} className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition ${!historyOpen
             ? `${actionAccentClass} text-white shadow-sm`
             : `${theme.borderClass} ${theme.surfaceClass} ${theme.textMutedClass} ${theme.controlHoverClass}`}`} aria-label="Show entries" title="Entries">
@@ -1873,7 +1872,7 @@ export default function Home() {
             </button>
             <input ref={importInputRef} type="file" accept=".json,application/json" onChange={handleImportFile} className="hidden"/>
           </div>
-          {quizTextLocked && (<p className={`-mt-2 mb-4 text-xs leading-5 ${theme.textMutedClass}`}>
+          {quizTextLocked && (<p className={`mb-4 text-xs leading-5 md:-mt-2 ${theme.textMutedClass}`}>
               Exports include all questions and answers.
             </p>)}
           {!historyOpen && (<>
