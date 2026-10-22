@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type Ref,
 } from "react";
 
 import { FEEDBACK_URL } from "../lib/feedback";
@@ -62,6 +63,8 @@ type SettingsPanelProps = {
     changes: Partial<WheelSettings>,
   ) => void;
   onRestoreDefaults: () => void;
+  onOpenFeedback: () => void;
+  feedbackButtonRef?: Ref<HTMLButtonElement>;
   activeTab: SettingsTab;
   onActiveTabChange: (
     tab: SettingsTab,
@@ -498,6 +501,8 @@ export default function SettingsPanel({
   settings,
   onSettingsChange,
   onRestoreDefaults,
+  onOpenFeedback,
+  feedbackButtonRef,
   activeTab,
   onActiveTabChange,
   accentClass = "bg-slate-900",
@@ -808,11 +813,52 @@ export default function SettingsPanel({
             <div>
               <SectionTitle title="Feedback" />
 
+              <button
+                ref={feedbackButtonRef}
+                type="button"
+                onClick={onOpenFeedback}
+                aria-describedby="feedback-form-description"
+                className="mb-3 flex w-full items-center justify-between gap-6 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                style={
+                  {
+                    "--tw-ring-color": accentHex,
+                  } as CSSProperties
+                }
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">
+                    Send feedback
+                  </p>
+
+                  <p
+                    id="feedback-form-description"
+                    className="mt-1 text-xs leading-5 text-slate-500"
+                  >
+                    Tell us what happened or what you
+                    would like to see. No account is
+                    needed.
+                  </p>
+                </div>
+
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0 text-slate-500"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
+
               <a
                 href={FEEDBACK_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Send feedback (opens in a new tab)"
+                aria-label="Report on GitHub (opens in a new tab)"
                 aria-describedby="feedback-description"
                 className="flex items-center justify-between gap-6 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={
@@ -823,7 +869,7 @@ export default function SettingsPanel({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900">
-                    Send feedback
+                    Report on GitHub
                   </p>
 
                   <p

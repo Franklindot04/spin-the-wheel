@@ -2,11 +2,13 @@
 import { useEffect, useRef, useState, } from "react";
 import type { ChangeEvent, CSSProperties, SetStateAction, } from "react";
 import EntryList from "./components/EntryList";
+import FeedbackDialog from "./components/FeedbackDialog";
 import SettingsPanel, { type SettingsTab, type WheelSettings as PanelWheelSettings, } from "./components/SettingsPanel";
 import WheelComponent from "./components/Wheel";
 import type { WheelEntry, } from "./lib/wheel-types";
 import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, THEME_STORAGE_KEY, } from "./lib/appearance-themes";
+import { EMPTY_FEEDBACK_DRAFT, type FeedbackDraft, } from "./lib/feedback-client";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, DEFAULT_CONFETTI_ENABLED, DEFAULT_CONFETTI_EFFECT, } from "./lib/wheel-defaults";
 import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/sound-engine";
@@ -56,6 +58,10 @@ export default function Home() {
     const [settingsTab, setSettingsTab,] = useState<SettingsTab>("main");
     const [historyOpen, setHistoryOpen,] = useState(false);
     const [resetConfirmOpen, setResetConfirmOpen,] = useState(false);
+    const [feedbackOpen, setFeedbackOpen,] = useState(false);
+    /* What was typed in the feedback form. Kept in memory only, never saved. */
+    const feedbackDraftRef = useRef<FeedbackDraft>(EMPTY_FEEDBACK_DRAFT);
+    const feedbackRowRef = useRef<HTMLButtonElement>(null);
     const [entriesResetOpen, setEntriesResetOpen,] = useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -1225,6 +1231,17 @@ export default function Home() {
         setResetConfirmOpen(false);
         setSettingsOpen(true);
     }
+    function openFeedback() {
+        if (spinning) {
+            return;
+        }
+        setSettingsOpen(false);
+        setFeedbackOpen(true);
+    }
+    function closeFeedback() {
+        setFeedbackOpen(false);
+        setSettingsOpen(true);
+    }
     function exportData() {
         const blob = new Blob([
             serializeAppData(appData),
@@ -1933,7 +1950,7 @@ export default function Home() {
             }}>
           <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl">
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} activeTab={settingsTab} onActiveTabChange={setSettingsTab} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
+              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} onOpenFeedback={openFeedback} feedbackButtonRef={feedbackRowRef} activeTab={settingsTab} onActiveTabChange={setSettingsTab} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
             </div>
             <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
               <button type="button" onClick={closeSettings} className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
@@ -1984,6 +2001,9 @@ export default function Home() {
             </div>
           </div>
         </div>)}
+      {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
+                feedbackDraftRef.current = draft;
+            }} onClose={closeFeedback} getReturnFocus={() => feedbackRowRef.current}/>)}
       {entriesResetOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
           <div ref={entriesResetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Reset entries" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
             <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
