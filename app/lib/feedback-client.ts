@@ -75,6 +75,7 @@ function sendFeedbackStub(
 
 async function postFeedback(
   report: FeedbackReport,
+  token: string,
   signal: AbortSignal,
 ): Promise<FeedbackResult> {
   // Stops on the caller's signal, or when the request
@@ -99,7 +100,7 @@ async function postFeedback(
     const response = await fetch(FEEDBACK_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(report),
+      body: JSON.stringify({ ...report, token }),
       cache: "no-store",
       signal: controller.signal,
     });
@@ -132,15 +133,17 @@ async function postFeedback(
 
 /*
  * Sends a report to /api/feedback, the Pages Function in
- * functions/api/feedback.js. Aborting the signal cancels it.
+ * functions/api/feedback.js, with the Turnstile token the
+ * Function checks. Aborting the signal cancels it.
  */
 export function submitFeedback(
   report: FeedbackReport,
+  token: string,
   signal: AbortSignal,
 ): Promise<FeedbackResult> {
   if (process.env.NODE_ENV === "development") {
     return sendFeedbackStub(signal);
   }
 
-  return postFeedback(report, signal);
+  return postFeedback(report, token, signal);
 }

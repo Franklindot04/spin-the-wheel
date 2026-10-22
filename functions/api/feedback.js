@@ -19,6 +19,10 @@ const LIMITS = {
 };
 
 const MAX_BODY_BYTES = 10 * 1024;
+const MAX_TOKEN_LENGTH = 2048;
+const SITEVERIFY_URL =
+  "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+const SITEVERIFY_TIMEOUT_MS = 5000;
 const DAILY_CAP = 200;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -113,8 +117,8 @@ function clean(value) {
 }
 
 /*
- * Returns the cleaned report, or an error message. Only these
- * fields are read. Anything else in the body is dropped.
+ * Returns the cleaned report and token, or an error message. Only
+ * these fields are read. Anything else in the body is dropped.
  */
 function validate(body) {
   const fields = {
@@ -154,7 +158,83 @@ function validate(body) {
     return { error: "That email doesn't look right." };
   }
 
-  return { report };
+  if (
+    typeof body.token !== "string" ||
+    !body.token ||
+    body.token.length > MAX_TOKEN_LENGTH
+  ) {
+    return { error: "Complete the security check." };
+  }
+
+  return { report, token: body.token };
+}
+
+/*
+ * Asks Turnstile whether the token is real, unused and was issued
+ * on this site. The secret comes only from the Cloudflare settings
+ * (TURNSTILE_SECRET_KEY). The visitor's IP address is not sent.
+ *
+ * Returns "ok", "failed" (the visitor's token was refused) or
+ * "unavailable" (the check itself is broken or unreachable, which
+ * is not the visitor's fault). Nothing is logged except fixed text.
+ */
+async function verifyToken(token, request, env) {
+  if (!env.TURNSTILE_SECRET_KEY) {
+    console.error("feedback: the Turnstile secret is not set");
+
+    return "unavailable";
+  }
+
+  let response;
+  let data;
+
+  try {
+    response = await fetch(SITEVERIFY_URL, {
+      method: "POST",
+      body: new URLSearchParams({
+        secret: env.TURNSTILE_SECRET_KEY,
+        response: token,
+      }),
+      signal: AbortSignal.timeout(SITEVERIFY_TIMEOUT_MS),
+    });
+
+    data = await response.json().catch(() => null);
+  } catch {
+    console.error("feedback: the Turnstile check could not be reached");
+
+    return "unavailable";
+  }
+
+  const codes = Array.isArray(data && data["error-codes"])
+    ? data["error-codes"]
+    : [];
+
+  // A wrong or missing secret is our mistake, not the visitor's.
+  if (
+    codes.includes("invalid-input-secret") ||
+    codes.includes("missing-input-secret")
+  ) {
+    console.error("feedback: the Turnstile secret was refused");
+
+    return "unavailable";
+  }
+
+  if (!response.ok) {
+    console.error("feedback: the Turnstile check did not answer");
+
+    return "unavailable";
+  }
+
+  if (!data || data.success !== true) {
+    return "failed";
+  }
+
+  // The check reports the host the widget was shown on.
+  if (data.hostname !== new URL(request.url).hostname) {
+    return "failed";
+  }
+
+  return "ok";
 }
 
 async function handle(request, env) {
@@ -192,10 +272,20 @@ async function handle(request, env) {
     return reply(200, { ok: true });
   }
 
-  const { report, error } = validate(body);
+  const { report, token, error } = validate(body);
 
   if (error) {
     return fail(400, error);
+  }
+
+  const check = await verifyToken(token, request, env);
+
+  if (check === "failed") {
+    return fail(403, "The security check failed. Try again.");
+  }
+
+  if (check === "unavailable") {
+    return fail(503, "The security check is unavailable. Try again later.");
   }
 
   // The count and the insert are one statement, so two reports

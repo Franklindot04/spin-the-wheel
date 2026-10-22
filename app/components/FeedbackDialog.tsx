@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -15,6 +16,11 @@ import {
   submitFeedback,
   type FeedbackDraft,
 } from "../lib/feedback-client";
+import {
+  loadTurnstile,
+  turnstileSetupProblem,
+  TURNSTILE_SITEKEY,
+} from "../lib/turnstile";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
 
 type FeedbackDialogProps = {
@@ -30,8 +36,10 @@ type FeedbackDialogProps = {
 };
 
 /*
- * offline, limited and failed are the three ways a send
- * can end without the report being stored.
+ * offline, limited and failed are the ways a send can end
+ * without the report being stored. check means the security
+ * check could not load, and waiting means Send was pressed
+ * before the check had finished.
  */
 type Status =
   | "idle"
@@ -39,7 +47,11 @@ type Status =
   | "success"
   | "offline"
   | "limited"
-  | "failed";
+  | "failed"
+  | "check"
+  | "waiting";
+
+const TURNSTILE_CONTAINER_ID = "feedback-turnstile";
 
 type FieldErrors = {
   happened?: string;
@@ -219,6 +231,132 @@ export default function FeedbackDialog({
   const aliveRef = useRef(true);
   const abortRef = useRef<AbortController | null>(null);
 
+  // The Turnstile token is single use, so it is kept in a ref and
+  // cleared after every send attempt.
+  const tokenRef = useRef<string | null>(null);
+  const widgetIdRef = useRef<string | null>(null);
+  const widgetRunRef = useRef(0);
+
+  const removeWidget = useCallback(() => {
+    const id = widgetIdRef.current;
+
+    widgetIdRef.current = null;
+    tokenRef.current = null;
+
+    if (id && window.turnstile) {
+      try {
+        window.turnstile.remove(id);
+      } catch {
+        // Already gone.
+      }
+    }
+  }, []);
+
+  // A new token is needed after every attempt.
+  const resetWidget = useCallback(() => {
+    const id = widgetIdRef.current;
+
+    tokenRef.current = null;
+
+    if (id && window.turnstile) {
+      try {
+        window.turnstile.reset(id);
+      } catch {
+        // The widget is already gone.
+      }
+    }
+  }, []);
+
+  const startWidget = useCallback(() => {
+    const run = ++widgetRunRef.current;
+
+    removeWidget();
+
+    const checkFailed = () => {
+      if (run !== widgetRunRef.current) {
+        return;
+      }
+
+      tokenRef.current = null;
+      setStatus((current) =>
+        current === "sending" || current === "success"
+          ? current
+          : "check",
+      );
+    };
+
+    const problem = turnstileSetupProblem();
+
+    if (problem) {
+      console.error(problem);
+      checkFailed();
+
+      return;
+    }
+
+    loadTurnstile()
+      .then((api) => {
+        const container = document.getElementById(
+          TURNSTILE_CONTAINER_ID,
+        );
+
+        if (
+          run !== widgetRunRef.current ||
+          !aliveRef.current ||
+          !container
+        ) {
+          return;
+        }
+
+        // The flexible widget is at least 300px wide, which
+        // does not fit a narrow phone. The compact one is 150px.
+        const id = api.render(
+          `#${TURNSTILE_CONTAINER_ID}`,
+          {
+            sitekey: TURNSTILE_SITEKEY,
+            theme: "dark",
+            size:
+              container.clientWidth >= 300
+                ? "flexible"
+                : "compact",
+            "response-field": false,
+            "refresh-expired": "manual",
+            callback: (token) => {
+              if (run !== widgetRunRef.current) {
+                return;
+              }
+
+              tokenRef.current = token;
+              setStatus((current) =>
+                current === "waiting" ||
+                current === "check"
+                  ? "idle"
+                  : current,
+              );
+            },
+            "error-callback": checkFailed,
+            "expired-callback": () => {
+              if (run !== widgetRunRef.current) {
+                return;
+              }
+
+              resetWidget();
+            },
+            "timeout-callback": () => {
+              tokenRef.current = null;
+            },
+          },
+        );
+
+        if (id) {
+          widgetIdRef.current = id;
+        } else {
+          checkFailed();
+        }
+      })
+      .catch(checkFailed);
+  }, [removeWidget, resetWidget]);
+
   useEffect(() => {
     onCloseRef.current = onClose;
     getReturnFocusRef.current = getReturnFocus;
@@ -234,6 +372,16 @@ export default function FeedbackDialog({
       abortRef.current?.abort();
     };
   }, []);
+
+  // The check is added when the dialog opens and removed when it closes.
+  useEffect(() => {
+    startWidget();
+
+    return () => {
+      widgetRunRef.current += 1;
+      removeWidget();
+    };
+  }, [startWidget, removeWidget]);
 
   /*
    * Escape closes, Tab stays inside the dialog, and focus
@@ -416,6 +564,19 @@ export default function FeedbackDialog({
       return;
     }
 
+    // Never send without a token. A broken check is started again.
+    const token = tokenRef.current;
+
+    if (!token) {
+      if (status === "check") {
+        startWidget();
+      }
+
+      setStatus("waiting");
+
+      return;
+    }
+
     sendingRef.current = true;
     setStatus("sending");
 
@@ -430,11 +591,15 @@ export default function FeedbackDialog({
         ? "ok"
         : await submitFeedback(
             { ...report, version: APP_VERSION },
+            token,
             controller.signal,
           );
 
       if (result === "ok") {
         onDraftChange(EMPTY_FEEDBACK_DRAFT);
+        removeWidget();
+      } else {
+        resetWidget();
       }
 
       if (aliveRef.current) {
@@ -448,6 +613,8 @@ export default function FeedbackDialog({
         }
       }
     } catch {
+      resetWidget();
+
       if (aliveRef.current) {
         setStatus("failed");
       }
@@ -462,7 +629,8 @@ export default function FeedbackDialog({
   const failed =
     status === "offline" ||
     status === "limited" ||
-    status === "failed";
+    status === "failed" ||
+    status === "check";
 
   const inputClass = theme.inputClass;
   const labelClass = theme.textPrimaryClass;
@@ -650,6 +818,16 @@ export default function FeedbackDialog({
                 />
               </div>
 
+              <div
+                role="group"
+                aria-label="Security check"
+              >
+                <div
+                  id={TURNSTILE_CONTAINER_ID}
+                  className="min-h-[65px]"
+                />
+              </div>
+
               <p
                 className={`text-xs leading-5 ${mutedClass}`}
               >
@@ -667,7 +845,7 @@ export default function FeedbackDialog({
             <div
               className={`border-t px-6 py-4 ${theme.borderClass}`}
             >
-              {failed ? (
+              {failed || status === "waiting" ? (
                 <div
                   role="alert"
                   className="mb-3 rounded-lg border border-red-300/40 bg-red-950/50 px-3 py-2.5 text-sm leading-6 text-red-100"
@@ -676,6 +854,14 @@ export default function FeedbackDialog({
                     <>
                       You&apos;re offline. Try again
                       when you&apos;re back, or{" "}
+                      {githubLink("use GitHub")}.
+                    </>
+                  ) : status === "waiting" ? (
+                    <>Please wait for the check to finish.</>
+                  ) : status === "check" ? (
+                    <>
+                      The security check couldn&apos;t
+                      finish. Try again, or{" "}
                       {githubLink("use GitHub")}.
                     </>
                   ) : status === "limited" ? (
