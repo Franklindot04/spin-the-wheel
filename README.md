@@ -59,6 +59,7 @@ Create interactive question-and-answer quizzes directly on the wheel.
 - Import and export wheel data as JSON
 - Share the app from the header: the share sheet on phones, or a copied link elsewhere.
 - Send feedback from Settings without a GitHub account, or report on GitHub
+- Phone layout: a slim top bar, a wheel chip, and a one-line toolbar under the wheel
 
 ### 📜 History
 
