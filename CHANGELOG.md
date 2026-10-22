@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- A Send feedback link in Settings opens the Feedback form on GitHub.
+
 ## [2.8.0] - 2026-10-22
 
 ### Added
