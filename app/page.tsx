@@ -1,9 +1,11 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, } from "react";
-import type { ChangeEvent, CSSProperties, SetStateAction, } from "react";
+import type { ChangeEvent, CSSProperties, MouseEvent as ReactMouseEvent, SetStateAction, } from "react";
 import EntryList from "./components/EntryList";
 import FeedbackDialog from "./components/FeedbackDialog";
+import ConfirmDialog from "./components/ConfirmDialog";
 import HowItWorksDialog from "./components/HowItWorksDialog";
+import TextDialog from "./components/TextDialog";
 import WheelChip from "./components/WheelChip";
 import MobileToolbar from "./components/MobileToolbar";
 import MobileTopBar from "./components/MobileTopBar";
@@ -34,6 +36,7 @@ function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partia
 }
 /* Shown in the Standard Mode card, and in the How it works dialog on phones. */
 const STANDARD_MODE_HELP = "Add your options in the list, then press Spin. Change a name, colour or weight with the entry's ... menu, and hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.";
+type TextDialogKind = "name" | "title" | "description";
 const QUIZ_LOCKED_TEXT_KEYS: string[] = [
     "label",
     "question",
@@ -81,6 +84,10 @@ export default function Home() {
     const chipButtonRef = useRef<HTMLButtonElement>(null);
     const moreButtonRef = useRef<HTMLButtonElement>(null);
     const [howOpen, setHowOpen,] = useState(false);
+    /* The text dialog (rename, title, description) and the delete confirm. */
+    const [textDialog, setTextDialog,] = useState<TextDialogKind | null>(null);
+    const [deleteWheelOpen, setDeleteWheelOpen,] = useState(false);
+    const dialogOpenerRef = useRef<HTMLElement | null>(null);
     const [entriesResetOpen, setEntriesResetOpen,] = useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -211,51 +218,150 @@ export default function Home() {
         setQuizStarted(false);
         setHistoryOpen(false);
     }
-    function renameActiveWheel() {
-        if (spinning) {
-            return;
-        }
-        const next = window.prompt("Wheel name", activeWheel.name);
-        if (next === null) {
-            return;
-        }
-        updateActiveWheel({
-            name: next.trim() ||
-                activeWheel.name,
-        });
+    /*
+     * Changing the name, title or description, and deleting a wheel,
+     * ask in a dialog of the app. The browser prompt and confirm are
+     * not used: some phone browsers switch them off for the rest of
+     * the session after "Suppress dialogs".
+     */
+    function anyDialogOpen() {
+        return (settingsOpen ||
+            feedbackOpen ||
+            howOpen ||
+            resetConfirmOpen ||
+            entriesResetOpen ||
+            deleteCopyOpen ||
+            pendingImport !== null ||
+            textDialog !== null ||
+            deleteWheelOpen);
     }
-    function editWheelTitle() {
-        if (spinning) {
-            return;
-        }
-        const next = window.prompt("Wheel title", wheelTitle);
-        if (next === null) {
-            return;
-        }
-        updateActiveWheel({
-            title: next.trim() ||
-                DEFAULT_WHEEL_TITLE,
-        });
+    /* The popovers close before a dialog opens. */
+    function closePopoversForDialog(opener?: HTMLElement | null) {
+        dialogOpenerRef.current = opener ??
+            (document.activeElement instanceof HTMLElement
+                ? document.activeElement
+                : null);
+        openPopoverRef.current = null;
+        setPopover(null);
     }
-    function editWheelDescription() {
-        if (spinning) {
+    function openTextDialog(kind: TextDialogKind, opener?: HTMLElement | null) {
+        if (spinning || anyDialogOpen()) {
             return;
         }
-        const next = window.prompt("Wheel description", wheelDescription);
-        if (next === null) {
-            return;
-        }
-        updateActiveWheel({
-            description: next.trim() ||
-                DEFAULT_WHEEL_DESCRIPTION,
-        });
+        closePopoversForDialog(opener);
+        setTextDialog(kind);
     }
-    function deleteActiveWheel() {
+    function renameActiveWheel(event?: ReactMouseEvent<HTMLElement>) {
+        openTextDialog("name", event?.currentTarget);
+    }
+    function editWheelTitle(event?: ReactMouseEvent<HTMLElement>) {
+        openTextDialog("title", event?.currentTarget);
+    }
+    function editWheelDescription(event?: ReactMouseEvent<HTMLElement>) {
+        openTextDialog("description", event?.currentTarget);
+    }
+    /*
+     * Focus goes back to the control that opened the dialog. If that
+     * control is hidden by now (the window was resized across 768 px),
+     * it goes to the menu button or the Settings button that is shown.
+     */
+    function returnFocusAfterDialog() {
+        const opener = dialogOpenerRef.current;
+        dialogOpenerRef.current = null;
+        /*
+         * One step later, after the page has been drawn again: the
+         * control may be gone by then (the Delete wheel button of the
+         * wide header goes away with the second-to-last wheel).
+         */
+        window.setTimeout(() => {
+            const shown = [
+                opener,
+                menuButtonRef.current,
+                settingsOpenerRef.current,
+                settingsButtonRef.current,
+                mobileSettingsButtonRef.current,
+            ].find((element) => element !== null &&
+                element !== undefined &&
+                element.isConnected &&
+                element.getClientRects().length > 0);
+            shown?.focus();
+        }, 0);
+    }
+    function closeTextDialog() {
+        setTextDialog(null);
+        returnFocusAfterDialog();
+    }
+    /*
+     * The same rules as the old prompts: the text is trimmed. An empty
+     * title or description goes back to the default one. An empty name
+     * is refused with a message. Text that did not change saves nothing.
+     */
+    const TEXT_DIALOGS: Record<TextDialogKind, {
+        title: string;
+        label: string;
+        current: string;
+        multiline: boolean;
+        hint?: string;
+        validate?: (text: string) => string | null;
+        apply: (text: string) => void;
+    }> = {
+        name: {
+            title: "Rename wheel",
+            label: "Wheel name",
+            current: activeWheel.name,
+            multiline: false,
+            validate: (text) => text === "" ? "Enter a name for the wheel." : null,
+            apply: (text) => {
+                if (text !== activeWheel.name) {
+                    updateActiveWheel({ name: text });
+                }
+            },
+        },
+        title: {
+            title: "Edit title",
+            label: "Wheel title",
+            current: activeWheel.title,
+            multiline: false,
+            hint: `Leave it empty to use "${DEFAULT_WHEEL_TITLE}".`,
+            apply: (text) => {
+                const next = text || DEFAULT_WHEEL_TITLE;
+                if (next !== activeWheel.title) {
+                    updateActiveWheel({ title: next });
+                }
+            },
+        },
+        description: {
+            title: "Edit description",
+            label: "Wheel description",
+            current: activeWheel.description,
+            multiline: true,
+            hint: `Leave it empty to use "${DEFAULT_WHEEL_DESCRIPTION}".`,
+            apply: (text) => {
+                const next = text || DEFAULT_WHEEL_DESCRIPTION;
+                if (next !== activeWheel.description) {
+                    updateActiveWheel({ description: next });
+                }
+            },
+        },
+    };
+    function deleteActiveWheel(event?: ReactMouseEvent<HTMLElement>) {
+        if (spinning ||
+            appData.wheels.length <= 1 ||
+            anyDialogOpen()) {
+            return;
+        }
+        closePopoversForDialog(event?.currentTarget);
+        setDeleteWheelOpen(true);
+    }
+    function closeDeleteWheel() {
+        setDeleteWheelOpen(false);
+        returnFocusAfterDialog();
+    }
+    function confirmDeleteWheel() {
+        setDeleteWheelOpen(false);
         if (spinning ||
             appData.wheels.length <= 1) {
-            return;
-        }
-        if (!window.confirm(`Delete ${activeWheel.name}?`)) {
+            returnFocusAfterDialog();
             return;
         }
         stopConfetti();
@@ -275,6 +381,7 @@ export default function Home() {
         setAskedQuizIds([]);
         setQuizStarted(false);
         setHistoryOpen(false);
+        returnFocusAfterDialog();
     }
     const standardEntries = activeWheel.standardEntries;
     const setStandardEntries = (next: SetStateAction<WheelEntry[]>) => {
@@ -1681,6 +1788,9 @@ export default function Home() {
               Rename
             </button>
             <button ref={settingsButtonRef} type="button" onClick={() => {
+                if (anyDialogOpen()) {
+                    return;
+                }
                 settingsOpenerRef.current = settingsButtonRef.current;
                 setSettingsOpen(true);
             }} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
@@ -1838,6 +1948,9 @@ export default function Home() {
           {mode === "standard" &&
             selectedEntry && !winnerBoxShown && renderStandardResult(false)}
           <MobileToolbar theme={theme} accentClass={actionAccentClass} spinning={spinning} historyOpen={historyOpen} historyCount={(mode === "standard" ? standardHistory : quizHistory).length} onShowEntries={() => setHistoryOpen(false)} onShowHistory={() => setHistoryOpen(true)} allEntriesHidden={allEntriesHidden} hideAllDisabled={spinning || currentSetupEntries.length === 0} onToggleAllEntriesHidden={toggleAllEntriesHidden} importDisabled={spinning || storageStale} importTitle={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"} onImport={openImportPicker} onExport={exportData} onShare={handleShare} onOpenSettings={() => {
+                if (anyDialogOpen()) {
+                    return;
+                }
                 settingsOpenerRef.current = mobileSettingsButtonRef.current;
                 setSettingsOpen(true);
             }} settingsButtonRef={mobileSettingsButtonRef} moreOpen={popover === "more"} onMoreToggle={() => togglePopover("more")} onMoreClose={closePopover} moreButtonRef={moreButtonRef}/>
@@ -2118,6 +2231,11 @@ export default function Home() {
             </div>
           </div>
         </div>)}
+      {textDialog !== null && (<TextDialog key={textDialog} theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={TEXT_DIALOGS[textDialog].title} label={TEXT_DIALOGS[textDialog].label} initialValue={TEXT_DIALOGS[textDialog].current} multiline={TEXT_DIALOGS[textDialog].multiline} hint={TEXT_DIALOGS[textDialog].hint} validate={TEXT_DIALOGS[textDialog].validate} onSubmit={(text) => {
+                TEXT_DIALOGS[textDialog].apply(text);
+                closeTextDialog();
+            }} onClose={closeTextDialog}/>)}
+      {deleteWheelOpen && (<ConfirmDialog theme={theme} title="Delete wheel?" message={`Delete "${activeWheel.name}"? Its entries, quiz questions, settings and history are removed. This cannot be undone.`} confirmLabel="Delete wheel" onConfirm={confirmDeleteWheel} onClose={closeDeleteWheel}/>)}
       {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={STANDARD_MODE_HELP} onClose={closeHowItWorks}/>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
