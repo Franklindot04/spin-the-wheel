@@ -53,6 +53,9 @@ type Status =
 
 const TURNSTILE_CONTAINER_ID = "feedback-turnstile";
 
+// The flexible widget is at least this wide.
+const WIDE_WIDGET_MIN_WIDTH = 300;
+
 type FieldErrors = {
   happened?: string;
   email?: string;
@@ -236,6 +239,7 @@ export default function FeedbackDialog({
   const tokenRef = useRef<string | null>(null);
   const widgetIdRef = useRef<string | null>(null);
   const widgetRunRef = useRef(0);
+  const widgetSizeRef = useRef<"flexible" | "compact" | null>(null);
 
   const removeWidget = useCallback(() => {
     const id = widgetIdRef.current;
@@ -310,15 +314,19 @@ export default function FeedbackDialog({
 
         // The flexible widget is at least 300px wide, which
         // does not fit a narrow phone. The compact one is 150px.
+        const size =
+          container.clientWidth >= WIDE_WIDGET_MIN_WIDTH
+            ? "flexible"
+            : "compact";
+
+        widgetSizeRef.current = size;
+
         const id = api.render(
           `#${TURNSTILE_CONTAINER_ID}`,
           {
             sitekey: TURNSTILE_SITEKEY,
             theme: "dark",
-            size:
-              container.clientWidth >= 300
-                ? "flexible"
-                : "compact",
+            size,
             "response-field": false,
             "refresh-expired": "manual",
             callback: (token) => {
@@ -382,6 +390,64 @@ export default function FeedbackDialog({
       removeWidget();
     };
   }, [startWidget, removeWidget]);
+
+  // Turning the phone, or resizing the window, can change which
+  // size fits. The widget keeps the size it was drawn with, so it
+  // is drawn again when the other size is needed. Not while sending.
+  // The width of the dialog is watched, because a window resize
+  // event does not always arrive.
+  useEffect(() => {
+    const watched = dialogRef.current;
+
+    if (!watched || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    let timer: number | null = null;
+
+    function handleResize() {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+
+      timer = window.setTimeout(() => {
+        timer = null;
+
+        const container = document.getElementById(
+          TURNSTILE_CONTAINER_ID,
+        );
+
+        if (
+          !container ||
+          sendingRef.current ||
+          widgetIdRef.current === null
+        ) {
+          return;
+        }
+
+        const wanted =
+          container.clientWidth >= WIDE_WIDGET_MIN_WIDTH
+            ? "flexible"
+            : "compact";
+
+        if (wanted !== widgetSizeRef.current) {
+          startWidget();
+        }
+      }, 200);
+    }
+
+    const observer = new ResizeObserver(handleResize);
+
+    observer.observe(watched);
+
+    return () => {
+      observer.disconnect();
+
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, [startWidget]);
 
   /*
    * Escape closes, Tab stays inside the dialog, and focus
@@ -682,7 +748,7 @@ export default function FeedbackDialog({
       >
         {status === "success" ? (
           <>
-            <div className="px-6 py-6">
+            <div className="px-3 py-6 sm:px-6">
               {heading}
 
               <p
@@ -694,7 +760,7 @@ export default function FeedbackDialog({
             </div>
 
             <div
-              className={`border-t px-6 py-4 ${theme.borderClass}`}
+              className={`border-t px-3 py-4 sm:px-6 ${theme.borderClass}`}
             >
               <button
                 ref={closeButtonRef}
@@ -712,7 +778,7 @@ export default function FeedbackDialog({
             onSubmit={submit}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 py-6">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 py-6 sm:px-6">
               {heading}
 
               <Field
@@ -845,7 +911,7 @@ export default function FeedbackDialog({
             </div>
 
             <div
-              className={`border-t px-6 py-4 ${theme.borderClass}`}
+              className={`border-t px-3 py-4 sm:px-6 ${theme.borderClass}`}
             >
               {failed || status === "waiting" ? (
                 <div
