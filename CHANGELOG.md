@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-10-22
+
 ### Added
 
 - A Send feedback link in Settings opens the Feedback form on GitHub.
@@ -308,7 +310,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.8.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.9.0...HEAD
+[2.9.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.5.0...v2.6.0

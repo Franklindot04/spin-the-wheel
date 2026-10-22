@@ -2,4 +2,4 @@
  * The version shown in feedback reports. It is bumped
  * in each release prep commit, with the changelog.
  */
-export const APP_VERSION = "2.8.0";
+export const APP_VERSION = "2.9.0";
