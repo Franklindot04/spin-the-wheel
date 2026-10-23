@@ -12,7 +12,10 @@ import {
   normalizeWheel,
 } from "./wheel-defaults";
 import type { RepairReport } from "./wheel-defaults";
-import { APPEARANCE_THEMES } from "./appearance-themes";
+import {
+  APPEARANCE_THEMES,
+  THEME_STORAGE_KEY,
+} from "./appearance-themes";
 
 export const STORAGE_KEY =
   "spin-the-wheel:v2";
@@ -25,6 +28,78 @@ export const UNREADABLE_BACKUP_KEY =
 
 export const MAX_IMPORT_FILE_SIZE =
   10 * 1024 * 1024;
+
+/*
+ * Browsers do not say how much localStorage space is left, and
+ * they differ: this is a conservative assumption, not a measured
+ * limit. Chromium allowed about 50 MiB in testing, and other
+ * browsers are often said to allow about 5 MB. The notice only
+ * says storage is getting full; a save that really fails still
+ * shows its own message.
+ */
+export const STORAGE_BUDGET_CHARACTERS =
+  5000000;
+
+export const STORAGE_WARN_RATIO = 0.8;
+
+/*
+ * The characters the app stores: the wheels, the theme copy and
+ * the kept unreadable copy, each with its key. The wheels are
+ * passed in because the caller has just written that string.
+ */
+export function countStoredCharacters(
+  savedWheels: string,
+): number {
+  let total =
+    STORAGE_KEY.length +
+    savedWheels.length;
+
+  for (const key of [
+    THEME_STORAGE_KEY,
+    UNREADABLE_BACKUP_KEY,
+  ]) {
+    try {
+      const value =
+        window.localStorage.getItem(key);
+
+      if (value !== null) {
+        total += key.length + value.length;
+      }
+    } catch {
+      // Count what can be read.
+    }
+  }
+
+  return total;
+}
+
+/*
+ * The whole percent to show once storage is nearly full, or
+ * null below the warning level. It stays at 99 until the budget
+ * itself is reached.
+ */
+export function getStorageFullPercent(
+  characters: number,
+): number | null {
+  if (
+    characters <
+    STORAGE_BUDGET_CHARACTERS *
+      STORAGE_WARN_RATIO
+  ) {
+    return null;
+  }
+
+  const percent = Math.round(
+    (characters /
+      STORAGE_BUDGET_CHARACTERS) *
+      100,
+  );
+
+  return characters <
+    STORAGE_BUDGET_CHARACTERS
+    ? Math.min(99, percent)
+    : percent;
+}
 
 export function isLegacyStoredData(
   value: unknown,

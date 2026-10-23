@@ -114,8 +114,22 @@ export function canDeleteEntry(
 export function getEntryWeight(
   entry: WheelEntry,
 ): number {
+  const weight = Number(
+    entry.weight ?? 1,
+  );
+
+  /*
+   * A weight that is not a finite number (for
+   * example 1e999 in a saved file) counts as 1.
+   * JSON writes Infinity as null, so keeping it
+   * would only settle after a second reload.
+   */
+  if (!Number.isFinite(weight)) {
+    return 1;
+  }
+
   return Math.max(
     1,
-    Math.floor(entry.weight ?? 1),
+    Math.floor(weight),
   );
 }
