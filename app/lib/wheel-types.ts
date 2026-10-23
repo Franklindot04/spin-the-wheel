@@ -11,15 +11,8 @@ export type AppearanceThemeConfig = {
   label: string;
   description: string;
 
-  // Theme preview
-  swatchClass: string;
-
   // Main application background
   pageClass: string;
-
-  // Header / top navigation
-  headerClass: string;
-  headerBorderClass: string;
 
   // Primary accent / action buttons
   accentClass: string;

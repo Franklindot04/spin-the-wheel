@@ -19,12 +19,8 @@ export const APPEARANCE_THEMES: Record<
   classic: {
     label: "Classic",
     description: "Clean and neutral.",
-    swatchClass: "bg-slate-100",
 
     pageClass: "bg-slate-950",
-
-    headerClass: "bg-slate-50",
-    headerBorderClass: "border-slate-200",
 
     accentClass: "bg-slate-900",
     accentHoverClass: "not-disabled:hover:bg-slate-800",
@@ -49,12 +45,8 @@ export const APPEARANCE_THEMES: Record<
   ocean: {
     label: "Ocean",
     description: "Cool blue tones.",
-    swatchClass: "bg-cyan-100",
 
     pageClass: "bg-cyan-950",
-
-    headerClass: "bg-cyan-50",
-    headerBorderClass: "border-cyan-200",
 
     accentClass: "bg-cyan-700",
     accentHoverClass: "not-disabled:hover:bg-cyan-800",
@@ -79,12 +71,8 @@ export const APPEARANCE_THEMES: Record<
   forest: {
     label: "Forest",
     description: "Natural green tones.",
-    swatchClass: "bg-emerald-100",
 
     pageClass: "bg-emerald-950",
-
-    headerClass: "bg-emerald-50",
-    headerBorderClass: "border-emerald-200",
 
     accentClass: "bg-emerald-700",
     accentHoverClass: "not-disabled:hover:bg-emerald-800",
@@ -109,12 +97,8 @@ export const APPEARANCE_THEMES: Record<
   sunset: {
     label: "Sunset",
     description: "Warm orange tones.",
-    swatchClass: "bg-orange-100",
 
     pageClass: "bg-orange-950",
-
-    headerClass: "bg-orange-50",
-    headerBorderClass: "border-orange-200",
 
     accentClass: "bg-orange-700",
     accentHoverClass: "not-disabled:hover:bg-orange-800",
@@ -139,12 +123,8 @@ export const APPEARANCE_THEMES: Record<
   violet: {
     label: "Violet",
     description: "Soft purple tones.",
-    swatchClass: "bg-violet-100",
 
     pageClass: "bg-violet-950",
-
-    headerClass: "bg-violet-50",
-    headerBorderClass: "border-violet-200",
 
     accentClass: "bg-violet-700",
     accentHoverClass: "not-disabled:hover:bg-violet-800",
