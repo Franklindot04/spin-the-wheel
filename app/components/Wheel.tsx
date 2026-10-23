@@ -1440,9 +1440,15 @@ export default function Wheel({
       /*
        * The quiz card's own Show Answer / Hide Answer button is
        * marked, so a press on it is not also a click outside.
+       * While a dialog of the app is open on top (How it works, the
+       * FAQ), a press in it is not a click outside either, and the
+       * box stays as it was.
        */
       return (
         box !== null &&
+        document.querySelector(
+          '[role="dialog"][aria-modal="true"]',
+        ) === null &&
         !box.contains(
           event.target as Node,
         ) &&

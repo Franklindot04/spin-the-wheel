@@ -15,6 +15,7 @@ type AppMenuProps = {
   onEditTitle: () => void;
   onEditDescription: () => void;
   onHowItWorks: () => void;
+  onFaq: () => void;
   onSendFeedback: () => void;
   spinning: boolean;
   surfaceClass: string;
@@ -31,6 +32,7 @@ export default function AppMenu({
   onEditTitle,
   onEditDescription,
   onHowItWorks,
+  onFaq,
   onSendFeedback,
   spinning,
   surfaceClass,
@@ -146,6 +148,15 @@ export default function AppMenu({
             className={itemClass}
           >
             How it works
+          </button>
+
+          <button
+            type="button"
+            data-menu-item=""
+            onClick={() => activate(onFaq)}
+            className={itemClass}
+          >
+            FAQ
           </button>
 
           <div

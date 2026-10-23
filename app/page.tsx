@@ -6,6 +6,8 @@ import FeedbackDialog from "./components/FeedbackDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
 import HowItWorksDialog from "./components/HowItWorksDialog";
 import TextDialog from "./components/TextDialog";
+import FaqDialog from "./components/FaqDialog";
+import { FAQ_CLOSE_LABEL, FAQ_FEEDBACK_LABEL, FAQ_ITEMS, FAQ_TITLE, } from "./lib/faq";
 import WheelChip from "./components/WheelChip";
 import MobileToolbar from "./components/MobileToolbar";
 import MobileTopBar from "./components/MobileTopBar";
@@ -84,6 +86,14 @@ export default function Home() {
     const chipButtonRef = useRef<HTMLButtonElement>(null);
     const moreButtonRef = useRef<HTMLButtonElement>(null);
     const [howOpen, setHowOpen,] = useState(false);
+    const [faqOpen, setFaqOpen,] = useState(false);
+    const faqRowRef = useRef<HTMLButtonElement>(null);
+    /*
+     * Where the FAQ was opened from: the app menu on a phone (true) or
+     * the Settings dialog (false). It decides where focus goes on close,
+     * and whether Settings comes back.
+     */
+    const faqFromMenuRef = useRef(false);
     /* The text dialog (rename, title, description) and the delete confirm. */
     const [textDialog, setTextDialog,] = useState<TextDialogKind | null>(null);
     const [deleteWheelOpen, setDeleteWheelOpen,] = useState(false);
@@ -224,10 +234,11 @@ export default function Home() {
      * not used: some phone browsers switch them off for the rest of
      * the session after "Suppress dialogs".
      */
-    function anyDialogOpen() {
-        return (settingsOpen ||
+    function anyDialogOpen(ignoreSettings = false) {
+        return ((!ignoreSettings && settingsOpen) ||
             feedbackOpen ||
             howOpen ||
+            faqOpen ||
             resetConfirmOpen ||
             entriesResetOpen ||
             deleteCopyOpen ||
@@ -601,7 +612,13 @@ export default function Home() {
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key ===
                 "Escape") {
-                closeSettings();
+                /*
+                 * The FAQ closes on Escape and brings Settings back in the
+                 * same update. It has already handled this key press.
+                 */
+                if (!event.defaultPrevented) {
+                    closeSettings();
+                }
                 return;
             }
             if (event.key !==
@@ -1394,6 +1411,75 @@ export default function Home() {
             setSettingsOpen(true);
         }
     }
+    /*
+     * The FAQ. From the app menu it works like How it works. From
+     * Settings it works like Send feedback: Settings closes, and comes
+     * back when the FAQ closes, with focus on the FAQ row.
+     */
+    function closePopoversForFaq() {
+        openPopoverRef.current = null;
+        setPopover(null);
+    }
+    function openFaqFromMenu() {
+        if (anyDialogOpen()) {
+            return;
+        }
+        faqFromMenuRef.current = true;
+        closePopoversForFaq();
+        setFaqOpen(true);
+    }
+    function openFaqFromSettings() {
+        if (anyDialogOpen(true)) {
+            return;
+        }
+        faqFromMenuRef.current = false;
+        closePopoversForFaq();
+        setSettingsOpen(false);
+        setFaqOpen(true);
+    }
+    function closeFaq() {
+        setFaqOpen(false);
+        if (!faqFromMenuRef.current) {
+            setSettingsOpen(true);
+            /*
+             * Settings is shown again in the same update, so wait for its
+             * row to be on the page. The row is gone below md, in which
+             * case focus stays on the Settings dialog.
+             */
+            window.setTimeout(() => {
+                const row = faqRowRef.current;
+                if (row &&
+                    row.isConnected &&
+                    row.getClientRects().length > 0) {
+                    row.focus();
+                    row.scrollIntoView({ block: "nearest" });
+                }
+            }, 0);
+            return;
+        }
+        const menuButton = menuButtonRef.current;
+        if (menuButton && menuButton.getClientRects().length > 0) {
+            menuButton.focus();
+        }
+        else {
+            /* The window was widened while the dialog was open. */
+            focusSettingsButton();
+        }
+    }
+    /* The FAQ's Send feedback button opens the form the way the menu or Settings does. */
+    function openFeedbackFromFaq() {
+        if (spinning) {
+            return;
+        }
+        setFaqOpen(false);
+        if (faqFromMenuRef.current) {
+            openFeedbackFromMenu();
+        }
+        else {
+            feedbackFromMenuRef.current = false;
+            setFeedbackOpen(true);
+        }
+    }
     const closePopover = useCallback((restoreFocus: boolean) => {
         const open = openPopoverRef.current;
         openPopoverRef.current = null;
@@ -1744,7 +1830,7 @@ export default function Home() {
             "--wheel-accent": theme.accentHex,
             "--wheel-accent-hover": theme.accentHoverHex,
         } as CSSProperties}>
-      <MobileTopBar title={wheelTitle.trim() || DEFAULT_WHEEL_TITLE} mode={mode} onModeChange={changeMode} spinning={spinning} theme={theme} accentClass={actionAccentClass} headerSurfaceClass={headerSurfaceClass} headerBorderClass={headerBorderClass} headerHoverClass={headerHoverClass} headerTextColor={headerTextColor} menuOpen={popover === "app"} onMenuToggle={() => togglePopover("app")} onMenuClose={closePopover} menuButtonRef={menuButtonRef} onEditTitle={editWheelTitle} onEditDescription={editWheelDescription} onHowItWorks={() => setHowOpen(true)} onSendFeedback={openFeedbackFromMenu}/>
+      <MobileTopBar title={wheelTitle.trim() || DEFAULT_WHEEL_TITLE} mode={mode} onModeChange={changeMode} spinning={spinning} theme={theme} accentClass={actionAccentClass} headerSurfaceClass={headerSurfaceClass} headerBorderClass={headerBorderClass} headerHoverClass={headerHoverClass} headerTextColor={headerTextColor} menuOpen={popover === "app"} onMenuToggle={() => togglePopover("app")} onMenuClose={closePopover} menuButtonRef={menuButtonRef} onEditTitle={editWheelTitle} onEditDescription={editWheelDescription} onHowItWorks={() => setHowOpen(true)} onFaq={openFaqFromMenu} onSendFeedback={openFeedbackFromMenu}/>
       <header className={`hidden border-b md:block ${headerBorderClass} ${headerSurfaceClass}`}>
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="hidden min-w-0 md:block">
@@ -2180,7 +2266,7 @@ export default function Home() {
             }}>
           <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl">
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} onOpenFeedback={openFeedback} feedbackButtonRef={feedbackRowRef} activeTab={settingsTab} onActiveTabChange={setSettingsTab} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
+              <SettingsPanel settings={panelSettings} onSettingsChange={handleSettingsChange} onRestoreDefaults={openRestoreDefaults} onOpenFeedback={openFeedback} onOpenFaq={openFaqFromSettings} feedbackButtonRef={feedbackRowRef} faqButtonRef={faqRowRef} activeTab={settingsTab} onActiveTabChange={setSettingsTab} accentClass={actionAccentClass} accentHex={theme.accentHex}/>
             </div>
             <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
               <button type="button" onClick={closeSettings} className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
@@ -2237,6 +2323,7 @@ export default function Home() {
             }} onClose={closeTextDialog}/>)}
       {deleteWheelOpen && (<ConfirmDialog theme={theme} title="Delete wheel?" message={`Delete "${activeWheel.name}"? Its entries, quiz questions, settings and history are removed. This cannot be undone.`} confirmLabel="Delete wheel" onConfirm={confirmDeleteWheel} onClose={closeDeleteWheel}/>)}
       {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={STANDARD_MODE_HELP} onClose={closeHowItWorks}/>)}
+      {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={FAQ_TITLE} closeLabel={FAQ_CLOSE_LABEL} feedbackLabel={FAQ_FEEDBACK_LABEL} items={FAQ_ITEMS} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
             }} onClose={closeFeedback} getReturnFocus={() => feedbackFromMenuRef.current ? menuButtonRef.current : feedbackRowRef.current}/>)}

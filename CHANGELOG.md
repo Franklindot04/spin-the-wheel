@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- An FAQ with short answers to common questions, opened from the phone menu or from Settings on desktop.
+
 ## [2.11.0] - 2026-10-22
 
 ### Added

@@ -64,7 +64,9 @@ type SettingsPanelProps = {
   ) => void;
   onRestoreDefaults: () => void;
   onOpenFeedback: () => void;
+  onOpenFaq: () => void;
   feedbackButtonRef?: Ref<HTMLButtonElement>;
+  faqButtonRef?: Ref<HTMLButtonElement>;
   activeTab: SettingsTab;
   onActiveTabChange: (
     tab: SettingsTab,
@@ -502,7 +504,9 @@ export default function SettingsPanel({
   onSettingsChange,
   onRestoreDefaults,
   onOpenFeedback,
+  onOpenFaq,
   feedbackButtonRef,
+  faqButtonRef,
   activeTab,
   onActiveTabChange,
   accentClass = "bg-slate-900",
@@ -808,6 +812,49 @@ export default function SettingsPanel({
                   })
                 }
               />
+            </div>
+
+            <div className="hidden md:block">
+              <SectionTitle title="Help" />
+
+              <button
+                ref={faqButtonRef}
+                type="button"
+                onClick={onOpenFaq}
+                aria-describedby="faq-description"
+                className="flex w-full items-center justify-between gap-6 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                style={
+                  {
+                    "--tw-ring-color": accentHex,
+                  } as CSSProperties
+                }
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">
+                    FAQ
+                  </p>
+
+                  <p
+                    id="faq-description"
+                    className="mt-1 text-xs leading-5 text-slate-500"
+                  >
+                    Short answers to common questions.
+                  </p>
+                </div>
+
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0 text-slate-500"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
             </div>
 
             <div className="hidden md:block">

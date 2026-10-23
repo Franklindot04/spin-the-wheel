@@ -60,6 +60,7 @@ Create interactive question-and-answer quizzes directly on the wheel.
 - Share the app from the header: the share sheet on phones, or a copied link elsewhere.
 - Send feedback from Settings without a GitHub account, or report on GitHub
 - Phone layout: a slim top bar, a wheel chip, and a one-line toolbar under the wheel
+- FAQ: short answers to common questions, from the menu on phones or Settings on desktop
 
 ### 📜 History
 
