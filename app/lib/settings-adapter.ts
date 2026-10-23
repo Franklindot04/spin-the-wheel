@@ -30,6 +30,11 @@ import {
   MIN_SPIN_SPEED,
 } from "./wheel-defaults";
 
+import {
+  DEFAULT_SPIN_SOUND,
+  DEFAULT_WINNER_SOUND,
+} from "./sound-options";
+
 function clampSpinSpeed(
   value: number,
 ): number {
@@ -268,11 +273,11 @@ export function wheelSettingsToPanelSettings(
 
     spinSound:
       settings.spinSound ??
-      "tick",
+      DEFAULT_SPIN_SOUND,
 
     winnerSound:
       settings.winnerSound ??
-      "success",
+      DEFAULT_WINNER_SOUND,
 
     volume:
       settings.volume ??

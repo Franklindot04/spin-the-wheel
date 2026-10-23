@@ -273,6 +273,7 @@ export function playSpinTick(
   strength = 1,
 ) {
   try {
+    /* These ids must stay in step with sound-options.ts. */
     if (
       sound !== "tick" &&
       sound !== "click" &&
@@ -739,6 +740,7 @@ function playApplause(
 function playPresetWinnerSound(
   sound: string,
 ) {
+  /* These ids must stay in step with sound-options.ts. */
   if (
     sound !== "success" &&
     sound !== "chime" &&

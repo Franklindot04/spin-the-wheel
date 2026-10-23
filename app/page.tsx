@@ -20,6 +20,7 @@ import { EMPTY_FEEDBACK_DRAFT, type FeedbackDraft, } from "./lib/feedback-client
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, DEFAULT_CONFETTI_ENABLED, DEFAULT_CONFETTI_EFFECT, } from "./lib/wheel-defaults";
 import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/sound-engine";
+import { DEFAULT_WINNER_SOUND } from "./lib/sound-options";
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, countStoredCharacters, getStorageFullPercent, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
@@ -37,7 +38,7 @@ function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partia
     };
 }
 /* Shown in the Standard Mode card, and in the How it works dialog on phones. */
-const STANDARD_MODE_HELP = "Add your options in the list, then press Spin. Change a name, colour or weight with the entry's ... menu, and hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.";
+const STANDARD_MODE_HELP = "Add your options in the list, then press Spin. Change a name or colour with the entry's ... menu, and its weight with the − and + buttons. Hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.";
 type TextDialogKind = "name" | "title" | "description";
 const QUIZ_LOCKED_TEXT_KEYS: string[] = [
     "label",
@@ -1281,7 +1282,7 @@ export default function Home() {
              */
             answerConfettiFiredRef.current = false;
             if (mode !== "quiz") {
-                playWinnerSound(activeWheel.settings.winnerSound ?? "success", finalEntry.winnerSound);
+                playWinnerSound(activeWheel.settings.winnerSound ?? DEFAULT_WINNER_SOUND, finalEntry.winnerSound);
                 setConfettiRun((current) => current + 1);
             }
             addHistoryItem(finalEntry, mode);
@@ -1754,7 +1755,7 @@ export default function Home() {
         setShowAnswer(reveal);
         if (reveal && !answerConfettiFiredRef.current) {
             answerConfettiFiredRef.current = true;
-            playWinnerSound(activeWheel.settings.winnerSound ?? "success", selectedEntry?.winnerSound);
+            playWinnerSound(activeWheel.settings.winnerSound ?? DEFAULT_WINNER_SOUND, selectedEntry?.winnerSound);
             setConfettiRun((current) => current + 1);
         }
     }

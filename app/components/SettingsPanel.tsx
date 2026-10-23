@@ -10,6 +10,10 @@ import {
 
 import { FEEDBACK_URL } from "../lib/feedback";
 import {
+  SPIN_SOUND_OPTIONS,
+  WINNER_SOUND_OPTIONS,
+} from "../lib/sound-options";
+import {
   startSpinPreview,
   startWinnerPreview,
   stopPreview,
@@ -255,20 +259,6 @@ const WINNER_DISPLAY_OPTIONS: Array<{
   { value: "popup", label: "Popup" },
 ];
 
-const SPIN_SOUND_OPTIONS = [
-  { value: "tick", label: "Tick" },
-  { value: "click", label: "Click" },
-  { value: "pop", label: "Pop" },
-  { value: "none", label: "None" },
-];
-
-const WINNER_SOUND_OPTIONS = [
-  { value: "success", label: "Success" },
-  { value: "chime", label: "Chime" },
-  { value: "applause", label: "Applause" },
-  { value: "none", label: "None" },
-];
-
 type PreviewKind = "spin" | "winner";
 
 function PreviewIcon({
@@ -307,9 +297,9 @@ function SoundField({
   label: string;
   kind: PreviewKind;
   value: string;
-  options: Array<{
-    value: string;
-    label: string;
+  options: ReadonlyArray<{
+    readonly value: string;
+    readonly label: string;
   }>;
   playing: boolean;
   onChange: (value: string) => void;
