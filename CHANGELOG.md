@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.14.0] - 2026-10-24
+
+### Changed
+
+- The entry "..." menu no longer has its own weight stepper. The − and + buttons in the entry row change the weight, and the Standard Mode help text says so.
+- Shift+Tab after clicking plain text in the text, how it works and FAQ dialogs now stays inside the dialog instead of moving to the page behind.
+- Dialogs share one focus trap, the sound lists and theme names each live in one place, and the header colours come from the theme config. Nothing else changes for users.
+
 ## [2.13.0] - 2026-10-23
 
 ### Added
@@ -347,7 +355,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.13.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.14.0...HEAD
+[2.14.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.13.0...v2.14.0
 [2.13.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.12.0...v2.13.0
 [2.12.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.11.0...v2.12.0
 [2.11.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.10.0...v2.11.0
