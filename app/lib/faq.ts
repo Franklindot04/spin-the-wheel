@@ -66,6 +66,12 @@ export const FAQ_ITEMS: FaqItem[] = [
       "Use Export to save a file, and Import to load it on another device. Import replaces everything saved in that browser.",
   },
   {
+    id: "share",
+    question: "How do I share the app?",
+    answer:
+      "Use Share in the header on desktop, or in More under the wheel on phones. It opens your device's share sheet, or copies the link.",
+  },
+  {
     id: "iphone-sound",
     question: "Why is there no sound on my iPhone?",
     answer:
