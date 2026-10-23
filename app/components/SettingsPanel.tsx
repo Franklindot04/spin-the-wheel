@@ -8,6 +8,7 @@ import {
   type Ref,
 } from "react";
 
+import { APPEARANCE_THEMES } from "../lib/appearance-themes";
 import { FEEDBACK_URL } from "../lib/feedback";
 import {
   SPIN_SOUND_OPTIONS,
@@ -18,6 +19,7 @@ import {
   startWinnerPreview,
   stopPreview,
 } from "../lib/sound-preview";
+import type { AppearanceTheme } from "../lib/wheel-types";
 
 export type SettingsTab =
   | "main"
@@ -36,13 +38,6 @@ export type ConfettiStyle =
   | "minimal"
   | "none";
 
-export type PageTheme =
-  | "slate"
-  | "blue"
-  | "purple"
-  | "green"
-  | "orange";
-
 export type WheelSettings = {
   spinSpeed: number;
   spinDuration: number;
@@ -58,7 +53,7 @@ export type WheelSettings = {
   spinSound: string;
   winnerSound: string;
   volume: number;
-  pageTheme: PageTheme;
+  appearanceTheme: AppearanceTheme;
 };
 
 type SettingsPanelProps = {
@@ -393,36 +388,17 @@ const TABS: Array<{
   },
 ];
 
-const THEME_OPTIONS: Array<{
-  value: PageTheme;
-  label: string;
-  previewClass: string;
-}> = [
-  {
-    value: "slate",
-    label: "Classic",
-    previewClass: "bg-slate-950",
-  },
-  {
-    value: "blue",
-    label: "Ocean",
-    previewClass: "bg-cyan-950",
-  },
-  {
-    value: "purple",
-    label: "Violet",
-    previewClass: "bg-violet-950",
-  },
-  {
-    value: "green",
-    label: "Forest",
-    previewClass: "bg-emerald-950",
-  },
-  {
-    value: "orange",
-    label: "Sunset",
-    previewClass: "bg-orange-950",
-  },
+/*
+ * The order of the cards in the Page Theme tab. It is written out
+ * here on purpose: APPEARANCE_THEMES lists Forest and Sunset before
+ * Violet, so looping over it would change the order of the cards.
+ */
+const THEME_PICKER_ORDER: AppearanceTheme[] = [
+  "classic",
+  "ocean",
+  "violet",
+  "forest",
+  "sunset",
 ];
 
 const CONFETTI_OPTIONS: Array<{
@@ -1145,20 +1121,23 @@ export default function SettingsPanel({
               />
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-                {THEME_OPTIONS.map(
-                  (theme) => {
+                {THEME_PICKER_ORDER.map(
+                  (value) => {
+                    const theme =
+                      APPEARANCE_THEMES[value];
+
                     const selected =
-                      settings.pageTheme ===
-                      theme.value;
+                      settings.appearanceTheme ===
+                      value;
 
                     return (
                       <button
-                        key={theme.value}
+                        key={value}
                         type="button"
                         onClick={() =>
                           updateSettings({
-                            pageTheme:
-                              theme.value,
+                            appearanceTheme:
+                              value,
                           })
                         }
                         className={`overflow-hidden rounded-xl border text-left transition ${
@@ -1176,7 +1155,7 @@ export default function SettingsPanel({
                         }
                       >
                         <div
-                          className={`h-16 ${theme.previewClass}`}
+                          className={`h-16 ${theme.pageClass}`}
                         />
 
                         <div className="flex items-center justify-between gap-2 bg-white px-3 py-2.5">

@@ -1,5 +1,4 @@
 import type {
-  AppearanceTheme,
   AutoGenerateType,
   ConfettiEffect,
   WheelSettings,
@@ -8,7 +7,6 @@ import type {
 
 import type {
   ConfettiStyle,
-  PageTheme,
   WheelSettings as PanelWheelSettings,
   WinnerDisplayMethod,
 } from "../components/SettingsPanel";
@@ -45,50 +43,6 @@ function clampSpinSpeed(
       Math.round(value),
     ),
   );
-}
-
-function panelThemeToAppTheme(
-  theme: PageTheme,
-): AppearanceTheme {
-  switch (theme) {
-    case "blue":
-      return "ocean";
-
-    case "green":
-      return "forest";
-
-    case "purple":
-      return "violet";
-
-    case "orange":
-      return "sunset";
-
-    case "slate":
-    default:
-      return "classic";
-  }
-}
-
-function appThemeToPanelTheme(
-  theme: AppearanceTheme,
-): PageTheme {
-  switch (theme) {
-    case "ocean":
-      return "blue";
-
-    case "forest":
-      return "green";
-
-    case "violet":
-      return "purple";
-
-    case "sunset":
-      return "orange";
-
-    case "classic":
-    default:
-      return "slate";
-  }
 }
 
 function panelAutoGenerateTypeToAppType(
@@ -283,10 +237,8 @@ export function wheelSettingsToPanelSettings(
       settings.volume ??
       DEFAULT_VOLUME,
 
-    pageTheme:
-      appThemeToPanelTheme(
-        settings.appearanceTheme,
-      ),
+    appearanceTheme:
+      settings.appearanceTheme,
   };
 }
 
@@ -298,9 +250,7 @@ export function panelSettingsToWheelSettings(
     ...currentSettings,
 
     appearanceTheme:
-      panelThemeToAppTheme(
-        panelSettings.pageTheme,
-      ),
+      panelSettings.appearanceTheme,
 
     wheelSize:
       currentSettings.wheelSize ??
