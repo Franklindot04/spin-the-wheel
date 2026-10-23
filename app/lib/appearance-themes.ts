@@ -22,6 +22,15 @@ export const APPEARANCE_THEMES: Record<
 
     pageClass: "bg-slate-950",
 
+    header: {
+      surfaceClass: "bg-slate-100",
+      borderClass: "border-slate-300",
+      hoverClass: "not-disabled:hover:bg-slate-200",
+      titleHex: "#0f172a",
+      mutedHex: "#334155",
+      toastTextClass: "text-slate-900",
+    },
+
     accentClass: "bg-slate-900",
     accentHoverClass: "not-disabled:hover:bg-slate-800",
     accentHex: "#0f172a",
@@ -47,6 +56,15 @@ export const APPEARANCE_THEMES: Record<
     description: "Cool blue tones.",
 
     pageClass: "bg-cyan-950",
+
+    header: {
+      surfaceClass: "bg-cyan-100",
+      borderClass: "border-cyan-300",
+      hoverClass: "not-disabled:hover:bg-cyan-200",
+      titleHex: "#164e63",
+      mutedHex: "#155e75",
+      toastTextClass: "text-cyan-950",
+    },
 
     accentClass: "bg-cyan-700",
     accentHoverClass: "not-disabled:hover:bg-cyan-800",
@@ -74,6 +92,15 @@ export const APPEARANCE_THEMES: Record<
 
     pageClass: "bg-emerald-950",
 
+    header: {
+      surfaceClass: "bg-emerald-100",
+      borderClass: "border-emerald-300",
+      hoverClass: "not-disabled:hover:bg-emerald-200",
+      titleHex: "#064e3b",
+      mutedHex: "#065f46",
+      toastTextClass: "text-emerald-950",
+    },
+
     accentClass: "bg-emerald-700",
     accentHoverClass: "not-disabled:hover:bg-emerald-800",
     accentHex: "#047857",
@@ -100,6 +127,15 @@ export const APPEARANCE_THEMES: Record<
 
     pageClass: "bg-orange-950",
 
+    header: {
+      surfaceClass: "bg-orange-100",
+      borderClass: "border-orange-300",
+      hoverClass: "not-disabled:hover:bg-orange-200",
+      titleHex: "#7c2d12",
+      mutedHex: "#9a3412",
+      toastTextClass: "text-orange-950",
+    },
+
     accentClass: "bg-orange-700",
     accentHoverClass: "not-disabled:hover:bg-orange-800",
     accentHex: "#c2410c",
@@ -125,6 +161,15 @@ export const APPEARANCE_THEMES: Record<
     description: "Soft purple tones.",
 
     pageClass: "bg-violet-950",
+
+    header: {
+      surfaceClass: "bg-violet-100",
+      borderClass: "border-violet-300",
+      hoverClass: "not-disabled:hover:bg-violet-200",
+      titleHex: "#4c1d95",
+      mutedHex: "#5b21b6",
+      toastTextClass: "text-violet-950",
+    },
 
     accentClass: "bg-violet-700",
     accentHoverClass: "not-disabled:hover:bg-violet-800",

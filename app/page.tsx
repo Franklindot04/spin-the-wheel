@@ -1669,69 +1669,7 @@ export default function Home() {
     const theme = APPEARANCE_THEMES[activeWheel.settings
         .appearanceTheme];
     const appearanceTheme = activeWheel.settings.appearanceTheme;
-    const headerTextClass = appearanceTheme === "ocean"
-        ? "text-cyan-950"
-        : appearanceTheme === "forest"
-            ? "text-emerald-950"
-            : appearanceTheme === "sunset"
-                ? "text-orange-950"
-                : appearanceTheme === "violet"
-                    ? "text-violet-950"
-                    : "text-slate-900";
-    const headerMutedClass = appearanceTheme === "ocean"
-        ? "text-cyan-800"
-        : appearanceTheme === "forest"
-            ? "text-emerald-800"
-            : appearanceTheme === "sunset"
-                ? "text-orange-800"
-                : appearanceTheme === "violet"
-                    ? "text-violet-800"
-                    : "text-slate-700";
-    const headerTextColor = appearanceTheme === "ocean"
-        ? "#164e63"
-        : appearanceTheme === "forest"
-            ? "#064e3b"
-            : appearanceTheme === "sunset"
-                ? "#7c2d12"
-                : appearanceTheme === "violet"
-                    ? "#4c1d95"
-                    : "#0f172a";
-    const headerMutedColor = appearanceTheme === "ocean"
-        ? "#155e75"
-        : appearanceTheme === "forest"
-            ? "#065f46"
-            : appearanceTheme === "sunset"
-                ? "#9a3412"
-                : appearanceTheme === "violet"
-                    ? "#5b21b6"
-                    : "#334155";
-    const headerSurfaceClass = appearanceTheme === "ocean"
-        ? "bg-cyan-100"
-        : appearanceTheme === "forest"
-            ? "bg-emerald-100"
-            : appearanceTheme === "sunset"
-                ? "bg-orange-100"
-                : appearanceTheme === "violet"
-                    ? "bg-violet-100"
-                    : "bg-slate-100";
-    const headerBorderClass = appearanceTheme === "ocean"
-        ? "border-cyan-300"
-        : appearanceTheme === "forest"
-            ? "border-emerald-300"
-            : appearanceTheme === "sunset"
-                ? "border-orange-300"
-                : appearanceTheme === "violet"
-                    ? "border-violet-300"
-                    : "border-slate-300";
-    const headerHoverClass = appearanceTheme === "ocean"
-        ? "not-disabled:hover:bg-cyan-200"
-        : appearanceTheme === "forest"
-            ? "not-disabled:hover:bg-emerald-200"
-            : appearanceTheme === "sunset"
-                ? "not-disabled:hover:bg-orange-200"
-                : appearanceTheme === "violet"
-                    ? "not-disabled:hover:bg-violet-200"
-                    : "not-disabled:hover:bg-slate-200";
+    const { surfaceClass: headerSurfaceClass, borderClass: headerBorderClass, hoverClass: headerHoverClass, titleHex: headerTextColor, mutedHex: headerMutedColor, toastTextClass: headerToastTextClass, } = theme.header;
     const actionAccentClass = appearanceTheme === "classic"
         ? "bg-slate-700"
         : theme.accentClass;
@@ -1852,7 +1790,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="hidden min-w-0 md:block">
             <div className="flex items-center gap-2">
-              <h1 className={`truncate text-2xl font-extrabold tracking-tight ${headerTextClass}`} style={{ color: headerTextColor }}>
+              <h1 className="truncate text-2xl font-extrabold tracking-tight" style={{ color: headerTextColor }}>
                 {wheelTitle.trim() || DEFAULT_WHEEL_TITLE}
               </h1>
               <button type="button" onClick={editWheelTitle} disabled={spinning} aria-label="Edit wheel title" title="Edit title" className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
@@ -1863,7 +1801,7 @@ export default function Home() {
               </button>
             </div>
             <div className="mt-1 flex items-center gap-1">
-              <p className={`truncate text-sm font-medium ${headerMutedClass}`} style={{ color: headerMutedColor }}>
+              <p className="truncate text-sm font-medium" style={{ color: headerMutedColor }}>
                 {wheelDescription.trim() || DEFAULT_WHEEL_DESCRIPTION}
               </p>
               <button type="button" onClick={editWheelDescription} disabled={spinning} aria-label="Edit wheel description" title="Edit description" className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
@@ -1912,7 +1850,7 @@ export default function Home() {
         </div>
       </header>
       <div role="status" className="pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-[max(1rem,env(safe-area-inset-left))]">
-        {shareMessage && (<span className={`rounded-lg border px-4 py-2 text-sm font-semibold shadow-lg ${headerSurfaceClass} ${headerBorderClass} ${headerTextClass}`}>
+        {shareMessage && (<span className={`rounded-lg border px-4 py-2 text-sm font-semibold shadow-lg ${headerSurfaceClass} ${headerBorderClass} ${headerToastTextClass}`}>
             {shareMessage}
           </span>)}
       </div>
