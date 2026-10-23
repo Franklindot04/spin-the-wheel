@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.12.0] - 2026-10-23
+
 ### Added
 
 - An FAQ with short answers to common questions, opened from the phone menu or from Settings on desktop.
@@ -333,7 +335,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.12.0...HEAD
+[2.12.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.11.0...v2.12.0
 [2.11.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.8.0...v2.9.0
