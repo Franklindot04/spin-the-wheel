@@ -1196,6 +1196,7 @@ export default function EntryMenu({
     }
 
     setMediaError(null);
+    setMediaNote(null);
 
     if (
       !file.type.startsWith(
@@ -1256,6 +1257,7 @@ export default function EntryMenu({
 
   function openSoundPicker() {
     setMediaError(null);
+    setMediaNote(null);
     soundInputRef.current?.click();
   }
 
@@ -1274,6 +1276,7 @@ export default function EntryMenu({
     });
 
     setMediaError(null);
+    setMediaNote(null);
   }
 
   return (
@@ -1301,7 +1304,11 @@ export default function EntryMenu({
 
       <button
         type="button"
-        onClick={onToggle}
+        onClick={() => {
+          setMediaError(null);
+          setMediaNote(null);
+          onToggle();
+        }}
         disabled={spinning}
         aria-label={`Customize ${
           entry.label ||
