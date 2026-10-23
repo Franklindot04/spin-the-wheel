@@ -639,33 +639,6 @@ export default function Home() {
                 }
                 return;
             }
-            if (event.key !==
-                "Tab" ||
-                !dialog) {
-                return;
-            }
-            // Keep keyboard focus inside the dialog.
-            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])")).filter((element) => element.getClientRects().length > 0);
-            if (focusable.length === 0) {
-                event.preventDefault();
-                return;
-            }
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            const active = document.activeElement;
-            if (event.shiftKey &&
-                (active === first ||
-                    active === dialog ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                last.focus();
-            }
-            else if (!event.shiftKey &&
-                (active === last ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                first.focus();
-            }
         }
         const previousBodyOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
@@ -677,6 +650,7 @@ export default function Home() {
             focusSettingsButton();
         };
     }, [settingsOpen]);
+    useFocusTrap(settingsOpen, settingsDialogRef);
     useEffect(() => {
         if (!resetConfirmOpen) {
             return;
