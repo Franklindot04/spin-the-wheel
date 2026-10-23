@@ -25,6 +25,7 @@ import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, 
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 import { shareLink } from "./lib/share";
+import { useFocusTrap } from "./lib/use-focus-trap";
 function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partial<Wheel>): AppData {
     return {
         ...current,
@@ -685,34 +686,6 @@ export default function Home() {
             if (event.key ===
                 "Escape") {
                 cancelRestoreDefaults();
-                return;
-            }
-            if (event.key !==
-                "Tab" ||
-                !dialog) {
-                return;
-            }
-            // Keep keyboard focus inside the dialog.
-            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
-            if (focusable.length === 0) {
-                event.preventDefault();
-                return;
-            }
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            const active = document.activeElement;
-            if (event.shiftKey &&
-                (active === first ||
-                    active === dialog ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                last.focus();
-            }
-            else if (!event.shiftKey &&
-                (active === last ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                first.focus();
             }
         }
         window.addEventListener("keydown", handleKeyDown);
@@ -722,6 +695,7 @@ export default function Home() {
             focusSettingsButton();
         };
     }, [resetConfirmOpen]);
+    useFocusTrap(resetConfirmOpen, resetDialogRef);
     useEffect(() => {
         if (!entriesResetOpen) {
             return;
@@ -732,34 +706,6 @@ export default function Home() {
             if (event.key ===
                 "Escape") {
                 setEntriesResetOpen(false);
-                return;
-            }
-            if (event.key !==
-                "Tab" ||
-                !dialog) {
-                return;
-            }
-            // Keep keyboard focus inside the dialog.
-            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
-            if (focusable.length === 0) {
-                event.preventDefault();
-                return;
-            }
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            const active = document.activeElement;
-            if (event.shiftKey &&
-                (active === first ||
-                    active === dialog ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                last.focus();
-            }
-            else if (!event.shiftKey &&
-                (active === last ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                first.focus();
             }
         }
         window.addEventListener("keydown", handleKeyDown);
@@ -769,6 +715,7 @@ export default function Home() {
             resetButton?.focus();
         };
     }, [entriesResetOpen]);
+    useFocusTrap(entriesResetOpen, entriesResetDialogRef);
     useEffect(() => {
         if (!deleteCopyOpen) {
             return;
@@ -779,34 +726,6 @@ export default function Home() {
             if (event.key ===
                 "Escape") {
                 setDeleteCopyOpen(false);
-                return;
-            }
-            if (event.key !==
-                "Tab" ||
-                !dialog) {
-                return;
-            }
-            // Keep keyboard focus inside the dialog.
-            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
-            if (focusable.length === 0) {
-                event.preventDefault();
-                return;
-            }
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            const active = document.activeElement;
-            if (event.shiftKey &&
-                (active === first ||
-                    active === dialog ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                last.focus();
-            }
-            else if (!event.shiftKey &&
-                (active === last ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                first.focus();
             }
         }
         window.addEventListener("keydown", handleKeyDown);
@@ -822,6 +741,7 @@ export default function Home() {
             }
         };
     }, [deleteCopyOpen]);
+    useFocusTrap(deleteCopyOpen, deleteCopyDialogRef);
     const currentSetupEntries = mode === "standard"
         ? standardEntries
         : quizEntries;
