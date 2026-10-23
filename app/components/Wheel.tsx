@@ -81,6 +81,8 @@ type WheelProps = {
   onRemove?: () => void;
   removeDisabled?: boolean;
   reason?: string;
+  /* Why Spin cannot be used, shown under it. Left out in full screen. */
+  spinReason?: string;
   onBoxFitChange?: (fits: boolean) => void;
   /*
    * Each time this number goes up, focus moves to Spin (or to
@@ -828,6 +830,7 @@ export default function Wheel({
   onRemove,
   removeDisabled = false,
   reason,
+  spinReason,
   onBoxFitChange,
   focusSpinRequest = 0,
   quiz = null,
@@ -1606,6 +1609,13 @@ export default function Wheel({
     spinning ||
     visibleEntries.length <
       minSpinEntries;
+
+  const spinReasonShown =
+    Boolean(spinReason) &&
+    spinDisabled &&
+    !spinning &&
+    !boxOpen &&
+    !expanded;
 
   /*
    * After Continue, Remove or Escape closes the box, focus
@@ -2765,12 +2775,29 @@ export default function Wheel({
         type="button"
         onClick={handleSpin}
         disabled={spinDisabled}
+        aria-describedby={
+          spinReasonShown
+            ? `${boxId}-spin-reason`
+            : undefined
+        }
         className={`wheel-spin mt-6 min-w-32 shrink-0 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
       >
         {spinning
           ? "Spinning…"
           : "Spin"}
       </button>
+
+      {spinReasonShown ? (
+        <p
+          id={`${boxId}-spin-reason`}
+          className={`mt-2 text-center text-xs leading-4 ${
+            theme?.textSecondaryClass ??
+            "text-slate-300"
+          }`}
+        >
+          {spinReason}
+        </p>
+      ) : null}
 
       <canvas
         ref={confettiCanvasRef}

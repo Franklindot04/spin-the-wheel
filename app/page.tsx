@@ -20,7 +20,7 @@ import { EMPTY_FEEDBACK_DRAFT, type FeedbackDraft, } from "./lib/feedback-client
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, DEFAULT_CONFETTI_ENABLED, DEFAULT_CONFETTI_EFFECT, } from "./lib/wheel-defaults";
 import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/sound-engine";
-import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
+import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, countStoredCharacters, getStorageFullPercent, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 import { shareLink } from "./lib/share";
@@ -115,6 +115,11 @@ export default function Home() {
     const deleteCopyButtonRef = useRef<HTMLButtonElement>(null);
     const [importError, setImportError,] = useState("");
     const [saveFailed, setSaveFailed,] = useState(false);
+    /* The whole percent of the storage budget in use, once it is nearly full. */
+    const [storageNearlyFull, setStorageNearlyFull,] = useState<{
+        percent: number;
+    } | null>(null);
+    const [storageNoticeDismissed, setStorageNoticeDismissed,] = useState(false);
     const [storedDataNotice, setStoredDataNotice,] = useState<StoredDataNotice | null>(null);
     const [v2StillUnreadable, setV2StillUnreadable,] = useState(false);
     const [storageStale, setStorageStale,] = useState(false);
@@ -520,6 +525,7 @@ export default function Home() {
         }
         let failed = false;
         let stale = false;
+        let fullPercent: number | null = null;
         try {
             const serialized = JSON.stringify(appData);
             const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -535,6 +541,9 @@ export default function Home() {
             else {
                 window.localStorage.setItem(STORAGE_KEY, serialized);
                 lastSeenStorageRef.current = serialized;
+            }
+            if (!stale) {
+                fullPercent = getStorageFullPercent(countStoredCharacters(serialized));
             }
         }
         catch {
@@ -566,6 +575,13 @@ export default function Home() {
             setSaveFailed(failed);
             if (!failed) {
                 setV2StillUnreadable(false);
+                setStorageNearlyFull(fullPercent === null
+                    ? null
+                    : { percent: fullPercent });
+                if (fullPercent === null) {
+                    // A later rise above the level shows the notice again.
+                    setStorageNoticeDismissed(false);
+                }
             }
         });
     }, [appData]);
@@ -1945,6 +1961,17 @@ export default function Home() {
               Export
             </button>
           </div>)}
+        {!saveFailed && storageNearlyFull && !storageNoticeDismissed && (<div role="status" className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-start sm:justify-between">
+            <p className="min-w-0 break-words">Browser storage is about {storageNearlyFull.percent}% full. Large images and sounds take the most space. Export your data to keep a copy, or remove media you no longer need.</p>
+            <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
+              <button type="button" onClick={exportData} className="rounded font-semibold text-amber-900 underline transition hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-900">
+                Export
+              </button>
+              <button type="button" onClick={() => setStorageNoticeDismissed(true)} className="rounded font-semibold text-amber-900 underline transition hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-900">
+                Dismiss
+              </button>
+            </div>
+          </div>)}
         {importError && (<div ref={importAlertRef} role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <p className="min-w-0 break-words">{importError}</p>
             <button type="button" onClick={() => setImportError("")} aria-label="Dismiss import error" className="shrink-0 rounded font-semibold text-red-800 transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
@@ -1982,7 +2009,7 @@ export default function Home() {
                 },
             })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} controlsStart={<WheelChip theme={theme} open={popover === "wheel"} onToggle={() => togglePopover("wheel")} onClose={closePopover} buttonRef={chipButtonRef} wheels={appData.wheels} activeWheelId={appData.activeWheelId} spinning={spinning} onSwitch={switchWheel} onAdd={addWheel} onRename={renameActiveWheel} onDelete={deleteActiveWheel}/>} onExpandedChange={handleExpandedChange} result={winnerEntryExists && selectedEntry
                 ? { label: selectedEntry.label, emoji: selectedEntry.emoji, image: selectedEntry.image }
-                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} quiz={mode === "quiz" && quizStarted && displayedQuizEntry && showAnswer
+                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." spinReason={mode === "standard" && !spinning && !standardResultExists && standardEntries.filter((entry) => !entry.hidden).length < 2 ? "Show at least 2 entries to spin." : undefined} onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} quiz={mode === "quiz" && quizStarted && displayedQuizEntry && showAnswer
                 ? {
                     label: displayedQuizEntry.label,
                     emoji: displayedQuizEntry.emoji,
