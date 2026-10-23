@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.13.0] - 2026-10-23
+
+### Added
+
+- A notice warns when browser storage is nearly full, with Export and Dismiss buttons.
+- A short line under Spin explains why it is disabled when fewer than 2 entries are visible.
+
+### Fixed
+
+- An entry weight that is too large to store is treated as 1, so repaired data settles after one reload.
+- The GIF note now clears when you choose or remove a sound.
+
 ## [2.12.0] - 2026-10-23
 
 ### Added
@@ -335,7 +347,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Initial release of Spin the Wheel.
 
-[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.12.0...HEAD
+[Unreleased]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.13.0...HEAD
+[2.13.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.12.0...v2.13.0
 [2.12.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.11.0...v2.12.0
 [2.11.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/Franklindot04/spin-the-wheel/compare/v2.9.0...v2.10.0
