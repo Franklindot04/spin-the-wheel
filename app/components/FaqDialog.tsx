@@ -198,10 +198,10 @@ export default function FaqDialog({
                 <div
                   id={panelId}
                   hidden={!open}
-                  className="px-5 pb-4 sm:px-6"
+                  className={`mx-5 mb-3 mt-1 rounded-xl p-3 sm:mx-6 ${theme.subtleSurfaceClass}`}
                 >
                   <p
-                    className={`break-words text-sm leading-6 ${theme.textSecondaryClass}`}
+                    className={`break-words text-sm leading-6 ${theme.textPrimaryClass}`}
                   >
                     {item.answer}
                   </p>
@@ -216,7 +216,7 @@ export default function FaqDialog({
                           ? "Wait for the spin to finish."
                           : undefined
                       }
-                      className={`mt-3 min-h-11 rounded-lg border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.textPrimaryClass} ${theme.controlHoverClass}`}
+                      className={`mt-3 min-h-11 rounded-lg border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.textPrimaryClass} not-disabled:hover:bg-white/10`}
                     >
                       {feedbackLabel}
                     </button>
