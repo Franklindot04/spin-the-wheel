@@ -1135,7 +1135,7 @@ export default function Wheel({
     const getWheelCentre = () => {
       const wheelBox = canvas.parentElement
         ?.querySelector(
-          'svg[aria-label="Spin the wheel"]',
+          "svg[data-wheel-svg]",
         )
         ?.getBoundingClientRect();
       const canvasBox = canvas.getBoundingClientRect();
@@ -2216,6 +2216,7 @@ export default function Wheel({
           viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
           className="h-full w-full overflow-visible drop-shadow-xl"
           aria-label="Spin the wheel"
+          data-wheel-svg=""
           role="img"
         >
           <g

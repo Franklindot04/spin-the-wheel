@@ -4,6 +4,8 @@ import {
   APPEARANCE_THEMES,
   THEME_STORAGE_KEY,
 } from "./lib/appearance-themes";
+import { languageScript } from "./lib/i18n/head-script";
+import { LanguageProvider } from "./lib/i18n/provider";
 
 export const metadata: Metadata = {
   title: "Spin the Wheel",
@@ -40,8 +42,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script
           dangerouslySetInnerHTML={{ __html: themeScript }}
         />
+        <script
+          dangerouslySetInnerHTML={{ __html: languageScript }}
+        />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <LanguageProvider>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

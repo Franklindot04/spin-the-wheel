@@ -16,6 +16,7 @@ import {
   APPEARANCE_THEMES,
   THEME_STORAGE_KEY,
 } from "./appearance-themes";
+import { LANGUAGE_STORAGE_KEY } from "./i18n/languages";
 
 export const STORAGE_KEY =
   "spin-the-wheel:v2";
@@ -43,8 +44,8 @@ export const STORAGE_BUDGET_CHARACTERS =
 export const STORAGE_WARN_RATIO = 0.8;
 
 /*
- * The characters the app stores: the wheels, the theme copy and
- * the kept unreadable copy, each with its key. The wheels are
+ * The characters the app stores: the wheels, the theme copy, the
+ * chosen language and the kept unreadable copy, each with its key. The wheels are
  * passed in because the caller has just written that string.
  */
 export function countStoredCharacters(
@@ -56,6 +57,7 @@ export function countStoredCharacters(
 
   for (const key of [
     THEME_STORAGE_KEY,
+    LANGUAGE_STORAGE_KEY,
     UNREADABLE_BACKUP_KEY,
   ]) {
     try {

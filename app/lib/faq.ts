@@ -1,8 +1,9 @@
 /*
- * All the text of the FAQ dialog, as plain data. The dialog only
- * shows what it is given, so another language can supply the same
- * shape without changing the dialog. Ids stay the same in every
- * language.
+ * The questions and answers of the FAQ dialog, as plain data. The
+ * dialog only shows what it is given, so another language can supply
+ * the same shape without changing the dialog. Ids stay the same in
+ * every language. The dialog title and its two button labels are in
+ * the i18n dictionary (faq.title, faq.close, faq.feedback).
  *
  * An item with action "feedback" gets a button after its answer
  * that opens the feedback form.
@@ -13,12 +14,6 @@ export type FaqItem = {
   answer: string;
   action?: "feedback";
 };
-
-export const FAQ_TITLE = "FAQ";
-
-export const FAQ_CLOSE_LABEL = "Close";
-
-export const FAQ_FEEDBACK_LABEL = "Send feedback";
 
 export const FAQ_ITEMS: FaqItem[] = [
   {

@@ -7,7 +7,8 @@ import ConfirmDialog from "./components/ConfirmDialog";
 import HowItWorksDialog from "./components/HowItWorksDialog";
 import TextDialog from "./components/TextDialog";
 import FaqDialog from "./components/FaqDialog";
-import { FAQ_CLOSE_LABEL, FAQ_FEEDBACK_LABEL, FAQ_ITEMS, FAQ_TITLE, } from "./lib/faq";
+import { FAQ_ITEMS } from "./lib/faq";
+import { useT } from "./lib/i18n/provider";
 import WheelChip from "./components/WheelChip";
 import MobileToolbar from "./components/MobileToolbar";
 import MobileTopBar from "./components/MobileTopBar";
@@ -46,6 +47,7 @@ const QUIZ_LOCKED_TEXT_KEYS: string[] = [
     "emoji",
 ];
 export default function Home() {
+    const t = useT();
     const [appData, setAppData] = useState<AppData>(createInitialAppData);
     const [mode, setMode] = useState<Mode>("standard");
     const activeWheel = appData.wheels.find((wheel) => wheel.id ===
@@ -2350,7 +2352,7 @@ export default function Home() {
             }} onClose={closeTextDialog}/>)}
       {deleteWheelOpen && (<ConfirmDialog theme={theme} title="Delete wheel?" message={`Delete "${activeWheel.name}"? Its entries, quiz questions, settings and history are removed. This cannot be undone.`} confirmLabel="Delete wheel" onConfirm={confirmDeleteWheel} onClose={closeDeleteWheel}/>)}
       {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={STANDARD_MODE_HELP} onClose={closeHowItWorks}/>)}
-      {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={FAQ_TITLE} closeLabel={FAQ_CLOSE_LABEL} feedbackLabel={FAQ_FEEDBACK_LABEL} items={FAQ_ITEMS} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
+      {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={t("faq.title")} closeLabel={t("faq.close")} feedbackLabel={t("faq.feedback")} items={FAQ_ITEMS} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
             }} onClose={closeFeedback} getReturnFocus={() => feedbackFromMenuRef.current ? menuButtonRef.current : feedbackRowRef.current}/>)}
