@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
+import { useFocusTrap } from "../lib/use-focus-trap";
 import { usePopover } from "../lib/use-popover";
 
 type HowItWorksDialogProps = {
@@ -36,6 +37,8 @@ export default function HowItWorksDialog({
     () => closeRef.current,
   );
 
+  useFocusTrap(true, panelRef);
+
   useEffect(() => {
     const previousBodyOverflow =
       document.body.style.overflow;
@@ -55,12 +58,6 @@ export default function HowItWorksDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="how-it-works-title"
-        onKeyDown={(event) => {
-          if (event.key === "Tab") {
-            event.preventDefault();
-            closeRef.current?.focus();
-          }
-        }}
         className={`max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl p-6 shadow-2xl ${theme.surfaceClass}`}
       >
         <h2

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import type { FormEvent, KeyboardEvent, RefObject } from "react";
+import type { FormEvent, RefObject } from "react";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
+import { useFocusTrap } from "../lib/use-focus-trap";
 import { usePopover } from "../lib/use-popover";
 
 /*
@@ -76,6 +77,8 @@ export default function TextDialog({
     },
   );
 
+  useFocusTrap(true, panelRef);
+
   useEffect(() => {
     const previousBodyOverflow =
       document.body.style.overflow;
@@ -118,55 +121,6 @@ export default function TextDialog({
     submit();
   }
 
-  function handleKeyDown(
-    event: KeyboardEvent<HTMLDivElement>,
-  ) {
-    if (event.key !== "Tab") {
-      return;
-    }
-
-    const panel = panelRef.current;
-
-    if (!panel) {
-      return;
-    }
-
-    const focusable = Array.from(
-      panel.querySelectorAll<HTMLElement>(
-        "input:not([disabled]), textarea:not([disabled]), button:not([disabled])",
-      ),
-    ).filter(
-      (element) =>
-        element.getClientRects().length > 0,
-    );
-
-    if (focusable.length === 0) {
-      return;
-    }
-
-    const first = focusable[0];
-    const last =
-      focusable[focusable.length - 1];
-
-    const active = document.activeElement;
-
-    if (
-      event.shiftKey &&
-      (active === first ||
-        !panel.contains(active))
-    ) {
-      event.preventDefault();
-      last.focus();
-    } else if (
-      !event.shiftKey &&
-      (active === last ||
-        !panel.contains(active))
-    ) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
   const fieldClass = `block w-full rounded-lg border px-3 py-2.5 text-base outline-none transition ${theme.inputClass} ${
     error ? "border-red-400" : ""
   }`;
@@ -183,7 +137,6 @@ export default function TextDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        onKeyDown={handleKeyDown}
         className={`max-h-[calc(100dvh-max(1rem,env(safe-area-inset-top))-1rem)] w-full max-w-md overflow-y-auto sm:max-h-[90dvh] rounded-2xl p-5 shadow-2xl sm:p-6 ${theme.surfaceClass}`}
       >
         <form noValidate onSubmit={handleSubmit}>

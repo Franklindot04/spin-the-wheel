@@ -11,15 +11,18 @@ export type AppearanceThemeConfig = {
   label: string;
   description: string;
 
-  // Theme preview
-  swatchClass: string;
-
   // Main application background
   pageClass: string;
 
-  // Header / top navigation
-  headerClass: string;
-  headerBorderClass: string;
+  // Header / top navigation: the wide header, the phone top bar and the share toast
+  header: {
+    surfaceClass: string;
+    borderClass: string;
+    hoverClass: string;
+    titleHex: string;
+    mutedHex: string;
+    toastTextClass: string;
+  };
 
   // Primary accent / action buttons
   accentClass: string;

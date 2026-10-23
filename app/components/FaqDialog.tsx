@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
 import type { FaqItem } from "../lib/faq";
+import { useFocusTrap } from "../lib/use-focus-trap";
 import { usePopover } from "../lib/use-popover";
 
 type FaqDialogProps = {
@@ -58,6 +58,9 @@ export default function FaqDialog({
       ),
   );
 
+  /* Answers that are closed are hidden, so their buttons are skipped. */
+  useFocusTrap(true, panelRef);
+
   useEffect(() => {
     const previousBodyOverflow =
       document.body.style.overflow;
@@ -78,56 +81,6 @@ export default function FaqDialog({
     );
   }
 
-  /* Answers that are closed are hidden, so their buttons are skipped. */
-  function handleKeyDown(
-    event: KeyboardEvent<HTMLDivElement>,
-  ) {
-    if (event.key !== "Tab") {
-      return;
-    }
-
-    const panel = panelRef.current;
-
-    if (!panel) {
-      return;
-    }
-
-    const focusable = Array.from(
-      panel.querySelectorAll<HTMLElement>(
-        "button:not([disabled])",
-      ),
-    ).filter(
-      (element) =>
-        element.getClientRects().length > 0,
-    );
-
-    if (focusable.length === 0) {
-      return;
-    }
-
-    const first = focusable[0];
-    const last =
-      focusable[focusable.length - 1];
-
-    const active = document.activeElement;
-
-    if (
-      event.shiftKey &&
-      (active === first ||
-        !panel.contains(active))
-    ) {
-      event.preventDefault();
-      last.focus();
-    } else if (
-      !event.shiftKey &&
-      (active === last ||
-        !panel.contains(active))
-    ) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
   const ringClass =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current";
 
@@ -138,7 +91,6 @@ export default function FaqDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        onKeyDown={handleKeyDown}
         className={`flex max-h-[calc(100dvh-max(1rem,env(safe-area-inset-top))-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl shadow-2xl sm:max-h-[90dvh] ${theme.surfaceClass}`}
       >
         <h2

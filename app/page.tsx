@@ -20,10 +20,12 @@ import { EMPTY_FEEDBACK_DRAFT, type FeedbackDraft, } from "./lib/feedback-client
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
 import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, DEFAULT_CONFETTI_ENABLED, DEFAULT_CONFETTI_EFFECT, } from "./lib/wheel-defaults";
 import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/sound-engine";
+import { DEFAULT_WINNER_SOUND } from "./lib/sound-options";
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, countStoredCharacters, getStorageFullPercent, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 import { shareLink } from "./lib/share";
+import { useFocusTrap } from "./lib/use-focus-trap";
 function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partial<Wheel>): AppData {
     return {
         ...current,
@@ -37,7 +39,7 @@ function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partia
     };
 }
 /* Shown in the Standard Mode card, and in the How it works dialog on phones. */
-const STANDARD_MODE_HELP = "Add your options in the list, then press Spin. Change a name, colour or weight with the entry's ... menu, and hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.";
+const STANDARD_MODE_HELP = "Add your options in the list, then press Spin. Change a name or colour with the entry's ... menu, and its weight with the − and + buttons. Hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.";
 type TextDialogKind = "name" | "title" | "description";
 const QUIZ_LOCKED_TEXT_KEYS: string[] = [
     "label",
@@ -637,33 +639,6 @@ export default function Home() {
                 }
                 return;
             }
-            if (event.key !==
-                "Tab" ||
-                !dialog) {
-                return;
-            }
-            // Keep keyboard focus inside the dialog.
-            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])")).filter((element) => element.getClientRects().length > 0);
-            if (focusable.length === 0) {
-                event.preventDefault();
-                return;
-            }
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            const active = document.activeElement;
-            if (event.shiftKey &&
-                (active === first ||
-                    active === dialog ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                last.focus();
-            }
-            else if (!event.shiftKey &&
-                (active === last ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                first.focus();
-            }
         }
         const previousBodyOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
@@ -675,6 +650,7 @@ export default function Home() {
             focusSettingsButton();
         };
     }, [settingsOpen]);
+    useFocusTrap(settingsOpen, settingsDialogRef);
     useEffect(() => {
         if (!resetConfirmOpen) {
             return;
@@ -684,34 +660,6 @@ export default function Home() {
             if (event.key ===
                 "Escape") {
                 cancelRestoreDefaults();
-                return;
-            }
-            if (event.key !==
-                "Tab" ||
-                !dialog) {
-                return;
-            }
-            // Keep keyboard focus inside the dialog.
-            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
-            if (focusable.length === 0) {
-                event.preventDefault();
-                return;
-            }
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            const active = document.activeElement;
-            if (event.shiftKey &&
-                (active === first ||
-                    active === dialog ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                last.focus();
-            }
-            else if (!event.shiftKey &&
-                (active === last ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                first.focus();
             }
         }
         window.addEventListener("keydown", handleKeyDown);
@@ -721,6 +669,7 @@ export default function Home() {
             focusSettingsButton();
         };
     }, [resetConfirmOpen]);
+    useFocusTrap(resetConfirmOpen, resetDialogRef);
     useEffect(() => {
         if (!entriesResetOpen) {
             return;
@@ -731,34 +680,6 @@ export default function Home() {
             if (event.key ===
                 "Escape") {
                 setEntriesResetOpen(false);
-                return;
-            }
-            if (event.key !==
-                "Tab" ||
-                !dialog) {
-                return;
-            }
-            // Keep keyboard focus inside the dialog.
-            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
-            if (focusable.length === 0) {
-                event.preventDefault();
-                return;
-            }
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            const active = document.activeElement;
-            if (event.shiftKey &&
-                (active === first ||
-                    active === dialog ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                last.focus();
-            }
-            else if (!event.shiftKey &&
-                (active === last ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                first.focus();
             }
         }
         window.addEventListener("keydown", handleKeyDown);
@@ -768,6 +689,7 @@ export default function Home() {
             resetButton?.focus();
         };
     }, [entriesResetOpen]);
+    useFocusTrap(entriesResetOpen, entriesResetDialogRef);
     useEffect(() => {
         if (!deleteCopyOpen) {
             return;
@@ -778,34 +700,6 @@ export default function Home() {
             if (event.key ===
                 "Escape") {
                 setDeleteCopyOpen(false);
-                return;
-            }
-            if (event.key !==
-                "Tab" ||
-                !dialog) {
-                return;
-            }
-            // Keep keyboard focus inside the dialog.
-            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled])"));
-            if (focusable.length === 0) {
-                event.preventDefault();
-                return;
-            }
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            const active = document.activeElement;
-            if (event.shiftKey &&
-                (active === first ||
-                    active === dialog ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                last.focus();
-            }
-            else if (!event.shiftKey &&
-                (active === last ||
-                    !dialog.contains(active))) {
-                event.preventDefault();
-                first.focus();
             }
         }
         window.addEventListener("keydown", handleKeyDown);
@@ -821,6 +715,7 @@ export default function Home() {
             }
         };
     }, [deleteCopyOpen]);
+    useFocusTrap(deleteCopyOpen, deleteCopyDialogRef);
     const currentSetupEntries = mode === "standard"
         ? standardEntries
         : quizEntries;
@@ -1281,7 +1176,7 @@ export default function Home() {
              */
             answerConfettiFiredRef.current = false;
             if (mode !== "quiz") {
-                playWinnerSound(activeWheel.settings.winnerSound ?? "success", finalEntry.winnerSound);
+                playWinnerSound(activeWheel.settings.winnerSound ?? DEFAULT_WINNER_SOUND, finalEntry.winnerSound);
                 setConfettiRun((current) => current + 1);
             }
             addHistoryItem(finalEntry, mode);
@@ -1668,69 +1563,7 @@ export default function Home() {
     const theme = APPEARANCE_THEMES[activeWheel.settings
         .appearanceTheme];
     const appearanceTheme = activeWheel.settings.appearanceTheme;
-    const headerTextClass = appearanceTheme === "ocean"
-        ? "text-cyan-950"
-        : appearanceTheme === "forest"
-            ? "text-emerald-950"
-            : appearanceTheme === "sunset"
-                ? "text-orange-950"
-                : appearanceTheme === "violet"
-                    ? "text-violet-950"
-                    : "text-slate-900";
-    const headerMutedClass = appearanceTheme === "ocean"
-        ? "text-cyan-800"
-        : appearanceTheme === "forest"
-            ? "text-emerald-800"
-            : appearanceTheme === "sunset"
-                ? "text-orange-800"
-                : appearanceTheme === "violet"
-                    ? "text-violet-800"
-                    : "text-slate-700";
-    const headerTextColor = appearanceTheme === "ocean"
-        ? "#164e63"
-        : appearanceTheme === "forest"
-            ? "#064e3b"
-            : appearanceTheme === "sunset"
-                ? "#7c2d12"
-                : appearanceTheme === "violet"
-                    ? "#4c1d95"
-                    : "#0f172a";
-    const headerMutedColor = appearanceTheme === "ocean"
-        ? "#155e75"
-        : appearanceTheme === "forest"
-            ? "#065f46"
-            : appearanceTheme === "sunset"
-                ? "#9a3412"
-                : appearanceTheme === "violet"
-                    ? "#5b21b6"
-                    : "#334155";
-    const headerSurfaceClass = appearanceTheme === "ocean"
-        ? "bg-cyan-100"
-        : appearanceTheme === "forest"
-            ? "bg-emerald-100"
-            : appearanceTheme === "sunset"
-                ? "bg-orange-100"
-                : appearanceTheme === "violet"
-                    ? "bg-violet-100"
-                    : "bg-slate-100";
-    const headerBorderClass = appearanceTheme === "ocean"
-        ? "border-cyan-300"
-        : appearanceTheme === "forest"
-            ? "border-emerald-300"
-            : appearanceTheme === "sunset"
-                ? "border-orange-300"
-                : appearanceTheme === "violet"
-                    ? "border-violet-300"
-                    : "border-slate-300";
-    const headerHoverClass = appearanceTheme === "ocean"
-        ? "not-disabled:hover:bg-cyan-200"
-        : appearanceTheme === "forest"
-            ? "not-disabled:hover:bg-emerald-200"
-            : appearanceTheme === "sunset"
-                ? "not-disabled:hover:bg-orange-200"
-                : appearanceTheme === "violet"
-                    ? "not-disabled:hover:bg-violet-200"
-                    : "not-disabled:hover:bg-slate-200";
+    const { surfaceClass: headerSurfaceClass, borderClass: headerBorderClass, hoverClass: headerHoverClass, titleHex: headerTextColor, mutedHex: headerMutedColor, toastTextClass: headerToastTextClass, } = theme.header;
     const actionAccentClass = appearanceTheme === "classic"
         ? "bg-slate-700"
         : theme.accentClass;
@@ -1754,7 +1587,7 @@ export default function Home() {
         setShowAnswer(reveal);
         if (reveal && !answerConfettiFiredRef.current) {
             answerConfettiFiredRef.current = true;
-            playWinnerSound(activeWheel.settings.winnerSound ?? "success", selectedEntry?.winnerSound);
+            playWinnerSound(activeWheel.settings.winnerSound ?? DEFAULT_WINNER_SOUND, selectedEntry?.winnerSound);
             setConfettiRun((current) => current + 1);
         }
     }
@@ -1851,7 +1684,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="hidden min-w-0 md:block">
             <div className="flex items-center gap-2">
-              <h1 className={`truncate text-2xl font-extrabold tracking-tight ${headerTextClass}`} style={{ color: headerTextColor }}>
+              <h1 className="truncate text-2xl font-extrabold tracking-tight" style={{ color: headerTextColor }}>
                 {wheelTitle.trim() || DEFAULT_WHEEL_TITLE}
               </h1>
               <button type="button" onClick={editWheelTitle} disabled={spinning} aria-label="Edit wheel title" title="Edit title" className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
@@ -1862,7 +1695,7 @@ export default function Home() {
               </button>
             </div>
             <div className="mt-1 flex items-center gap-1">
-              <p className={`truncate text-sm font-medium ${headerMutedClass}`} style={{ color: headerMutedColor }}>
+              <p className="truncate text-sm font-medium" style={{ color: headerMutedColor }}>
                 {wheelDescription.trim() || DEFAULT_WHEEL_DESCRIPTION}
               </p>
               <button type="button" onClick={editWheelDescription} disabled={spinning} aria-label="Edit wheel description" title="Edit description" className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
@@ -1911,7 +1744,7 @@ export default function Home() {
         </div>
       </header>
       <div role="status" className="pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-[max(1rem,env(safe-area-inset-left))]">
-        {shareMessage && (<span className={`rounded-lg border px-4 py-2 text-sm font-semibold shadow-lg ${headerSurfaceClass} ${headerBorderClass} ${headerTextClass}`}>
+        {shareMessage && (<span className={`rounded-lg border px-4 py-2 text-sm font-semibold shadow-lg ${headerSurfaceClass} ${headerBorderClass} ${headerToastTextClass}`}>
             {shareMessage}
           </span>)}
       </div>
