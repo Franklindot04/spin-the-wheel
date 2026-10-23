@@ -22,6 +22,7 @@ type MobileTopBarProps = {
   onEditTitle: () => void;
   onEditDescription: () => void;
   onHowItWorks: () => void;
+  onFaq: () => void;
   onSendFeedback: () => void;
 };
 
@@ -47,6 +48,7 @@ export default function MobileTopBar({
   onEditTitle,
   onEditDescription,
   onHowItWorks,
+  onFaq,
   onSendFeedback,
 }: MobileTopBarProps) {
   const modeClass = (value: Mode) =>
@@ -101,6 +103,7 @@ export default function MobileTopBar({
           onEditTitle={onEditTitle}
           onEditDescription={onEditDescription}
           onHowItWorks={onHowItWorks}
+          onFaq={onFaq}
           onSendFeedback={onSendFeedback}
           spinning={spinning}
           surfaceClass={headerSurfaceClass}

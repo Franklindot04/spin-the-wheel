@@ -16,6 +16,8 @@ type FaqDialogProps = {
   items: FaqItem[];
   /* Called by an item with the feedback action. */
   onFeedback: () => void;
+  /* The form cannot open while a spin runs, as in the app menu. */
+  feedbackDisabled?: boolean;
   onClose: () => void;
 };
 
@@ -34,6 +36,7 @@ export default function FaqDialog({
   feedbackLabel,
   items,
   onFeedback,
+  feedbackDisabled = false,
   onClose,
 }: FaqDialogProps) {
   const titleId = useId();
@@ -207,7 +210,13 @@ export default function FaqDialog({
                     <button
                       type="button"
                       onClick={onFeedback}
-                      className={`mt-3 min-h-11 rounded-lg border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.textPrimaryClass} ${theme.controlHoverClass}`}
+                      disabled={feedbackDisabled}
+                      title={
+                        feedbackDisabled
+                          ? "Wait for the spin to finish."
+                          : undefined
+                      }
+                      className={`mt-3 min-h-11 rounded-lg border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.textPrimaryClass} ${theme.controlHoverClass}`}
                     >
                       {feedbackLabel}
                     </button>
