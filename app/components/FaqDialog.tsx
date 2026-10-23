@@ -198,7 +198,7 @@ export default function FaqDialog({
                 <div
                   id={panelId}
                   hidden={!open}
-                  className={`mx-5 mb-3 mt-1 rounded-xl p-3 sm:mx-6 ${theme.subtleSurfaceClass}`}
+                  className={`mx-5 mb-3 mt-1 rounded-l-none rounded-r-xl border-l-[3px] p-3 sm:mx-6 ${theme.subtleSurfaceClass} ${theme.textMutedClass}`}
                 >
                   <p
                     className={`break-words text-sm leading-6 ${theme.textPrimaryClass}`}
