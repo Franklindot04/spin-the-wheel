@@ -22,6 +22,11 @@ export const APPEARANCE_THEMES: Record<
 
     pageClass: "bg-slate-950",
 
+    /*
+     * The loading shell in globals.css (.shell-header, one rule per
+     * theme) repeats the header surface and border colours of every
+     * theme below. Change them there together with these.
+     */
     header: {
       surfaceClass: "bg-slate-100",
       borderClass: "border-slate-300",
