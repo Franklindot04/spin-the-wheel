@@ -16,6 +16,7 @@ import {
   submitFeedback,
   type FeedbackDraft,
 } from "../lib/feedback-client";
+import { useFocusTrap } from "../lib/use-focus-trap";
 import {
   loadTurnstile,
   turnstileSetupProblem,
@@ -62,9 +63,6 @@ type FieldErrors = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 type FieldProps = {
   id: string;
@@ -450,9 +448,9 @@ export default function FeedbackDialog({
   }, [startWidget]);
 
   /*
-   * Escape closes, Tab stays inside the dialog, and focus
-   * goes back to the Send feedback row afterwards. The page
-   * behind does not scroll while the dialog is open.
+   * Escape closes, and focus goes back to the Send feedback
+   * row afterwards. The page behind does not scroll while the
+   * dialog is open. Tab stays inside through useFocusTrap.
    */
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -460,48 +458,6 @@ export default function FeedbackDialog({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         onCloseRef.current();
-
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialog) {
-        return;
-      }
-
-      const focusable = Array.from(
-        dialog.querySelectorAll<HTMLElement>(
-          FOCUSABLE,
-        ),
-      ).filter(
-        (element) =>
-          element.getClientRects().length > 0,
-      );
-
-      if (focusable.length === 0) {
-        event.preventDefault();
-
-        return;
-      }
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement;
-
-      if (
-        event.shiftKey &&
-        (active === first ||
-          active === dialog ||
-          !dialog.contains(active))
-      ) {
-        event.preventDefault();
-        last.focus();
-      } else if (
-        !event.shiftKey &&
-        (active === last ||
-          !dialog.contains(active))
-      ) {
-        event.preventDefault();
-        first.focus();
       }
     }
 
@@ -527,6 +483,8 @@ export default function FeedbackDialog({
       }, 0);
     };
   }, []);
+
+  useFocusTrap(true, dialogRef);
 
   // Back online: the offline message no longer applies.
   useEffect(() => {
