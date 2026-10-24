@@ -2124,7 +2124,7 @@ export default function Home() {
             : "entries"}
         </span>
       </footer>
-      {settingsOpen && (<div ref={settingsDialogRef} tabIndex={-1} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 outline-none" role="dialog" aria-modal="true" aria-label="Settings" onMouseDown={(event) => {
+      {settingsOpen && (<div ref={settingsDialogRef} tabIndex={-1} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 outline-none" role="dialog" aria-modal="true" aria-label={t("settings.dialogLabel")} onMouseDown={(event) => {
                 if (event.target ===
                     event.currentTarget) {
                     event.preventDefault();
@@ -2137,7 +2137,7 @@ export default function Home() {
             </div>
             <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
               <button type="button" onClick={closeSettings} className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
-                Done
+                {t("settings.done")}
               </button>
             </div>
           </div>
@@ -2161,25 +2161,25 @@ export default function Home() {
           </div>
         </div>)}
       {resetConfirmOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
-          <div ref={resetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Restore defaults" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
+          <div ref={resetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={t("settings.restoreDefaults")} className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
             <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-              Restore defaults?
+              {t("restoreDefaults.title")}
             </h2>
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
-              This will restore the default entries, quiz questions, settings, title, description, and history. Your wheel name and other wheels are kept.
+              {t("restoreDefaults.message")}
             </p>
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
-              Export your data first if you want to keep a copy.
+              {t("common.exportFirst")}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <button type="button" onClick={exportData} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                Export all wheels
+                {t("common.exportAllWheels")}
               </button>
               <button type="button" onClick={resetWheelToDefaults} disabled={spinning} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
-                Restore
+                {t("restoreDefaults.confirm")}
               </button>
               <button type="button" onClick={cancelRestoreDefaults} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>
@@ -2195,54 +2195,54 @@ export default function Home() {
                 feedbackDraftRef.current = draft;
             }} onClose={closeFeedback} getReturnFocus={() => feedbackFromMenuRef.current ? menuButtonRef.current : feedbackRowRef.current}/>)}
       {entriesResetOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
-          <div ref={entriesResetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Reset entries" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
+          <div ref={entriesResetDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={t("resetEntries.label")} className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
             <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-              Reset entries?
+              {t("resetEntries.title")}
             </h2>
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
-              Reset the {mode === "quiz" ? "quiz questions" : "entries"} to the defaults?
+              {mode === "quiz" ? t("resetEntries.messageQuiz") : t("resetEntries.messageEntries")}
             </p>
             {mode === "quiz" && quizStarted && (<p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
-                This also ends the quiz and returns to setup.
+                {t("resetEntries.quizEnds")}
               </p>)}
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
-              Export your data first if you want to keep a copy.
+              {t("common.exportFirst")}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <button type="button" onClick={exportData} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                Export all wheels
+                {t("common.exportAllWheels")}
               </button>
               <button type="button" onClick={resetCurrentEntries} disabled={spinning} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
-                Reset
+                {t("resetEntries.confirm")}
               </button>
               <button type="button" onClick={() => setEntriesResetOpen(false)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>
         </div>)}
       {deleteCopyOpen && storedDataNotice && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
-          <div ref={deleteCopyDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Delete the kept copy" className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
+          <div ref={deleteCopyDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={t("deleteCopy.label")} className={`w-full max-w-md rounded-2xl p-6 shadow-2xl outline-none ${theme.surfaceClass}`}>
             <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-              Delete the kept copy?
+              {t("deleteCopy.title")}
             </h2>
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
               {storedDataNotice.memoryOnly
-                ? "This copy exists only until the page is closed. Deleting it now loses it immediately."
-                : "This permanently deletes the copy of your unreadable saved data kept in this browser. It cannot be recovered afterwards."}
+                ? t("deleteCopy.messageMemory")
+                : t("deleteCopy.messageStored")}
             </p>
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
-              Export raw data first if you want to keep it.
+              {t("deleteCopy.exportFirst")}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <button type="button" onClick={exportRawData} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                Export raw data
+                {t("deleteCopy.exportRaw")}
               </button>
               <button type="button" onClick={deleteUnreadableCopy} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
-                Delete copy
+                {t("deleteCopy.confirm")}
               </button>
               <button type="button" onClick={() => setDeleteCopyOpen(false)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>
