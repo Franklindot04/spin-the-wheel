@@ -32,6 +32,7 @@ import {
   stopWinnerSound,
   unlock,
 } from "../lib/sound-engine";
+import { useT } from "../lib/i18n/provider";
 import { DEFAULT_SPIN_SOUND } from "../lib/sound-options";
 import { createTickTracker } from "../lib/spin-ticks";
 import {
@@ -807,8 +808,8 @@ export default function Wheel({
   onSpin,
   canSpin = true,
   minSpinEntries = 2,
-  emptyTitle = "No visible entries",
-  emptyMessage = "Add entries or show hidden ones to spin the wheel.",
+    emptyTitle,
+  emptyMessage,
   spinDuration = 4.5,
   spinSound = DEFAULT_SPIN_SOUND,
   soundActive = false,
@@ -839,6 +840,8 @@ export default function Wheel({
   onAnotherSpin,
   anotherSpinDisabled = false,
 }: WheelProps) {
+  const t = useT();
+
   const imageClipPrefix = `slice-image-${toIdPart(
     useId(),
   )}`;
@@ -2017,7 +2020,7 @@ export default function Wheel({
     >
       <div
         className="wheel-controls mb-4 flex w-full max-w-[760px] shrink-0 items-center justify-end gap-3 sm:justify-between"
-        aria-label="Wheel controls"
+        aria-label={t("wheelView.controls")}
       >
         <div
           className={`hidden items-center overflow-hidden rounded-xl border shadow-sm ${
@@ -2045,8 +2048,8 @@ export default function Wheel({
               theme?.controlHoverClass ??
               "text-slate-700 hover:bg-slate-100"
             }`}
-            aria-label="Decrease wheel size"
-            title="Decrease wheel size"
+            aria-label={t("wheelView.decreaseSize")}
+            title={t("wheelView.decreaseSize")}
           >
             <MinusIcon />
           </button>
@@ -2081,8 +2084,8 @@ export default function Wheel({
               theme?.controlHoverClass ??
               "text-slate-700 hover:bg-slate-100"
             }`}
-            aria-label="Increase wheel size"
-            title="Increase wheel size"
+            aria-label={t("wheelView.increaseSize")}
+            title={t("wheelView.increaseSize")}
           >
             <PlusIcon />
           </button>
@@ -2113,13 +2116,13 @@ export default function Wheel({
               }`}
               aria-label={
                 soundEnabled
-                  ? "Mute sound"
-                  : "Unmute sound"
+                  ? t("wheelView.mute")
+                  : t("wheelView.unmute")
               }
               title={
                 soundEnabled
-                  ? "Mute sound"
-                  : "Unmute sound"
+                  ? t("wheelView.mute")
+                  : t("wheelView.unmute")
               }
             >
               <SpeakerIcon muted={!soundEnabled} />
@@ -2138,8 +2141,8 @@ export default function Wheel({
                   ? `${theme.controlClass} ${theme.controlHoverClass}`
                   : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
               }`}
-              aria-label="Close fullscreen"
-              title="Close (Esc)"
+              aria-label={t("wheelView.closeFullscreen")}
+              title={t("wheelView.closeTitle")}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -2153,7 +2156,7 @@ export default function Wheel({
                 <path d="M6 6l12 12" />
                 <path d="M18 6L6 18" />
               </svg>
-              Close
+              {t("wheelView.close")}
             </button>
           ) : (
             <button
@@ -2172,13 +2175,13 @@ export default function Wheel({
               }`}
               aria-label={
                 fullscreen
-                  ? "Exit fullscreen"
-                  : "Enter fullscreen"
+                  ? t("wheelView.exitFullscreen")
+                  : t("wheelView.enterFullscreen")
               }
               title={
                 fullscreen
-                  ? "Exit fullscreen"
-                  : "Fullscreen"
+                  ? t("wheelView.exitFullscreen")
+                  : t("wheelView.fullscreenTitle")
               }
             >
               <FullscreenIcon
@@ -2216,7 +2219,7 @@ export default function Wheel({
         <svg
           viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
           className="h-full w-full overflow-visible drop-shadow-xl"
-          aria-label="Spin the wheel"
+          aria-label={t("wheelView.svgLabel")}
           data-wheel-svg=""
           role="img"
         >
@@ -2481,7 +2484,7 @@ export default function Wheel({
                   "text-slate-100"
                 }`}
               >
-                {emptyTitle}
+                {emptyTitle ?? t("wheelView.emptyTitle")}
               </p>
               <p
                 className={`mt-1 text-xs ${
@@ -2489,7 +2492,7 @@ export default function Wheel({
                   "text-slate-300"
                 }`}
               >
-                {emptyMessage}
+                {emptyMessage ?? t("wheelView.emptyMessage")}
               </p>
             </div>
           </div>
@@ -2500,7 +2503,7 @@ export default function Wheel({
             ref={winnerBoxRef}
             role="dialog"
             aria-modal="false"
-            aria-label="Quiz answer"
+            aria-label={t("quizBox.label")}
             aria-describedby={`${boxId}-answer`}
             onKeyDown={(event) => {
               if (event.key === "Escape") {
@@ -2571,7 +2574,7 @@ export default function Wheel({
 
             <div
               tabIndex={0}
-              aria-label="Question and answer"
+              aria-label={t("quizBox.qaLabel")}
               className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
             >
               <p
@@ -2580,7 +2583,7 @@ export default function Wheel({
                   "text-slate-400"
                 }`}
               >
-                Question
+                {t("quizBox.question")}
               </p>
 
               <p
@@ -2598,7 +2601,7 @@ export default function Wheel({
                   "text-slate-400"
                 }`}
               >
-                Answer
+                {t("quizBox.answer")}
               </p>
 
               <p
@@ -2619,7 +2622,7 @@ export default function Wheel({
                 onClick={continueFromBox}
                 className={`min-h-9 min-w-0 flex-1 rounded-lg px-1 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${accentClass} ${accentHoverClass}`}
               >
-                Hide Answer
+                {t("result.hideAnswer")}
               </button>
 
               {quiz.canSpinAgain ? (
@@ -2633,7 +2636,7 @@ export default function Wheel({
                       : "border-slate-600 text-slate-200"
                   }`}
                 >
-                  Give it another spin 😉
+                  {t("result.anotherSpin")}
                 </button>
               ) : null}
             </div>
@@ -2645,7 +2648,7 @@ export default function Wheel({
             ref={winnerBoxRef}
             role="dialog"
             aria-modal="false"
-            aria-label="Winner"
+            aria-label={t("winnerBox.label")}
             aria-describedby={`${boxId}-name${
               removeDisabled && reason
                 ? ` ${boxId}-reason`
@@ -2689,7 +2692,7 @@ export default function Wheel({
                 "text-slate-400"
               }`}
             >
-              Winner
+              {t("winnerBox.heading")}
             </p>
 
             <div className="mt-1 flex w-full items-center justify-center gap-2">
@@ -2733,7 +2736,7 @@ export default function Wheel({
                 onClick={continueFromBox}
                 className={`h-9 min-w-0 flex-1 rounded-lg px-1 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${accentClass} ${accentHoverClass}`}
               >
-                Continue
+                {t("winnerBox.continue")}
               </button>
 
               <button
@@ -2746,7 +2749,7 @@ export default function Wheel({
                     : "border-slate-600 text-slate-200"
                 }`}
               >
-                Remove
+                {t("winnerBox.remove")}
               </button>
             </div>
 
@@ -2785,8 +2788,8 @@ export default function Wheel({
         className={`wheel-spin mt-6 min-w-32 shrink-0 rounded-xl px-9 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
       >
         {spinning
-          ? "Spinning…"
-          : "Spin"}
+          ? t("wheelView.spinning")
+          : t("wheelView.spin")}
       </button>
 
       {spinReasonShown ? (

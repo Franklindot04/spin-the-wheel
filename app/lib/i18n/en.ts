@@ -443,6 +443,67 @@ export const en = {
     other: "{count} entries",
   },
 
+  "wheelView.controls": "Wheel controls",
+  "wheelView.decreaseSize": "Decrease wheel size",
+  "wheelView.increaseSize": "Increase wheel size",
+  "wheelView.mute": "Mute sound",
+  "wheelView.unmute": "Unmute sound",
+  "wheelView.closeFullscreen": "Close fullscreen",
+  "wheelView.closeTitle": "Close (Esc)",
+  "wheelView.close": "Close",
+  "wheelView.exitFullscreen": "Exit fullscreen",
+  "wheelView.enterFullscreen": "Enter fullscreen",
+  "wheelView.fullscreenTitle": "Fullscreen",
+  "wheelView.svgLabel": "Spin the wheel",
+  "wheelView.emptyTitle": "No visible entries",
+  "wheelView.emptyMessage":
+    "Add entries or show hidden ones to spin the wheel.",
+  "wheelView.spin": "Spin",
+  "wheelView.spinning": "Spinning…",
+
+  "winnerBox.label": "Winner",
+  "winnerBox.heading": "Winner",
+  "winnerBox.continue": "Continue",
+  "winnerBox.remove": "Remove",
+
+  "quizBox.label": "Quiz answer",
+  "quizBox.qaLabel": "Question and answer",
+  "quizBox.question": "Question",
+  "quizBox.answer": "Answer",
+
+  "feedback.version": "App version {version}",
+  "feedback.happened.label": "What happened",
+  "feedback.did.label": "What I did",
+  "feedback.expected.label": "What I expected",
+  "feedback.device.label": "Device and browser",
+  "feedback.device.placeholder": "iPhone 15, Safari",
+  "feedback.email.label": "Email",
+  "feedback.email.hint": "Only used to reply to you.",
+  "feedback.required": "Required",
+  "feedback.optional": "Optional",
+  "feedback.counter": "{length} / {max}",
+  "feedback.error.happened": "Tell us what happened.",
+  "feedback.error.email": "That email doesn't look right.",
+  "feedback.honeypot": "Leave this field empty",
+  "feedback.securityCheck": "Security check",
+  "feedback.privacy":
+    "Your report goes to the developer's private storage. It includes the app version and what you type, and your email if you add one. It's used only to fix problems and to reply. Reports are kept for up to 6 months, then deleted by hand. A security check from Cloudflare runs when you send. Don't include personal or sensitive information.",
+  "feedback.newTab": "(opens in a new tab)",
+  "feedback.status.offline":
+    "You're offline. Try again when you're back, or <link>use GitHub</link>.",
+  "feedback.status.waiting": "Please wait for the check to finish.",
+  "feedback.status.check":
+    "The security check couldn't finish. Try again, or <link>use GitHub</link>.",
+  "feedback.status.limited":
+    "Too many reports right now. Try again later, or <link>use GitHub</link>.",
+  "feedback.status.failed":
+    "Couldn't send your report. Your text is still here. Try again, or <link>use GitHub</link>.",
+  "feedback.thanks": "Thanks, we got it",
+  "feedback.close": "Close",
+  "feedback.sending": "Sending…",
+  "feedback.retry": "Retry",
+  "feedback.send": "Send",
+
   "faq.item.add-options.question": "How do I add options?",
   "faq.item.add-options.answer":
     "Use + Add in the Entries list, then type a name. Press Spin when you are ready.",

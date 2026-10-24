@@ -5,7 +5,8 @@ import {
   useEffect,
   useRef,
   useState,
-  type FormEvent,
+    type FormEvent,
+  type ReactNode,
 } from "react";
 
 import { APP_VERSION } from "../lib/app-version";
@@ -16,6 +17,7 @@ import {
   submitFeedback,
   type FeedbackDraft,
 } from "../lib/feedback-client";
+import { useT } from "../lib/i18n/provider";
 import { useFocusTrap } from "../lib/use-focus-trap";
 import {
   loadTurnstile,
@@ -101,6 +103,8 @@ function Field({
   email,
   required,
 }: FieldProps) {
+  const t = useT();
+
   const showCounter =
     value.length >= Math.ceil(max * 0.8);
 
@@ -195,7 +199,10 @@ function Field({
               : mutedClass
           }`}
         >
-          {value.length} / {max}
+          {t("feedback.counter", {
+            length: value.length,
+            max,
+          })}
         </p>
       ) : null}
     </div>
@@ -211,6 +218,8 @@ export default function FeedbackDialog({
   onClose,
   getReturnFocus,
 }: FeedbackDialogProps) {
+  const t = useT();
+
   const [values, setValues] =
     useState<FeedbackDraft>(draft);
 
@@ -555,7 +564,7 @@ export default function FeedbackDialog({
     const nextErrors: FieldErrors = {};
 
     if (!report.happened) {
-      nextErrors.happened = "Tell us what happened.";
+      nextErrors.happened = t("feedback.error.happened");
     }
 
     if (
@@ -564,8 +573,7 @@ export default function FeedbackDialog({
         FEEDBACK_LIMITS.email ||
         !EMAIL_PATTERN.test(report.email))
     ) {
-      nextErrors.email =
-        "That email doesn't look right.";
+      nextErrors.email = t("feedback.error.email");
     }
 
     setErrors(nextErrors);
@@ -664,20 +672,22 @@ export default function FeedbackDialog({
 
   const primaryButtonClass = `rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${accentClass} ${accentHoverClass}`;
 
-  const githubLink = (text: string) => (
-    <a
-      href={FEEDBACK_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-semibold underline underline-offset-2"
-    >
-      {text}
-      <span className="sr-only">
-        {" "}
-        (opens in a new tab)
-      </span>
-    </a>
-  );
+  const githubLink = {
+    link: (children: ReactNode) => (
+      <a
+        href={FEEDBACK_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold underline underline-offset-2"
+      >
+        {children}
+        <span className="sr-only">
+          {" "}
+          {t("feedback.newTab")}
+        </span>
+      </a>
+    ),
+  };
 
   // Inside the scrolling part, so a phone keyboard leaves more room.
   const heading = (
@@ -685,11 +695,11 @@ export default function FeedbackDialog({
       <h2
         className={`text-lg font-semibold ${theme.textPrimaryClass}`}
       >
-        Send feedback
+        {t("menu.sendFeedback")}
       </h2>
 
       <p className={`mt-1 text-xs ${mutedClass}`}>
-        App version {APP_VERSION}
+        {t("feedback.version", { version: APP_VERSION })}
       </p>
     </div>
   );
@@ -701,7 +711,7 @@ export default function FeedbackDialog({
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label="Send feedback"
+        aria-label={t("menu.sendFeedback")}
         className={`flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl shadow-2xl outline-none ${theme.surfaceClass}`}
       >
         {status === "success" ? (
@@ -713,7 +723,7 @@ export default function FeedbackDialog({
                 role="status"
                 className={`mt-4 text-base font-semibold ${theme.textPrimaryClass}`}
               >
-                Thanks, we got it
+                {t("feedback.thanks")}
               </p>
             </div>
 
@@ -726,7 +736,7 @@ export default function FeedbackDialog({
                 onClick={onClose}
                 className={`w-full ${primaryButtonClass}`}
               >
-                Close
+                {t("feedback.close")}
               </button>
             </div>
           </>
@@ -741,8 +751,8 @@ export default function FeedbackDialog({
 
               <Field
                 id="feedback-happened"
-                label="What happened"
-                tag="Required"
+                label={t("feedback.happened.label")}
+                tag={t("feedback.required")}
                 value={values.happened}
                 max={FEEDBACK_LIMITS.happened}
                 rows={4}
@@ -759,7 +769,7 @@ export default function FeedbackDialog({
 
               <Field
                 id="feedback-did"
-                label="What I did"
+                label={t("feedback.did.label")}
                 value={values.did}
                 max={FEEDBACK_LIMITS.did}
                 rows={3}
@@ -774,7 +784,7 @@ export default function FeedbackDialog({
 
               <Field
                 id="feedback-expected"
-                label="What I expected"
+                label={t("feedback.expected.label")}
                 value={values.expected}
                 max={FEEDBACK_LIMITS.expected}
                 rows={3}
@@ -789,10 +799,10 @@ export default function FeedbackDialog({
 
               <Field
                 id="feedback-device"
-                label="Device and browser"
+                label={t("feedback.device.label")}
                 value={values.device}
                 max={FEEDBACK_LIMITS.device}
-                placeholder="iPhone 15, Safari"
+                placeholder={t("feedback.device.placeholder")}
                 readOnly={sending}
                 inputClass={inputClass}
                 labelClass={labelClass}
@@ -804,11 +814,11 @@ export default function FeedbackDialog({
 
               <Field
                 id="feedback-email"
-                label="Email"
-                tag="Optional"
+                label={t("feedback.email.label")}
+                tag={t("feedback.optional")}
                 value={values.email}
                 max={FEEDBACK_LIMITS.email}
-                hint="Only used to reply to you."
+                hint={t("feedback.email.hint")}
                 error={errors.email}
                 email
                 readOnly={sending}
@@ -826,7 +836,7 @@ export default function FeedbackDialog({
                 className="sr-only"
               >
                 <label htmlFor="feedback-extra">
-                  Leave this field empty
+                  {t("feedback.honeypot")}
                 </label>
 
                 <input
@@ -844,7 +854,7 @@ export default function FeedbackDialog({
 
               <div
                 role="group"
-                aria-label="Security check"
+                aria-label={t("feedback.securityCheck")}
               >
                 <div
                   id={TURNSTILE_CONTAINER_ID}
@@ -855,16 +865,7 @@ export default function FeedbackDialog({
               <p
                 className={`text-xs leading-5 ${mutedClass}`}
               >
-                Your report goes to the
-                developer&apos;s private storage. It
-                includes the app version and what you
-                type, and your email if you add one.
-                It&apos;s used only to fix problems and
-                to reply. Reports are kept for up to 6
-                months, then deleted by hand. A security
-                check from Cloudflare runs when you send.
-                Don&apos;t include personal or sensitive
-                information.
+                {t("feedback.privacy")}
               </p>
             </div>
 
@@ -877,31 +878,15 @@ export default function FeedbackDialog({
                   className="mb-3 rounded-lg border border-red-300/40 bg-red-950/50 px-3 py-2.5 text-sm leading-6 text-red-100"
                 >
                   {status === "offline" ? (
-                    <>
-                      You&apos;re offline. Try again
-                      when you&apos;re back, or{" "}
-                      {githubLink("use GitHub")}.
-                    </>
+                    <>{t.rich("feedback.status.offline", githubLink)}</>
                   ) : status === "waiting" ? (
-                    <>Please wait for the check to finish.</>
+                    <>{t("feedback.status.waiting")}</>
                   ) : status === "check" ? (
-                    <>
-                      The security check couldn&apos;t
-                      finish. Try again, or{" "}
-                      {githubLink("use GitHub")}.
-                    </>
+                    <>{t.rich("feedback.status.check", githubLink)}</>
                   ) : status === "limited" ? (
-                    <>
-                      Too many reports right now. Try
-                      again later, or{" "}
-                      {githubLink("use GitHub")}.
-                    </>
+                    <>{t.rich("feedback.status.limited", githubLink)}</>
                   ) : (
-                    <>
-                      Couldn&apos;t send your report.
-                      Your text is still here. Try
-                      again, or {githubLink("use GitHub")}.
-                    </>
+                    <>{t.rich("feedback.status.failed", githubLink)}</>
                   )}
                 </div>
               ) : null}
@@ -913,10 +898,10 @@ export default function FeedbackDialog({
                   className={`flex-1 ${primaryButtonClass}`}
                 >
                   {sending
-                    ? "Sending…"
+                    ? t("feedback.sending")
                     : failed
-                      ? "Retry"
-                      : "Send"}
+                      ? t("feedback.retry")
+                      : t("feedback.send")}
                 </button>
 
                 <button
@@ -924,7 +909,7 @@ export default function FeedbackDialog({
                   onClick={onClose}
                   className={secondaryButtonClass}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
               </div>
             </div>
