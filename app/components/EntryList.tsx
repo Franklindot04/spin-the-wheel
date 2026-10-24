@@ -12,6 +12,7 @@ import {
   countGraphemes,
   getEntryWeight,
 } from "../lib/wheel-utils";
+import { useT } from "../lib/i18n/provider";
 import EntryMenu from "./EntryMenu";
 
 type EntryListProps = {
@@ -99,6 +100,8 @@ export default function EntryList({
   accentHoverClass,
   theme,
 }: EntryListProps) {
+  const t = useT();
+
   const [
     openMenuId,
     setOpenMenuId,
@@ -119,14 +122,16 @@ export default function EntryList({
     maxEntries !== undefined &&
     entries.length >= maxEntries;
 
-  const limitMessage = `Maximum ${maxEntries} ${
+  const limitMessage = t(
     mode === "quiz"
-      ? "questions"
-      : "entries"
-  }`;
+      ? "entryList.limit.questions"
+      : "entryList.limit.entries",
+    { max: maxEntries ?? 0 },
+  );
 
-  const deleteLockedTitle =
-    "Back to Setup to delete questions";
+  const deleteLockedTitle = t(
+    "entryList.deleteLockedTitle",
+  );
 
   const lockedClass = textLocked
     ? "border-dashed cursor-default"
@@ -199,19 +204,29 @@ export default function EntryList({
             className={`text-base font-semibold ${theme.textPrimaryClass}`}
           >
             {mode === "quiz"
-              ? "Questions"
-              : "Entries"}
+              ? t("entryList.heading.questions")
+              : t("entryList.heading.entries")}
           </h2>
 
           <p
             className={`mt-1 text-sm ${theme.textMutedClass}`}
           >
-            {entries.length}{" "}
-            {mode === "quiz"
-              ? "questions"
-              : "entries"}
-            {atLimit &&
-              ` · ${limitMessage}`}
+            {atLimit
+              ? t(
+                  mode === "quiz"
+                    ? "entryList.countAtLimit.questions"
+                    : "entryList.countAtLimit.entries",
+                  {
+                    count: entries.length,
+                    max: maxEntries ?? 0,
+                  },
+                )
+              : t(
+                  mode === "quiz"
+                    ? "entryList.count.questions"
+                    : "entryList.count.entries",
+                  { count: entries.length },
+                )}
           </p>
         </div>
 
@@ -225,14 +240,15 @@ export default function EntryList({
           }
           title={
             additionsDisabled
-              ? "Back to Setup to add questions"
+              ? t("entryList.addLockedTitle")
               : atLimit
                 ? limitMessage
                 : undefined
           }
           className={`rounded-lg px-3 py-2 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-current focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${accentClass} ${accentHoverClass}`}
         >
-          + Add
+          {t("entryList.add")}
+
         </button>
       </div>
 
@@ -240,7 +256,7 @@ export default function EntryList({
         <p
           className={`mt-4 rounded-xl p-4 text-sm leading-6 ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}
         >
-          Questions and answers are hidden while the quiz runs. You can still hide questions or change their weight. Questions cannot be added or deleted. Back to Setup shows them again.
+          {t("entryList.quizTextHidden")}
         </p>
       )}
 
@@ -356,9 +372,9 @@ export default function EntryList({
                             ? theme.textMutedClass
                             : theme.textPrimaryClass
                         }`}
-                        aria-label={`Entry ${
-                          index + 1
-                        }`}
+                        aria-label={t("entryList.entryLabel", {
+                          number: index + 1,
+                        })}
                       />
                     )}
 
@@ -366,18 +382,16 @@ export default function EntryList({
                       <span
                         className={`text-[10px] font-medium ${theme.textMutedClass}`}
                       >
-                        {labelLength}{" "}
-                        {labelLength ===
-                        1
-                          ? "character"
-                          : "characters"}
+                        {t("entryList.characters", {
+                          count: labelLength,
+                        })}
                       </span>
 
                       {entry.hidden && (
                         <span
                           className={`text-[10px] font-semibold uppercase tracking-wide ${theme.textMutedClass}`}
                         >
-                          Hidden
+                          {t("entryList.hidden")}
                         </span>
                       )}
                     </div>
@@ -393,8 +407,12 @@ export default function EntryList({
                       }
                       aria-label={
                         entry.hidden
-                          ? `Show ${entry.label}`
-                          : `Hide ${entry.label}`
+                          ? t("entryList.showNamed", {
+                              name: entry.label,
+                            })
+                          : t("entryList.hideNamed", {
+                              name: entry.label,
+                            })
                       }
                       aria-pressed={
                         !entry.hidden
@@ -404,8 +422,8 @@ export default function EntryList({
                       }
                       title={
                         entry.hidden
-                          ? "Show entry"
-                          : "Hide entry"
+                          ? t("entryList.showTitle")
+                          : t("entryList.hideTitle")
                       }
                       className={`flex h-8 w-8 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.textMutedClass} ${theme.controlHoverClass}`}
                     >
@@ -498,11 +516,13 @@ export default function EntryList({
                         )
                       }
                       className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-red-200 transition not-disabled:hover:bg-red-950/40 not-disabled:hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-30`}
-                      aria-label={`Delete ${entry.label}`}
+                      aria-label={t("entryList.deleteNamed", {
+                        name: entry.label,
+                      })}
                       title={
                         deletionsDisabled
                           ? deleteLockedTitle
-                          : "Delete entry"
+                          : t("entryList.deleteTitle")
                       }
                     >
                       ×
@@ -516,7 +536,7 @@ export default function EntryList({
                   <span
                     className={`text-[10px] font-semibold uppercase tracking-wide ${theme.textMutedClass}`}
                   >
-                    Slice weight
+                    {t("entryList.sliceWeight")}
                   </span>
 
                   <div
@@ -534,7 +554,7 @@ export default function EntryList({
                         rowDisabled ||
                         weight <= 1
                       }
-                      aria-label="Decrease slice weight"
+                      aria-label={t("entryList.decreaseWeight")}
                       className={`flex h-7 w-8 items-center justify-center text-sm font-bold transition ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-35`}
                     >
                       −
@@ -557,7 +577,7 @@ export default function EntryList({
                       disabled={
                         rowDisabled
                       }
-                      aria-label="Increase slice weight"
+                      aria-label={t("entryList.increaseWeight")}
                       className={`flex h-7 w-8 items-center justify-center text-sm font-bold transition ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-35`}
                     >
                       +
@@ -570,7 +590,7 @@ export default function EntryList({
                     id={lockNoteId}
                     className={`mt-2 text-xs leading-4 ${theme.textMutedClass}`}
                   >
-                    Locked while this result is showing.
+                    {t("entryList.locked")}
                   </p>
                 )}
 
@@ -598,7 +618,7 @@ export default function EntryList({
                           },
                         )
                       }
-                      placeholder="Question"
+                      placeholder={t("entryList.questionPlaceholder")}
                       rows={3}
                       disabled={
                         disabled
@@ -617,11 +637,9 @@ export default function EntryList({
                       <span
                         className={`text-[10px] font-medium ${theme.textMutedClass}`}
                       >
-                        {questionLength}{" "}
-                        {questionLength ===
-                        1
-                          ? "character"
-                          : "characters"}
+                        {t("entryList.characters", {
+                          count: questionLength,
+                        })}
                       </span>
                     </div>
 
@@ -643,7 +661,7 @@ export default function EntryList({
                           },
                         )
                       }
-                      placeholder="Answer"
+                      placeholder={t("entryList.answerPlaceholder")}
                       rows={3}
                       disabled={
                         disabled
@@ -662,11 +680,9 @@ export default function EntryList({
                       <span
                         className={`text-[10px] font-medium ${theme.textMutedClass}`}
                       >
-                        {answerLength}{" "}
-                        {answerLength ===
-                        1
-                          ? "character"
-                          : "characters"}
+                        {t("entryList.characters", {
+                          count: answerLength,
+                        })}
                       </span>
                     </div>
                   </div>

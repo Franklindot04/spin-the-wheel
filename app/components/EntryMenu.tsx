@@ -11,6 +11,12 @@ import type {
   WheelEntry,
 } from "../lib/wheel-types";
 import { useT } from "../lib/i18n/provider";
+import type { PlainMessageKey } from "../lib/i18n/messages";
+import {
+  MAX_AUDIO_SIZE,
+  MAX_IMAGE_SIZE,
+  formatFileSize,
+} from "../lib/media-limits";
 import {
   EMOJI_GROUPS,
   EMOJI_OPTIONS,
@@ -51,45 +57,44 @@ type EntryMenuProps = {
   theme: AppearanceThemeConfig;
 };
 
-const MAX_IMAGE_SIZE =
-  1 * 1024 * 1024;
 
-const MAX_AUDIO_SIZE =
-  2 * 1024 * 1024;
 
 const MAX_IMAGE_DIMENSION = 512;
 
 const IMAGE_JPEG_QUALITY = 0.85;
 
-const FONT_OPTIONS = [
+const FONT_OPTIONS: Array<{
+  labelKey: PlainMessageKey;
+  value: string;
+}> = [
   {
-    label: "Arial",
+    labelKey: "entryMenu.font.arial",
     value:
       "Arial, Helvetica, sans-serif",
   },
   {
-    label: "Georgia",
+    labelKey: "entryMenu.font.georgia",
     value:
       "Georgia, 'Times New Roman', serif",
   },
   {
-    label: "Verdana",
+    labelKey: "entryMenu.font.verdana",
     value:
       "Verdana, Geneva, sans-serif",
   },
   {
-    label: "Trebuchet MS",
+    labelKey: "entryMenu.font.trebuchet",
     value:
       "'Trebuchet MS', Arial, sans-serif",
   },
   {
-    label: "Courier New",
+    labelKey: "entryMenu.font.courier",
     value:
       "'Courier New', Courier, monospace",
   },
 ];
 
-function getUnlistedFontLabel(
+function getUnlistedFontName(
   fontFamily: string,
 ): string {
   const name = fontFamily
@@ -97,26 +102,7 @@ function getUnlistedFontLabel(
     .trim()
     .replace(/^['"]|['"]$/g, "");
 
-  return `${name || fontFamily} (not available)`;
-}
-
-function formatFileSize(
-  bytes: number,
-): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-
-  if (bytes < 1024 * 1024) {
-    return `${(
-      bytes / 1024
-    ).toFixed(1)} KB`;
-  }
-
-  return `${(
-    bytes /
-    (1024 * 1024)
-  ).toFixed(1)} MB`;
+  return name || fontFamily;
 }
 
 function readFileAsDataUrl(
@@ -611,9 +597,12 @@ function EmojiPicker({
   const currentEmojiName =
     currentOption
       ? currentTone > 0
-        ? `${t(currentOption.nameKey)}, ${t(
-            EMOJI_TONES[currentTone].nameKey,
-          ).toLowerCase()} skin tone`
+        ? t("emoji.nameWithTone", {
+            name: t(currentOption.nameKey),
+            tone: t(
+              EMOJI_TONES[currentTone].inlineKey,
+            ),
+          })
         : t(currentOption.nameKey)
       : entry.emoji;
 
@@ -630,11 +619,13 @@ function EmojiPicker({
         }
         aria-expanded={expanded}
         aria-controls={panelId}
-        aria-label={`Emoji: ${
+        aria-label={
           entry.emoji
-            ? currentEmojiName
-            : "none"
-        }`}
+            ? t("entryMenu.emojiSummary", {
+                name: currentEmojiName ?? "",
+              })
+            : t("entryMenu.emojiSummaryNone")
+        }
         className={`flex w-full items-center gap-3 rounded-lg text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${theme.textSecondaryClass}`}
       >
         <span className="shrink-0">
@@ -642,7 +633,7 @@ function EmojiPicker({
         </span>
 
         <span className="min-w-0 flex-1 text-xs font-medium">
-          Emoji
+          {t("entryMenu.emoji")}
         </span>
 
         {entry.emoji ? (
@@ -657,7 +648,7 @@ function EmojiPicker({
           <span
             className={`text-[11px] font-medium ${theme.textMutedClass}`}
           >
-            None
+            {t("entryMenu.emojiNone")}
           </span>
         )}
 
@@ -684,7 +675,7 @@ function EmojiPicker({
           id={panelId}
           className={`mt-2 text-[11px] leading-4 ${theme.textMutedClass}`}
         >
-          Locked while the quiz runs. Back to Setup to change it.
+          {t("entryMenu.emojiLocked")}
         </p>
       )}
 
@@ -702,7 +693,7 @@ function EmojiPicker({
             })
           }
           disabled={disabled}
-          aria-label="No emoji"
+          aria-label={t("entryMenu.noEmojiLabel")}
           className="peer sr-only"
         />
 
@@ -710,19 +701,19 @@ function EmojiPicker({
           aria-hidden="true"
           className={`flex cursor-pointer items-center rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${theme.subtleSurfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} peer-checked:ring-2 peer-checked:ring-current peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current peer-disabled:cursor-not-allowed peer-disabled:opacity-40`}
         >
-          None
+          {t("entryMenu.emojiNone")}
         </span>
       </label>
 
       <div
         role="group"
-        aria-label="Emoji skin tone"
+        aria-label={t("entryMenu.skinToneGroup")}
         className="mt-2 flex items-center gap-2"
       >
         <span
           className={`mr-auto text-[10px] ${theme.textMutedClass}`}
         >
-          Skin tone
+          {t("entryMenu.skinTone")}
         </span>
 
         {EMOJI_TONES.map(
@@ -740,7 +731,9 @@ function EmojiPicker({
                   setTone(index)
                 }
                 disabled={disabled}
-                aria-label={`${t(item.nameKey)} skin tone`}
+                aria-label={t("emoji.toneLabel", {
+                  tone: t(item.nameKey),
+                })}
                 className="peer sr-only"
               />
 
@@ -780,9 +773,12 @@ function EmojiPicker({
                 const name =
                   option.toneCapable &&
                   tone > 0
-                    ? `${t(option.nameKey)}, ${t(
-                        EMOJI_TONES[tone].nameKey,
-                      ).toLowerCase()} skin tone`
+                    ? t("emoji.nameWithTone", {
+                        name: t(option.nameKey),
+                        tone: t(
+                          EMOJI_TONES[tone].inlineKey,
+                        ),
+                      })
                     : t(option.nameKey);
 
                 return (
@@ -850,6 +846,8 @@ export default function EntryMenu({
   accentHoverClass,
   theme,
 }: EntryMenuProps) {
+  const t = useT();
+
   const menuRef =
     useRef<HTMLDivElement>(null);
 
@@ -1035,7 +1033,7 @@ export default function EntryMenu({
       )
     ) {
       setMediaError(
-        "Please select an image file.",
+        t("entryMenu.error.notImage"),
       );
       return;
     }
@@ -1052,9 +1050,9 @@ export default function EntryMenu({
         await decodeImage(file);
     } catch {
       setMediaError(
-        `Could not read this image (${formatFileSize(
-          file.size,
-        )}).`,
+        t("entryMenu.error.imageUnreadable", {
+          size: formatFileSize(t, file.size),
+        }),
       );
       return;
     }
@@ -1076,9 +1074,9 @@ export default function EntryMenu({
       }
     } catch {
       setMediaError(
-        `Could not read this image (${formatFileSize(
-          file.size,
-        )}).`,
+        t("entryMenu.error.imageUnreadable", {
+          size: formatFileSize(t, file.size),
+        }),
       );
       return;
     } finally {
@@ -1091,16 +1089,20 @@ export default function EntryMenu({
     ) {
       // Rounded up to 0.1 MB so a size just over the limit never shows as the limit.
       setMediaError(
-        `Image is ${formatFileSize(
-          Math.ceil(
-            imageBlob.size /
-              (MAX_IMAGE_SIZE /
-                10),
-          ) *
-            (MAX_IMAGE_SIZE / 10),
-        )} and still over the ${formatFileSize(
-          MAX_IMAGE_SIZE,
-        )} limit after resizing.`,
+        t("entryMenu.error.imageTooBig", {
+          size: formatFileSize(
+            t,
+            Math.ceil(
+              imageBlob.size /
+                (MAX_IMAGE_SIZE / 10),
+            ) *
+              (MAX_IMAGE_SIZE / 10),
+          ),
+          limit: formatFileSize(
+            t,
+            MAX_IMAGE_SIZE,
+          ),
+        }),
       );
       return;
     }
@@ -1119,12 +1121,12 @@ export default function EntryMenu({
 
       if (isGif) {
         setMediaNote(
-          "Only the first frame of the GIF is used.",
+          t("entryMenu.gifNote"),
         );
       }
     } catch {
       setMediaError(
-        "The image could not be loaded.",
+        t("entryMenu.error.imageLoad"),
       );
     }
   }
@@ -1150,7 +1152,7 @@ export default function EntryMenu({
       )
     ) {
       setMediaError(
-        "Please select an audio file.",
+        t("entryMenu.error.notAudio"),
       );
       return;
     }
@@ -1160,9 +1162,12 @@ export default function EntryMenu({
       MAX_AUDIO_SIZE
     ) {
       setMediaError(
-        `Audio must be ${formatFileSize(
-          MAX_AUDIO_SIZE,
-        )} or smaller.`,
+        t("entryMenu.error.audioTooBig", {
+          size: formatFileSize(
+            t,
+            MAX_AUDIO_SIZE,
+          ),
+        }),
       );
       return;
     }
@@ -1180,7 +1185,7 @@ export default function EntryMenu({
       setMediaError(null);
     } catch {
       setMediaError(
-        "The audio file could not be loaded.",
+        t("entryMenu.error.audioLoad"),
       );
     }
   }
@@ -1256,13 +1261,16 @@ export default function EntryMenu({
           onToggle();
         }}
         disabled={spinning}
-        aria-label={`Customize ${
-          entry.label ||
-          "entry"
-        }`}
+        aria-label={
+          entry.label
+            ? t("entryMenu.customizeNamed", {
+                name: entry.label,
+              })
+            : t("entryMenu.customizeUnnamed")
+        }
         aria-expanded={open}
         aria-haspopup="menu"
-        title="Customize entry"
+        title={t("entryMenu.customizeTitle")}
         className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${theme.textMutedClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}
       >
         <span
@@ -1276,10 +1284,13 @@ export default function EntryMenu({
       {open && (
         <div
           role="menu"
-          aria-label={`Customize ${
-            entry.label ||
-            "entry"
-          }`}
+          aria-label={
+          entry.label
+            ? t("entryMenu.customizeNamed", {
+                name: entry.label,
+              })
+            : t("entryMenu.customizeUnnamed")
+        }
           className={`absolute right-0 top-10 z-50 w-72 max-w-[calc(100vw-6.5rem)] overflow-hidden rounded-xl border ${theme.borderClass} ${theme.surfaceClass} shadow-xl ring-1 ring-white/10`}
         >
           <div
@@ -1289,20 +1300,20 @@ export default function EntryMenu({
               className={`truncate text-xs font-bold ${theme.textPrimaryClass}`}
             >
               {entry.label ||
-                "Untitled entry"}
+                t("entryMenu.untitled")}
             </p>
 
             <p
               className={`mt-0.5 text-[10px] ${theme.textMutedClass}`}
             >
-              Entry customization
+              {t("entryMenu.subtitle")}
             </p>
           </div>
 
           <div className="py-1">
             <MenuRow
               icon="color"
-              label="Slice color"
+              label={t("entryMenu.sliceColor")}
               theme={theme}
             >
               <label
@@ -1348,7 +1359,7 @@ export default function EntryMenu({
 
             <MenuRow
               icon="text"
-              label="Text color"
+              label={t("entryMenu.textColor")}
               theme={theme}
             >
               <label
@@ -1396,7 +1407,7 @@ export default function EntryMenu({
 
             <MenuRow
               icon="font"
-              label="Font"
+              label={t("entryMenu.font")}
               theme={theme}
             >
               <select
@@ -1434,9 +1445,11 @@ export default function EntryMenu({
                     }
                     disabled
                   >
-                    {getUnlistedFontLabel(
-                      entry.fontFamily,
-                    )}
+                    {t("entryMenu.fontUnavailable", {
+                      name: getUnlistedFontName(
+                        entry.fontFamily,
+                      ),
+                    })}
                   </option>
                 ) : null}
 
@@ -1448,7 +1461,7 @@ export default function EntryMenu({
                         font.value
                       }
                     >
-                      {font.label}
+                      {t(font.labelKey)}
                     </option>
                   ),
                 )}
@@ -1483,16 +1496,18 @@ export default function EntryMenu({
                   <p
                     className={`text-xs font-medium ${theme.textSecondaryClass}`}
                   >
-                    Image
+                    {t("entryMenu.image")}
                   </p>
 
                   <p
                     className={`mt-0.5 text-[10px] ${theme.textMutedClass}`}
                   >
-                    Max{" "}
-                    {formatFileSize(
-                      MAX_IMAGE_SIZE,
-                    )}
+                    {t("entryMenu.max", {
+                      size: formatFileSize(
+                        t,
+                        MAX_IMAGE_SIZE,
+                      ),
+                    })}
                   </p>
                 </div>
 
@@ -1508,7 +1523,7 @@ export default function EntryMenu({
                       }
                       className={`rounded-lg ${theme.subtleSurfaceClass} px-2 py-1.5 text-[10px] font-semibold ${theme.textSecondaryClass} transition ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}
                     >
-                      Replace
+                      {t("entryMenu.replace")}
                     </button>
 
                     <button
@@ -1519,10 +1534,10 @@ export default function EntryMenu({
                       disabled={
                         spinning
                       }
-                      aria-label="Remove image"
+                      aria-label={t("entryMenu.removeImageLabel")}
                       className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-200 transition not-disabled:hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      Remove
+                      {t("entryMenu.remove")}
                     </button>
                   </div>
                 ) : (
@@ -1534,7 +1549,7 @@ export default function EntryMenu({
                     disabled={spinning}
                     className={`rounded-lg ${theme.subtleSurfaceClass} px-2.5 py-1.5 text-[10px] font-semibold ${theme.textSecondaryClass} transition ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}
                   >
-                    Add
+                    {t("entryMenu.add")}
                   </button>
                 )}
               </div>
@@ -1551,7 +1566,7 @@ export default function EntryMenu({
                   />
 
                   <span className="text-[10px] font-medium text-emerald-200">
-                    Image attached
+                    {t("entryMenu.imageAttached")}
                   </span>
                 </div>
               )}
@@ -1571,16 +1586,18 @@ export default function EntryMenu({
                   <p
                     className={`text-xs font-medium ${theme.textSecondaryClass}`}
                   >
-                    Winner sound
+                    {t("entryMenu.winnerSound")}
                   </p>
 
                   <p
                     className={`mt-0.5 text-[10px] ${theme.textMutedClass}`}
                   >
-                    Max{" "}
-                    {formatFileSize(
-                      MAX_AUDIO_SIZE,
-                    )}
+                    {t("entryMenu.max", {
+                      size: formatFileSize(
+                        t,
+                        MAX_AUDIO_SIZE,
+                      ),
+                    })}
                   </p>
                 </div>
 
@@ -1596,7 +1613,7 @@ export default function EntryMenu({
                       }
                       className={`rounded-lg ${theme.subtleSurfaceClass} px-2 py-1.5 text-[10px] font-semibold ${theme.textSecondaryClass} transition ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}
                     >
-                      Replace
+                      {t("entryMenu.replace")}
                     </button>
 
                     <button
@@ -1607,10 +1624,10 @@ export default function EntryMenu({
                       disabled={
                         spinning
                       }
-                      aria-label="Remove winner sound"
+                      aria-label={t("entryMenu.removeSoundLabel")}
                       className="rounded-lg px-2 py-1.5 text-[10px] font-semibold text-red-200 transition not-disabled:hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      Remove
+                      {t("entryMenu.remove")}
                     </button>
                   </div>
                 ) : (
@@ -1622,7 +1639,7 @@ export default function EntryMenu({
                     disabled={spinning}
                     className={`rounded-lg ${theme.subtleSurfaceClass} px-2.5 py-1.5 text-[10px] font-semibold ${theme.textSecondaryClass} transition ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}
                   >
-                    Add
+                    {t("entryMenu.add")}
                   </button>
                 )}
               </div>
@@ -1641,7 +1658,7 @@ export default function EntryMenu({
                   />
 
                   <span className="shrink-0 text-[10px] font-medium text-emerald-200">
-                    Audio attached
+                    {t("entryMenu.audioAttached")}
                   </span>
                 </div>
               )}
@@ -1683,16 +1700,22 @@ export default function EntryMenu({
               title={
                 duplicateDisabled
                   ? duplicateDisabledTitle ??
-                    "Back to Setup to duplicate questions"
+                    t("entryMenu.duplicateLockedTitle")
                   : undefined
               }
-              aria-label={`Duplicate entry ${entry.label}`.trim()}
+              aria-label={
+                entry.label.trim()
+                  ? t("entryMenu.duplicateNamed", {
+                      name: entry.label,
+                    }).trim()
+                  : t("entryMenu.duplicate")
+              }
               className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-medium ${theme.textSecondaryClass} transition ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}
             >
               <MenuIcon type="duplicate" />
 
               <span className="flex-1">
-                Duplicate entry
+                {t("entryMenu.duplicate")}
               </span>
             </button>
 
@@ -1706,16 +1729,22 @@ export default function EntryMenu({
               title={
                 deleteDisabled
                   ? deleteDisabledTitle ??
-                    "Keep at least 2 visible entries"
+                    t("entryMenu.deleteKeepTitle")
                   : undefined
               }
-              aria-label={`Delete entry ${entry.label}`.trim()}
+              aria-label={
+                entry.label.trim()
+                  ? t("entryMenu.deleteNamed", {
+                      name: entry.label,
+                    }).trim()
+                  : t("entryMenu.delete")
+              }
               className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-medium text-red-300 transition not-disabled:hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <MenuIcon type="delete" />
 
               <span className="flex-1">
-                Delete entry
+                {t("entryMenu.delete")}
               </span>
             </button>
           </div>
@@ -1728,7 +1757,7 @@ export default function EntryMenu({
               onClick={onClose}
               className={`w-full rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${accentClass} ${accentHoverClass}`}
             >
-              Done
+              {t("entryMenu.done")}
             </button>
           </div>
         </div>

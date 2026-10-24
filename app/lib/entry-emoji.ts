@@ -102,6 +102,8 @@ export const EMOJI_OPTIONS: EmojiOption[] =
 
 export type EmojiTone = {
   nameKey: PlainMessageKey;
+  /* The form used inside a sentence, as its own message. */
+  inlineKey: PlainMessageKey;
   modifier: string;
 };
 
@@ -109,12 +111,36 @@ export type EmojiTone = {
  * Index 0 is the default (no modifier).
  */
 export const EMOJI_TONES: EmojiTone[] = [
-  { nameKey: "emoji.tone.default", modifier: "" },
-  { nameKey: "emoji.tone.light", modifier: "\u{1F3FB}" },
-  { nameKey: "emoji.tone.mediumLight", modifier: "\u{1F3FC}" },
-  { nameKey: "emoji.tone.medium", modifier: "\u{1F3FD}" },
-  { nameKey: "emoji.tone.mediumDark", modifier: "\u{1F3FE}" },
-  { nameKey: "emoji.tone.dark", modifier: "\u{1F3FF}" },
+  {
+    nameKey: "emoji.tone.default",
+    inlineKey: "emoji.toneInline.default",
+    modifier: "",
+  },
+  {
+    nameKey: "emoji.tone.light",
+    inlineKey: "emoji.toneInline.light",
+    modifier: "\u{1F3FB}",
+  },
+  {
+    nameKey: "emoji.tone.mediumLight",
+    inlineKey: "emoji.toneInline.mediumLight",
+    modifier: "\u{1F3FC}",
+  },
+  {
+    nameKey: "emoji.tone.medium",
+    inlineKey: "emoji.toneInline.medium",
+    modifier: "\u{1F3FD}",
+  },
+  {
+    nameKey: "emoji.tone.mediumDark",
+    inlineKey: "emoji.toneInline.mediumDark",
+    modifier: "\u{1F3FE}",
+  },
+  {
+    nameKey: "emoji.tone.dark",
+    inlineKey: "emoji.toneInline.dark",
+    modifier: "\u{1F3FF}",
+  },
 ];
 
 const TONE_MODIFIER_PATTERN =

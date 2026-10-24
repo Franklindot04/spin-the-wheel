@@ -1,11 +1,22 @@
+import type { en } from "./i18n/en";
 import type { PlainMessageKey } from "./i18n/messages";
+import type { Translator } from "./i18n/typed";
+import {
+  MAX_AUDIO_SIZE,
+  MAX_IMAGE_SIZE,
+  formatFileSize,
+} from "./media-limits";
+
+const SIZED_ANSWER = "faq.item.image-sound.answer";
 
 /*
  * The questions and answers of the FAQ dialog. The words are in
  * the i18n dictionary (faq.item.<id>.question and .answer, and
  * faq.title, faq.close and faq.feedback), so this list holds
  * only the ids, the keys and the actions. Ids stay the same in
- * every language.
+ * every language. The answer about images and sounds has the two
+ * size limits as values; buildFaqItems fills them in from
+ * media-limits.ts.
  *
  * An item with action "feedback" gets a button after its answer
  * that opens the feedback form.
@@ -13,9 +24,10 @@ import type { PlainMessageKey } from "./i18n/messages";
 export type FaqSource = {
   id: string;
   question: PlainMessageKey;
-  answer: PlainMessageKey;
+  answer: PlainMessageKey | typeof SIZED_ANSWER;
   action?: "feedback";
 };
+
 
 /* An item with its words filled in, which is what the dialog shows. */
 export type FaqItem = {
@@ -74,7 +86,7 @@ export const FAQ_ITEMS: FaqSource[] = [
   {
     id: "image-sound",
     question: "faq.item.image-sound.question",
-    answer: "faq.item.image-sound.answer",
+    answer: SIZED_ANSWER,
   },
   {
     id: "report-problem",
@@ -83,3 +95,29 @@ export const FAQ_ITEMS: FaqSource[] = [
     action: "feedback",
   },
 ];
+
+/* The items with their words in the current language. */
+export function buildFaqItems(
+  t: Translator<typeof en>,
+): FaqItem[] {
+  return FAQ_ITEMS.map((item) => ({
+    id: item.id,
+    question: t(item.question),
+    answer:
+      item.answer === SIZED_ANSWER
+        ? t(item.answer, {
+            imageSize: formatFileSize(
+              t,
+              MAX_IMAGE_SIZE,
+              0,
+            ),
+            soundSize: formatFileSize(
+              t,
+              MAX_AUDIO_SIZE,
+              0,
+            ),
+          })
+        : t(item.answer),
+    action: item.action,
+  }));
+}

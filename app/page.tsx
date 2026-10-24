@@ -7,7 +7,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
 import HowItWorksDialog from "./components/HowItWorksDialog";
 import TextDialog from "./components/TextDialog";
 import FaqDialog from "./components/FaqDialog";
-import { FAQ_ITEMS } from "./lib/faq";
+import { buildFaqItems } from "./lib/faq";
 import { useT } from "./lib/i18n/provider";
 import WheelChip from "./components/WheelChip";
 import MobileToolbar from "./components/MobileToolbar";
@@ -1992,7 +1992,7 @@ export default function Home() {
                 quizStarted} textLocked={quizTextLocked} disabled={spinning} lockedId={lockedEntryId} maxEntries={activeWheel.settings.maxEntries} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme}/>
               <div className="mt-4">
                 <button ref={entriesResetButtonRef} type="button" onClick={openResetEntries} disabled={spinning} className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
-                  Reset Entries
+                  {t("entryList.reset")}
                 </button>
               </div>
             </>)}
@@ -2190,7 +2190,7 @@ export default function Home() {
             }} onClose={closeTextDialog}/>)}
       {deleteWheelOpen && (<ConfirmDialog theme={theme} title={t("deleteWheel.title")} message={t("deleteWheel.message", { name: activeWheel.name })} confirmLabel={t("deleteWheel.confirm")} onConfirm={confirmDeleteWheel} onClose={closeDeleteWheel}/>)}
       {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={t("standardMode.help")} onClose={closeHowItWorks}/>)}
-      {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={t("faq.title")} closeLabel={t("faq.close")} feedbackLabel={t("faq.feedback")} items={FAQ_ITEMS.map((item) => ({ id: item.id, question: t(item.question), answer: t(item.answer), action: item.action }))} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
+      {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={t("faq.title")} closeLabel={t("faq.close")} feedbackLabel={t("faq.feedback")} items={buildFaqItems(t)} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
             }} onClose={closeFeedback} getReturnFocus={() => feedbackFromMenuRef.current ? menuButtonRef.current : feedbackRowRef.current}/>)}
