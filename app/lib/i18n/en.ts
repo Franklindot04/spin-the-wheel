@@ -504,6 +504,18 @@ export const en = {
   "feedback.retry": "Retry",
   "feedback.send": "Send",
 
+  "defaults.wheelTitle": "Spin the Wheel",
+  "defaults.wheelDescription": "Create a wheel for anything.",
+  "defaults.wheelName": "Wheel {number}",
+  "defaults.wheelNameFallback": "Wheel",
+  "defaults.option": "Option {number}",
+  "defaults.question": "Question {number}",
+  "defaults.copyName": "{name} Copy",
+
+  "meta.title": "Spin the Wheel",
+  "meta.description":
+    "Create and customize wheels for games, quizzes, decisions, and more.",
+
   "faq.item.add-options.question": "How do I add options?",
   "faq.item.add-options.answer":
     "Use + Add in the Entries list, then type a name. Press Spin when you are ready.",

@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { DICTIONARIES } from "./dictionaries";
+import { keepDocumentTitle } from "./document-meta";
 import { en } from "./en";
 import {
   getLanguageSnapshot,
@@ -72,8 +73,10 @@ export function LanguageProvider({
     getServerLanguageSnapshot,
   );
 
-  useEffect(() => {
+    useEffect(() => {
     setDocumentLanguage(getLanguageSnapshot());
+
+    return keepDocumentTitle(getLanguageSnapshot);
   }, []);
 
   const value = useMemo(

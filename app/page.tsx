@@ -8,7 +8,9 @@ import HowItWorksDialog from "./components/HowItWorksDialog";
 import TextDialog from "./components/TextDialog";
 import FaqDialog from "./components/FaqDialog";
 import { buildFaqItems } from "./lib/faq";
-import { useT } from "./lib/i18n/provider";
+import { getDefaultTexts } from "./lib/default-texts";
+import { getLanguageSnapshot } from "./lib/i18n/language-store";
+import { useLanguage, useT } from "./lib/i18n/provider";
 import WheelChip from "./components/WheelChip";
 import MobileToolbar from "./components/MobileToolbar";
 import MobileTopBar from "./components/MobileTopBar";
@@ -19,7 +21,7 @@ import type { AppData, Mode, SpinHistoryItem, Wheel, } from "./lib/wheel-types";
 import { APPEARANCE_THEMES, THEME_STORAGE_KEY, } from "./lib/appearance-themes";
 import { EMPTY_FEEDBACK_DRAFT, type FeedbackDraft, } from "./lib/feedback-client";
 import { panelSettingsToWheelSettings, wheelSettingsToPanelSettings, } from "./lib/settings-adapter";
-import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_WHEEL_DESCRIPTION, DEFAULT_WHEEL_TITLE, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, DEFAULT_CONFETTI_ENABLED, DEFAULT_CONFETTI_EFFECT, } from "./lib/wheel-defaults";
+import { createEntry, createInitialAppData, createInitialEntries, createInitialQuizEntries, createWheel, createDefaultWheelSettings, DEFAULT_SPIN_DURATION, MAX_HISTORY_ITEMS, DEFAULT_SPIN_SPEED, MAX_SPIN_DURATION, MIN_SPIN_DURATION, DEFAULT_SOUND_ENABLED, DEFAULT_VOLUME, DEFAULT_CONFETTI_ENABLED, DEFAULT_CONFETTI_EFFECT, } from "./lib/wheel-defaults";
 import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/sound-engine";
 import { DEFAULT_WINNER_SOUND } from "./lib/sound-options";
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, countStoredCharacters, getStorageFullPercent, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
@@ -48,9 +50,26 @@ const QUIZ_LOCKED_TEXT_KEYS: string[] = [
     "answer",
     "emoji",
 ];
+/*
+ * The words written into saved data when something is made: a new
+ * wheel, entry or copy, or the defaults after Restore defaults.
+ * They are written in the language at that moment and never
+ * changed afterwards. This reads the language store, so it is
+ * called only from effects and event handlers, which run in the
+ * browser, and always reads the language afresh instead of using
+ * the one a render closed over. The first state below is made on
+ * the server too, so it is plain English and is replaced after
+ * the language is known.
+ */
+function creationTexts() {
+    return getDefaultTexts(getLanguageSnapshot());
+}
 export default function Home() {
     const t = useT();
-    const [appData, setAppData] = useState<AppData>(createInitialAppData);
+    const { language } = useLanguage();
+    /* For what is drawn: the hint and the fallback of an empty title. */
+    const shownDefaults = getDefaultTexts(language);
+    const [appData, setAppData] = useState<AppData>(() => createInitialAppData(getDefaultTexts()));
     const [mode, setMode] = useState<Mode>("standard");
     const activeWheel = appData.wheels.find((wheel) => wheel.id ===
         appData.activeWheelId) ??
@@ -133,7 +152,9 @@ export default function Home() {
     const saveAlertRef = useRef<HTMLDivElement>(null);
     const [pendingImport, setPendingImport,] = useState<AppData | null>(null);
     const [storageLoaded, setStorageLoaded,] = useState(false);
-    const hasLoadedStorage = useRef(false);
+        const hasLoadedStorage = useRef(false);
+    /* The defaults made at load time, which are saved only after the first change. */
+    const pristineAppDataRef = useRef<AppData | null>(null);
     const mirroredThemeRef = useRef<string | null>(null);
     const spinTimerRef = useRef<number | null>(null);
     useEffect(() => {
@@ -220,7 +241,7 @@ export default function Home() {
             return;
         }
         stopConfetti();
-        const wheel = createWheel(appData.wheels.length + 1);
+        const wheel = createWheel(creationTexts(), appData.wheels.length + 1);
         setAppData((current) => ({
             ...current,
             wheels: [
@@ -342,9 +363,9 @@ export default function Home() {
             label: t("textDialog.title.label"),
             current: activeWheel.title,
             multiline: false,
-            hint: t("textDialog.title.hint", { default: DEFAULT_WHEEL_TITLE }),
+            hint: t("textDialog.title.hint", { default: shownDefaults.wheelTitle }),
             apply: (text) => {
-                const next = text || DEFAULT_WHEEL_TITLE;
+                const next = text || creationTexts().wheelTitle;
                 if (next !== activeWheel.title) {
                     updateActiveWheel({ title: next });
                 }
@@ -355,9 +376,9 @@ export default function Home() {
             label: t("textDialog.description.label"),
             current: activeWheel.description,
             multiline: true,
-            hint: t("textDialog.description.hint", { default: DEFAULT_WHEEL_DESCRIPTION }),
+            hint: t("textDialog.description.hint", { default: shownDefaults.wheelDescription }),
             apply: (text) => {
-                const next = text || DEFAULT_WHEEL_DESCRIPTION;
+                const next = text || creationTexts().wheelDescription;
                 if (next !== activeWheel.description) {
                     updateActiveWheel({ description: next });
                 }
@@ -484,9 +505,18 @@ export default function Home() {
     useEffect(() => {
         const loadStoredData = () => {
             try {
-                const loaded = loadStoredAppData();
+                                const texts = creationTexts();
+                const loaded = loadStoredAppData(texts);
                 if (loaded.data) {
                     setAppData(loaded.data);
+                }
+                else {
+                    // Nothing could be read (a first visit, or unreadable data): start
+                    // from defaults in the language now, and do not save them until
+                    // something is changed.
+                    const fresh = createInitialAppData(texts);
+                    pristineAppDataRef.current = fresh;
+                    setAppData(fresh);
                 }
                 setStoredDataNotice(loaded.notice);
                 lastSeenStorageRef.current = window.localStorage.getItem(STORAGE_KEY);
@@ -523,8 +553,9 @@ export default function Home() {
         };
     }, []);
     useEffect(() => {
-        if (!hasLoadedStorage.current ||
-            storageStaleRef.current) {
+                if (!hasLoadedStorage.current ||
+            storageStaleRef.current ||
+            appData === pristineAppDataRef.current) {
             return;
         }
         let failed = false;
@@ -832,9 +863,10 @@ export default function Home() {
             return;
         }
         const nextNumber = entries.length + 1;
+        const texts = creationTexts();
         const newEntry: WheelEntry = createEntry(crypto.randomUUID(), mode === "quiz"
-            ? `Question ${nextNumber}`
-            : `Option ${nextNumber}`, entries.length);
+            ? texts.questionName(nextNumber)
+            : texts.optionName(nextNumber), entries.length);
         if (mode === "standard") {
             setStandardEntries((current) => [
                 ...current,
@@ -907,7 +939,7 @@ export default function Home() {
         const duplicate: WheelEntry = {
             ...source,
             id: crypto.randomUUID(),
-            label: `${source.label} Copy`,
+            label: creationTexts().copyName(source.label),
             hidden: false,
             hiddenByHideAll: undefined,
         };
@@ -1251,11 +1283,12 @@ export default function Home() {
             return;
         }
         stopConfetti();
+        const texts = creationTexts();
         updateActiveWheel({
-            standardEntries: createInitialEntries(),
-            quizEntries: createInitialQuizEntries(),
-            title: DEFAULT_WHEEL_TITLE,
-            description: DEFAULT_WHEEL_DESCRIPTION,
+            standardEntries: createInitialEntries(texts),
+            quizEntries: createInitialQuizEntries(texts),
+            title: texts.wheelTitle,
+            description: texts.wheelDescription,
             settings: createDefaultWheelSettings(),
             standardHistory: [],
             quizHistory: [],
@@ -1280,10 +1313,10 @@ export default function Home() {
         }
         stopConfetti();
         if (mode === "standard") {
-            setStandardEntries(createInitialEntries());
+            setStandardEntries(createInitialEntries(creationTexts()));
         }
         else {
-            setQuizEntries(createInitialQuizEntries());
+            setQuizEntries(createInitialQuizEntries(creationTexts()));
         }
         setAskedQuizIds([]);
         setQuizStarted(false);
@@ -1524,13 +1557,13 @@ export default function Home() {
         }
         setImportError("");
         if (file.size > MAX_IMPORT_FILE_SIZE) {
-            setImportError(t("import.tooLarge", { size: formatFileSize(t, MAX_IMPORT_FILE_SIZE, 0) }));
+            setImportError(t("import.tooLarge", { size: formatFileSize(t, language, MAX_IMPORT_FILE_SIZE, 0) }));
             return;
         }
         file
             .text()
             .then((content) => {
-            setPendingImport(parseImportedData(content));
+            setPendingImport(parseImportedData(content, creationTexts()));
         })
             .catch((error: unknown) => {
             setImportError(error instanceof ImportError
@@ -1687,13 +1720,13 @@ export default function Home() {
             "--wheel-accent": theme.accentHex,
             "--wheel-accent-hover": theme.accentHoverHex,
         } as CSSProperties}>
-      <MobileTopBar title={wheelTitle.trim() || DEFAULT_WHEEL_TITLE} mode={mode} onModeChange={changeMode} spinning={spinning} theme={theme} accentClass={actionAccentClass} headerSurfaceClass={headerSurfaceClass} headerBorderClass={headerBorderClass} headerHoverClass={headerHoverClass} headerTextColor={headerTextColor} menuOpen={popover === "app"} onMenuToggle={() => togglePopover("app")} onMenuClose={closePopover} menuButtonRef={menuButtonRef} onEditTitle={editWheelTitle} onEditDescription={editWheelDescription} onHowItWorks={() => setHowOpen(true)} onFaq={openFaqFromMenu} onSendFeedback={openFeedbackFromMenu}/>
+      <MobileTopBar title={wheelTitle.trim() || shownDefaults.wheelTitle} mode={mode} onModeChange={changeMode} spinning={spinning} theme={theme} accentClass={actionAccentClass} headerSurfaceClass={headerSurfaceClass} headerBorderClass={headerBorderClass} headerHoverClass={headerHoverClass} headerTextColor={headerTextColor} menuOpen={popover === "app"} onMenuToggle={() => togglePopover("app")} onMenuClose={closePopover} menuButtonRef={menuButtonRef} onEditTitle={editWheelTitle} onEditDescription={editWheelDescription} onHowItWorks={() => setHowOpen(true)} onFaq={openFaqFromMenu} onSendFeedback={openFeedbackFromMenu}/>
       <header className={`hidden border-b md:block ${headerBorderClass} ${headerSurfaceClass}`}>
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="hidden min-w-0 md:block">
             <div className="flex items-center gap-2">
               <h1 className="truncate text-2xl font-extrabold tracking-tight" style={{ color: headerTextColor }}>
-                {wheelTitle.trim() || DEFAULT_WHEEL_TITLE}
+                {wheelTitle.trim() || shownDefaults.wheelTitle}
               </h1>
               <button type="button" onClick={editWheelTitle} disabled={spinning} aria-label={t("header.editTitleLabel")} title={t("menu.editTitle")} className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1704,7 +1737,7 @@ export default function Home() {
             </div>
             <div className="mt-1 flex items-center gap-1">
               <p className="truncate text-sm font-medium" style={{ color: headerMutedColor }}>
-                {wheelDescription.trim() || DEFAULT_WHEEL_DESCRIPTION}
+                {wheelDescription.trim() || shownDefaults.wheelDescription}
               </p>
               <button type="button" onClick={editWheelDescription} disabled={spinning} aria-label={t("header.editDescriptionLabel")} title={t("menu.editDescription")} className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -2036,7 +2069,7 @@ export default function Home() {
                               {item.label}
                             </span>
                             <span className={`shrink-0 text-xs ${theme.textMutedClass}`}>
-                              {formatHistoryTime(item.timestamp)}
+                              {formatHistoryTime(item.timestamp, language)}
                             </span>
                           </div>
                           {item.question &&
@@ -2178,7 +2211,7 @@ export default function Home() {
             }} onClose={closeTextDialog}/>)}
       {deleteWheelOpen && (<ConfirmDialog theme={theme} title={t("deleteWheel.title")} message={t("deleteWheel.message", { name: activeWheel.name })} confirmLabel={t("deleteWheel.confirm")} onConfirm={confirmDeleteWheel} onClose={closeDeleteWheel}/>)}
       {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={t("standardMode.help")} onClose={closeHowItWorks}/>)}
-      {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={t("faq.title")} closeLabel={t("faq.close")} feedbackLabel={t("faq.feedback")} items={buildFaqItems(t)} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
+      {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={t("faq.title")} closeLabel={t("faq.close")} feedbackLabel={t("faq.feedback")} items={buildFaqItems(t, language)} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
             }} onClose={closeFeedback} getReturnFocus={() => feedbackFromMenuRef.current ? menuButtonRef.current : feedbackRowRef.current}/>)}

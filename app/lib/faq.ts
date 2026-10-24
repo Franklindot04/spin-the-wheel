@@ -99,6 +99,7 @@ export const FAQ_ITEMS: FaqSource[] = [
 /* The items with their words in the current language. */
 export function buildFaqItems(
   t: Translator<typeof en>,
+  language: string,
 ): FaqItem[] {
   return FAQ_ITEMS.map((item) => ({
     id: item.id,
@@ -108,11 +109,13 @@ export function buildFaqItems(
         ? t(item.answer, {
             imageSize: formatFileSize(
               t,
+              language,
               MAX_IMAGE_SIZE,
               0,
             ),
             soundSize: formatFileSize(
               t,
+              language,
               MAX_AUDIO_SIZE,
               0,
             ),

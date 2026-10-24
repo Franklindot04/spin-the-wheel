@@ -10,7 +10,7 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
-import { useT } from "../lib/i18n/provider";
+import { useLanguage, useT } from "../lib/i18n/provider";
 import type { PlainMessageKey } from "../lib/i18n/messages";
 import {
   MAX_AUDIO_SIZE,
@@ -848,6 +848,8 @@ export default function EntryMenu({
 }: EntryMenuProps) {
   const t = useT();
 
+  const { language } = useLanguage();
+
   const menuRef =
     useRef<HTMLDivElement>(null);
 
@@ -1051,7 +1053,7 @@ export default function EntryMenu({
     } catch {
       setMediaError(
         t("entryMenu.error.imageUnreadable", {
-          size: formatFileSize(t, file.size),
+          size: formatFileSize(t, language, file.size),
         }),
       );
       return;
@@ -1075,7 +1077,7 @@ export default function EntryMenu({
     } catch {
       setMediaError(
         t("entryMenu.error.imageUnreadable", {
-          size: formatFileSize(t, file.size),
+          size: formatFileSize(t, language, file.size),
         }),
       );
       return;
@@ -1092,6 +1094,7 @@ export default function EntryMenu({
         t("entryMenu.error.imageTooBig", {
           size: formatFileSize(
             t,
+            language,
             Math.ceil(
               imageBlob.size /
                 (MAX_IMAGE_SIZE / 10),
@@ -1100,6 +1103,7 @@ export default function EntryMenu({
           ),
           limit: formatFileSize(
             t,
+            language,
             MAX_IMAGE_SIZE,
           ),
         }),
@@ -1165,6 +1169,7 @@ export default function EntryMenu({
         t("entryMenu.error.audioTooBig", {
           size: formatFileSize(
             t,
+            language,
             MAX_AUDIO_SIZE,
           ),
         }),
@@ -1505,6 +1510,7 @@ export default function EntryMenu({
                     {t("entryMenu.max", {
                       size: formatFileSize(
                         t,
+                        language,
                         MAX_IMAGE_SIZE,
                       ),
                     })}
@@ -1595,6 +1601,7 @@ export default function EntryMenu({
                     {t("entryMenu.max", {
                       size: formatFileSize(
                         t,
+                        language,
                         MAX_AUDIO_SIZE,
                       ),
                     })}

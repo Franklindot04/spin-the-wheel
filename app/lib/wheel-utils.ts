@@ -89,13 +89,64 @@ export function countGraphemes(
   return Array.from(text).length;
 }
 
+/*
+ * The locales to write a history time in: the device's own
+ * language when it has the same main language as the app (so
+ * es-MX keeps its region and its 12-hour clock under Spanish),
+ * then the app's language. A device in another language does
+ * not change the app's dates.
+ */
+export function historyLocales(
+  language: string,
+  deviceLanguages:
+    | readonly (string | null | undefined)[]
+    | null
+    | undefined,
+): string[] {
+  const main = (tag: string) =>
+    tag.trim().toLowerCase().split(/[-_]/)[0];
+
+  const same = (deviceLanguages ?? []).find(
+    (tag): tag is string =>
+      typeof tag === "string" &&
+      tag.trim() !== "" &&
+      main(tag) === main(language),
+  );
+
+  return same && same !== language
+    ? [same, language]
+    : [language];
+}
+
 export function formatHistoryTime(
   timestamp: number,
+  language: string,
 ): string {
-  return new Date(timestamp).toLocaleString([], {
+  const options = {
     dateStyle: "short",
     timeStyle: "short",
-  });
+  } as const;
+
+  const date = new Date(timestamp);
+
+  try {
+    return date.toLocaleString(
+      historyLocales(
+        language,
+        typeof navigator === "undefined"
+          ? []
+          : navigator.languages,
+      ),
+      options,
+    );
+  } catch {
+    // A tag the browser rejects: the app's language, then the device's.
+    try {
+      return date.toLocaleString(language, options);
+    } catch {
+      return date.toLocaleString([], options);
+    }
+  }
 }
 
 export function canDeleteEntry(

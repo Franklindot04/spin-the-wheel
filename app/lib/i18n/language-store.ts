@@ -1,3 +1,4 @@
+import { applyDocumentMeta } from "./document-meta";
 import {
   DEFAULT_LANGUAGE,
   LANGUAGE_STORAGE_KEY,
@@ -64,9 +65,11 @@ export function setDocumentLanguage(
     root.setAttribute("lang", language);
   }
 
-  if (root.getAttribute("data-lang") !== language) {
+    if (root.getAttribute("data-lang") !== language) {
     root.setAttribute("data-lang", language);
   }
+
+  applyDocumentMeta(language);
 }
 
 /*

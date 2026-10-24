@@ -3,9 +3,8 @@ import type {
   LegacyStoredData,
   Wheel,
 } from "./wheel-types";
+import type { DefaultTexts } from "./default-texts";
 import {
-  DEFAULT_WHEEL_DESCRIPTION,
-  DEFAULT_WHEEL_TITLE,
   createDefaultWheelSettings,
   LEGACY_WINNER_DISPLAY,
   normalizeEntries,
@@ -155,6 +154,7 @@ export function isAppData(
 
 export function migrateStoredData(
   value: unknown,
+  texts: DefaultTexts,
   report?: RepairReport,
 ): AppData | null {
   if (isAppData(value)) {
@@ -163,6 +163,7 @@ export function migrateStoredData(
     for (const item of value.wheels) {
       const wheel = normalizeWheel(
         item,
+        texts,
         report,
       );
 
@@ -201,15 +202,15 @@ export function migrateStoredData(
     const wheel: Wheel = {
       id: crypto.randomUUID(),
 
-      name: "Wheel 1",
+      name: texts.wheelName(1),
 
       title:
         value.wheelTitle.trim() ||
-        DEFAULT_WHEEL_TITLE,
+        texts.wheelTitle,
 
       description:
         value.wheelDescription.trim() ||
-        DEFAULT_WHEEL_DESCRIPTION,
+        texts.wheelDescription,
 
       standardEntries:
         normalizeEntries(
@@ -243,6 +244,7 @@ export function migrateStoredData(
 
     const normalized = normalizeWheel(
       wheel,
+      texts,
       report,
     );
 
@@ -328,7 +330,9 @@ function findKeptCopy(): StoredDataNotice | null {
   }
 }
 
-function loadLegacyData(): AppData | null {
+function loadLegacyData(
+  texts: DefaultTexts,
+): AppData | null {
   try {
     const savedV1 =
       window.localStorage.getItem(
@@ -341,13 +345,16 @@ function loadLegacyData(): AppData | null {
 
     return migrateStoredData(
       JSON.parse(savedV1),
+      texts,
     );
   } catch {
     return null;
   }
 }
 
-export function loadStoredAppData(): StoredDataLoad {
+export function loadStoredAppData(
+  texts: DefaultTexts,
+): StoredDataLoad {
   try {
     const savedV2 =
       window.localStorage.getItem(
@@ -364,6 +371,7 @@ export function loadStoredAppData(): StoredDataLoad {
       try {
         data = migrateStoredData(
           JSON.parse(savedV2),
+          texts,
           report,
         );
       } catch {
@@ -393,7 +401,7 @@ export function loadStoredAppData(): StoredDataLoad {
 
       const legacy = failed
         ? null
-        : loadLegacyData();
+        : loadLegacyData(texts);
 
       return {
         data: legacy,
@@ -406,7 +414,7 @@ export function loadStoredAppData(): StoredDataLoad {
       };
     }
 
-    const legacy = loadLegacyData();
+    const legacy = loadLegacyData(texts);
 
     return {
       data: legacy,
@@ -454,6 +462,7 @@ export class ImportError extends Error {
 
 export function parseImportedData(
   content: string,
+  texts: DefaultTexts,
 ): AppData {
   let parsed: unknown;
 
@@ -466,7 +475,7 @@ export function parseImportedData(
   }
 
   const imported =
-    migrateStoredData(parsed);
+    migrateStoredData(parsed, texts);
 
   if (!imported) {
     const version =
