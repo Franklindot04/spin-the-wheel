@@ -428,7 +428,29 @@ export function serializeAppData(
   );
 }
 
-export class ImportError extends Error {}
+/*
+ * What was wrong with an import. The words are in the i18n
+ * dictionary (import.error.*), so the error carries a key and
+ * its values, and the page turns it into text for the
+ * current language.
+ */
+export type ImportProblem =
+  | { key: "import.error.notJson" }
+  | {
+      key: "import.error.unsupportedVersion";
+      version: string;
+    }
+  | { key: "import.error.invalidFile" };
+
+export class ImportError extends Error {
+  readonly problem: ImportProblem;
+
+  constructor(problem: ImportProblem) {
+    super(problem.key);
+
+    this.problem = problem;
+  }
+}
 
 export function parseImportedData(
   content: string,
@@ -438,9 +460,9 @@ export function parseImportedData(
   try {
     parsed = JSON.parse(content);
   } catch {
-    throw new ImportError(
-      "This is not a JSON file. Choose a Spin the Wheel export.",
-    );
+    throw new ImportError({
+      key: "import.error.notJson",
+    });
   }
 
   const imported =
@@ -463,14 +485,15 @@ export function parseImportedData(
       version !== 1 &&
       version !== 2
     ) {
-      throw new ImportError(
-        `This export uses an unsupported version (${String(version).slice(0, 20)}). Only versions 1 and 2 can be imported.`,
-      );
+      throw new ImportError({
+        key: "import.error.unsupportedVersion",
+        version: String(version).slice(0, 20),
+      });
     }
 
-    throw new ImportError(
-      "This file is not a valid Spin the Wheel export.",
-    );
+    throw new ImportError({
+      key: "import.error.invalidFile",
+    });
   }
 
   return imported;

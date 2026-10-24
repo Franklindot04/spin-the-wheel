@@ -1,3 +1,5 @@
+import type { PlainMessageKey } from "./i18n/messages";
+
 export type Mode = "standard" | "quiz";
 
 export type AppearanceTheme =
@@ -8,8 +10,9 @@ export type AppearanceTheme =
   | "violet";
 
 export type AppearanceThemeConfig = {
-  label: string;
-  description: string;
+  /* Message keys (see i18n/en.ts), not words: the layout reads this file on the server. */
+  labelKey: PlainMessageKey;
+  descriptionKey: PlainMessageKey;
 
   // Main application background
   pageClass: string;

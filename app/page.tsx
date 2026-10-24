@@ -23,6 +23,7 @@ import { createEntry, createInitialAppData, createInitialEntries, createInitialQ
 import { playWinnerSound, prepareEntrySound, setSoundSettings } from "./lib/sound-engine";
 import { DEFAULT_WINNER_SOUND } from "./lib/sound-options";
 import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, countStoredCharacters, getStorageFullPercent, loadStoredAppData, parseImportedData, serializeAppData, } from "./lib/wheel-storage";
+import type { ImportProblem } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
 import { shareLink } from "./lib/share";
@@ -169,7 +170,7 @@ export default function Home() {
         }, 2500);
     }
     async function handleShare() {
-        const result = await shareLink();
+        const result = await shareLink(t("share.title"));
         if (result === "copied") {
             showShareMessage("Link copied");
         }
@@ -1534,9 +1535,15 @@ export default function Home() {
         })
             .catch((error: unknown) => {
             setImportError(error instanceof ImportError
-                ? error.message
+                ? importProblemText(error.problem)
                 : "The selected file could not be imported. Choose a valid Spin the Wheel JSON export.");
         });
+    }
+    function importProblemText(problem: ImportProblem) {
+        if (problem.key === "import.error.unsupportedVersion") {
+            return t(problem.key, { version: problem.version });
+        }
+        return t(problem.key);
     }
     function applyImportedData() {
         if (!pendingImport ||
@@ -2185,7 +2192,7 @@ export default function Home() {
             }} onClose={closeTextDialog}/>)}
       {deleteWheelOpen && (<ConfirmDialog theme={theme} title="Delete wheel?" message={`Delete "${activeWheel.name}"? Its entries, quiz questions, settings and history are removed. This cannot be undone.`} confirmLabel="Delete wheel" onConfirm={confirmDeleteWheel} onClose={closeDeleteWheel}/>)}
       {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={STANDARD_MODE_HELP} onClose={closeHowItWorks}/>)}
-      {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={t("faq.title")} closeLabel={t("faq.close")} feedbackLabel={t("faq.feedback")} items={FAQ_ITEMS} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
+      {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={t("faq.title")} closeLabel={t("faq.close")} feedbackLabel={t("faq.feedback")} items={FAQ_ITEMS.map((item) => ({ id: item.id, question: t(item.question), answer: t(item.answer), action: item.action }))} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
             }} onClose={closeFeedback} getReturnFocus={() => feedbackFromMenuRef.current ? menuButtonRef.current : feedbackRowRef.current}/>)}

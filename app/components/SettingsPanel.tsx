@@ -10,6 +10,8 @@ import {
 
 import { APPEARANCE_THEMES } from "../lib/appearance-themes";
 import { FEEDBACK_URL } from "../lib/feedback";
+import { useT } from "../lib/i18n/provider";
+import type { PlainMessageKey } from "../lib/i18n/messages";
 import {
   SPIN_SOUND_OPTIONS,
   WINNER_SOUND_OPTIONS,
@@ -294,16 +296,22 @@ function SoundField({
   value: string;
   options: ReadonlyArray<{
     readonly value: string;
-    readonly label: string;
+    readonly labelKey: PlainMessageKey;
   }>;
   playing: boolean;
   onChange: (value: string) => void;
   onPreview: () => void;
   accentClass: string;
 }) {
-  const soundLabel =
-    options.find((option) => option.value === value)
-      ?.label ?? value;
+  const t = useT();
+
+  const selectedOption = options.find(
+    (option) => option.value === value,
+  );
+
+  const soundLabel = selectedOption
+    ? t(selectedOption.labelKey)
+    : value;
   const none = value === "none";
 
   return (
@@ -329,7 +337,7 @@ function SoundField({
               key={option.value}
               value={option.value}
             >
-              {option.label}
+              {t(option.labelKey)}
             </option>
           ))}
         </select>
@@ -478,6 +486,8 @@ export default function SettingsPanel({
   accentClass = "bg-slate-900",
   accentHex = "#0f172a",
 }: SettingsPanelProps) {
+  const t = useT();
+
   function updateSettings(
     changes: Partial<WheelSettings>,
   ) {
@@ -1160,7 +1170,7 @@ export default function SettingsPanel({
 
                         <div className="flex items-center justify-between gap-2 bg-white px-3 py-2.5">
                           <span className="text-xs font-bold text-slate-800">
-                            {theme.label}
+                            {t(theme.labelKey)}
                           </span>
 
                           {selected ? (

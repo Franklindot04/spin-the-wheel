@@ -7,8 +7,6 @@
 export const SHARE_URL =
   "https://spin-the-wheel-9js.pages.dev";
 
-export const SHARE_TITLE = "Spin the Wheel";
-
 /*
  * shared:    the share sheet took the link
  * cancelled: the person closed the share sheet
@@ -103,13 +101,17 @@ export async function copyText(
 /*
  * Opens the share sheet where the browser has one and
  * copies the link where it does not, or where the
- * sheet fails. Closing the sheet is not a failure.
+ * sheet fails. Closing the sheet is not a failure. The
+ * title is the words the sheet shows with the link
+ * (the share.title message), given by the caller.
  */
-export async function shareLink(): Promise<ShareResult> {
+export async function shareLink(
+  title: string,
+): Promise<ShareResult> {
   if (typeof navigator.share === "function") {
     try {
       await navigator.share({
-        title: SHARE_TITLE,
+        title,
         url: SHARE_URL,
       });
 

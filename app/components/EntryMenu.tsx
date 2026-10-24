@@ -10,6 +10,7 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
+import { useT } from "../lib/i18n/provider";
 import {
   EMOJI_GROUPS,
   EMOJI_OPTIONS,
@@ -566,6 +567,8 @@ function EmojiPicker({
   ) => void;
   theme: AppearanceThemeConfig;
 }) {
+  const t = useT();
+
   /*
    * The tone is interface state only.
    * It starts from the tone of the
@@ -608,10 +611,10 @@ function EmojiPicker({
   const currentEmojiName =
     currentOption
       ? currentTone > 0
-        ? `${currentOption.name}, ${EMOJI_TONES[
-            currentTone
-          ].name.toLowerCase()} skin tone`
-        : currentOption.name
+        ? `${t(currentOption.nameKey)}, ${t(
+            EMOJI_TONES[currentTone].nameKey,
+          ).toLowerCase()} skin tone`
+        : t(currentOption.nameKey)
       : entry.emoji;
 
   const cellClass = `relative flex h-9 w-full cursor-pointer items-center justify-center rounded-lg text-lg leading-none transition ${theme.subtleSurfaceClass} ${theme.textPrimaryClass} ${theme.controlHoverClass} peer-checked:ring-2 peer-checked:ring-current peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current peer-disabled:cursor-not-allowed peer-disabled:opacity-40`;
@@ -725,7 +728,7 @@ function EmojiPicker({
         {EMOJI_TONES.map(
           (item, index) => (
             <label
-              key={item.name}
+              key={item.nameKey}
               className="relative"
             >
               <input
@@ -737,7 +740,7 @@ function EmojiPicker({
                   setTone(index)
                 }
                 disabled={disabled}
-                aria-label={`${item.name} skin tone`}
+                aria-label={`${t(item.nameKey)} skin tone`}
                 className="peer sr-only"
               />
 
@@ -759,9 +762,9 @@ function EmojiPicker({
       <div className="mt-2 space-y-1">
         {EMOJI_GROUPS.map((group) => (
           <div
-            key={group.label}
+            key={group.labelKey}
             role="group"
-            aria-label={group.label}
+            aria-label={t(group.labelKey)}
             className="grid grid-cols-6 gap-1"
           >
             {group.options.map(
@@ -777,10 +780,10 @@ function EmojiPicker({
                 const name =
                   option.toneCapable &&
                   tone > 0
-                    ? `${option.name}, ${EMOJI_TONES[
-                        tone
-                      ].name.toLowerCase()} skin tone`
-                    : option.name;
+                    ? `${t(option.nameKey)}, ${t(
+                        EMOJI_TONES[tone].nameKey,
+                      ).toLowerCase()} skin tone`
+                    : t(option.nameKey);
 
                 return (
                   <label
