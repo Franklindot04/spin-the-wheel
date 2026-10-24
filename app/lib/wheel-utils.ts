@@ -90,11 +90,15 @@ export function countGraphemes(
 }
 
 /*
- * The locales to write a history time in: the device's own
- * language when it has the same main language as the app (so
- * es-MX keeps its region and its 12-hour clock under Spanish),
- * then the app's language. A device in another language does
- * not change the app's dates.
+ * The locales to write a history time in: the browser's own
+ * default locale when it has the same main language as the app,
+ * else the first entry of the browser's language list that has
+ * it (so es-MX keeps its region and its 12-hour clock under
+ * Spanish), then the app's language. The default locale comes
+ * first because it is what the browser itself uses for dates,
+ * and its list can start with another region (a default of
+ * en-GB with a list of en-US, en). A browser in another
+ * language does not change the app's dates.
  */
 export function historyLocales(
   language: string,
@@ -102,16 +106,21 @@ export function historyLocales(
     | readonly (string | null | undefined)[]
     | null
     | undefined,
+  defaultLocale?: string | null,
 ): string[] {
   const main = (tag: string) =>
     tag.trim().toLowerCase().split(/[-_]/)[0];
 
-  const same = (deviceLanguages ?? []).find(
+  const same = [
+    defaultLocale,
+    ...(deviceLanguages ?? []),
+  ].find(
     (tag): tag is string =>
       typeof tag === "string" &&
       tag.trim() !== "" &&
       main(tag) === main(language),
   );
+
 
   return same && same !== language
     ? [same, language]
@@ -136,11 +145,13 @@ export function formatHistoryTime(
         typeof navigator === "undefined"
           ? []
           : navigator.languages,
+        new Intl.DateTimeFormat().resolvedOptions().locale,
       ),
       options,
     );
   } catch {
-    // A tag the browser rejects: the app's language, then the device's.
+    // A tag the browser rejects: the app's language, then the
+    // browser's default.
     try {
       return date.toLocaleString(language, options);
     } catch {
