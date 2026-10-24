@@ -89,13 +89,75 @@ export function countGraphemes(
   return Array.from(text).length;
 }
 
+/*
+ * The locales to write a history time in: the browser's own
+ * default locale when it has the same main language as the app,
+ * else the first entry of the browser's language list that has
+ * it (so es-MX keeps its region and its 12-hour clock under
+ * Spanish), then the app's language. The default locale comes
+ * first because it is what the browser itself uses for dates,
+ * and its list can start with another region (a default of
+ * en-GB with a list of en-US, en). A browser in another
+ * language does not change the app's dates.
+ */
+export function historyLocales(
+  language: string,
+  deviceLanguages:
+    | readonly (string | null | undefined)[]
+    | null
+    | undefined,
+  defaultLocale?: string | null,
+): string[] {
+  const main = (tag: string) =>
+    tag.trim().toLowerCase().split(/[-_]/)[0];
+
+  const same = [
+    defaultLocale,
+    ...(deviceLanguages ?? []),
+  ].find(
+    (tag): tag is string =>
+      typeof tag === "string" &&
+      tag.trim() !== "" &&
+      main(tag) === main(language),
+  );
+
+
+  return same && same !== language
+    ? [same, language]
+    : [language];
+}
+
 export function formatHistoryTime(
   timestamp: number,
+  language: string,
 ): string {
-  return new Date(timestamp).toLocaleString([], {
+  const options = {
     dateStyle: "short",
     timeStyle: "short",
-  });
+  } as const;
+
+  const date = new Date(timestamp);
+
+  try {
+    return date.toLocaleString(
+      historyLocales(
+        language,
+        typeof navigator === "undefined"
+          ? []
+          : navigator.languages,
+        new Intl.DateTimeFormat().resolvedOptions().locale,
+      ),
+      options,
+    );
+  } catch {
+    // A tag the browser rejects: the app's language, then the
+    // browser's default.
+    try {
+      return date.toLocaleString(language, options);
+    } catch {
+      return date.toLocaleString([], options);
+    }
+  }
 }
 
 export function canDeleteEntry(

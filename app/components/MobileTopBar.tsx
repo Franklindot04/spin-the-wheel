@@ -3,6 +3,7 @@
 import type { RefObject } from "react";
 import type { AppearanceThemeConfig, Mode } from "../lib/wheel-types";
 import AppMenu from "./AppMenu";
+import { useT } from "../lib/i18n/provider";
 
 type MobileTopBarProps = {
   title: string;
@@ -51,6 +52,8 @@ export default function MobileTopBar({
   onFaq,
   onSendFeedback,
 }: MobileTopBarProps) {
+  const t = useT();
+
   const modeClass = (value: Mode) =>
     `min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition ${
       mode === value
@@ -81,7 +84,7 @@ export default function MobileTopBar({
             disabled={spinning}
             className={modeClass("standard")}
           >
-            Standard
+            {t("mode.standard")}
           </button>
           <button
             type="button"
@@ -91,7 +94,7 @@ export default function MobileTopBar({
             disabled={spinning}
             className={modeClass("quiz")}
           >
-            Quiz
+            {t("mode.quiz")}
           </button>
         </div>
 

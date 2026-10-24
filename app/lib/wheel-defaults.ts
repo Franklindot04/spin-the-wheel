@@ -12,6 +12,7 @@ import type {
 } from "./wheel-types";
 
 import { APPEARANCE_THEMES } from "./appearance-themes";
+import type { DefaultTexts } from "./default-texts";
 import { normalizeEmoji } from "./entry-emoji";
 import { getEntryWeight } from "./wheel-utils";
 import {
@@ -32,11 +33,7 @@ export const COLORS = [
   "#fbcfe8",
 ];
 
-export const DEFAULT_WHEEL_TITLE =
-  "Spin the Wheel";
 
-export const DEFAULT_WHEEL_DESCRIPTION =
-  "Create a wheel for anything.";
 
 export const DEFAULT_TEXT_COLOR =
   "#0f172a";
@@ -183,21 +180,24 @@ export function createEntry(
 }
 
 export function createInitialEntries(
+  texts: DefaultTexts,
   prefix = "standard",
 ): WheelEntry[] {
   return [1, 2, 3, 4].map((number) =>
     createEntry(
       `${prefix}-${number}`,
       prefix === "quiz"
-        ? `Question ${number}`
-        : `Option ${number}`,
+        ? texts.questionName(number)
+        : texts.optionName(number),
       number - 1,
     ),
   );
 }
 
-export function createInitialQuizEntries(): WheelEntry[] {
-  return createInitialEntries("quiz");
+export function createInitialQuizEntries(
+  texts: DefaultTexts,
+): WheelEntry[] {
+  return createInitialEntries(texts, "quiz");
 }
 
 export type RepairReport = {
@@ -698,6 +698,7 @@ export function normalizeWheelSettings(
 
 export function normalizeWheel(
   value: unknown,
+  texts: DefaultTexts,
   report?: RepairReport,
 ): Wheel | null {
   if (!isRecord(value)) {
@@ -722,19 +723,19 @@ export function normalizeWheel(
 
     name: normalizeText(
       value.name,
-      "Wheel",
+      texts.wheelNameFallback,
       report,
     ),
 
     title: normalizeText(
       value.title,
-      DEFAULT_WHEEL_TITLE,
+      texts.wheelTitle,
       report,
     ),
 
     description: normalizeText(
       value.description,
-      DEFAULT_WHEEL_DESCRIPTION,
+      texts.wheelDescription,
       report,
     ),
 
@@ -768,25 +769,26 @@ export function normalizeWheel(
 }
 
 export function createWheel(
+  texts: DefaultTexts,
   index = 1,
 ): Wheel {
   return {
     id: crypto.randomUUID(),
 
     name:
-      `Wheel ${index}`,
+      texts.wheelName(index),
 
     title:
-      DEFAULT_WHEEL_TITLE,
+      texts.wheelTitle,
 
     description:
-      DEFAULT_WHEEL_DESCRIPTION,
+      texts.wheelDescription,
 
     standardEntries:
-      createInitialEntries(),
+      createInitialEntries(texts),
 
     quizEntries:
-      createInitialQuizEntries(),
+      createInitialQuizEntries(texts),
 
     standardHistory: [],
 
@@ -797,9 +799,11 @@ export function createWheel(
   };
 }
 
-export function createInitialAppData(): AppData {
+export function createInitialAppData(
+  texts: DefaultTexts,
+): AppData {
   const wheel =
-    createWheel(1);
+    createWheel(texts, 1);
 
   return {
     version: 2,

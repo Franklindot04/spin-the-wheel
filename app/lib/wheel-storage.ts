@@ -3,9 +3,8 @@ import type {
   LegacyStoredData,
   Wheel,
 } from "./wheel-types";
+import type { DefaultTexts } from "./default-texts";
 import {
-  DEFAULT_WHEEL_DESCRIPTION,
-  DEFAULT_WHEEL_TITLE,
   createDefaultWheelSettings,
   LEGACY_WINNER_DISPLAY,
   normalizeEntries,
@@ -16,6 +15,7 @@ import {
   APPEARANCE_THEMES,
   THEME_STORAGE_KEY,
 } from "./appearance-themes";
+import { LANGUAGE_STORAGE_KEY } from "./i18n/languages";
 
 export const STORAGE_KEY =
   "spin-the-wheel:v2";
@@ -43,8 +43,8 @@ export const STORAGE_BUDGET_CHARACTERS =
 export const STORAGE_WARN_RATIO = 0.8;
 
 /*
- * The characters the app stores: the wheels, the theme copy and
- * the kept unreadable copy, each with its key. The wheels are
+ * The characters the app stores: the wheels, the theme copy, the
+ * chosen language and the kept unreadable copy, each with its key. The wheels are
  * passed in because the caller has just written that string.
  */
 export function countStoredCharacters(
@@ -56,6 +56,7 @@ export function countStoredCharacters(
 
   for (const key of [
     THEME_STORAGE_KEY,
+    LANGUAGE_STORAGE_KEY,
     UNREADABLE_BACKUP_KEY,
   ]) {
     try {
@@ -153,6 +154,7 @@ export function isAppData(
 
 export function migrateStoredData(
   value: unknown,
+  texts: DefaultTexts,
   report?: RepairReport,
 ): AppData | null {
   if (isAppData(value)) {
@@ -161,6 +163,7 @@ export function migrateStoredData(
     for (const item of value.wheels) {
       const wheel = normalizeWheel(
         item,
+        texts,
         report,
       );
 
@@ -199,15 +202,15 @@ export function migrateStoredData(
     const wheel: Wheel = {
       id: crypto.randomUUID(),
 
-      name: "Wheel 1",
+      name: texts.wheelName(1),
 
       title:
         value.wheelTitle.trim() ||
-        DEFAULT_WHEEL_TITLE,
+        texts.wheelTitle,
 
       description:
         value.wheelDescription.trim() ||
-        DEFAULT_WHEEL_DESCRIPTION,
+        texts.wheelDescription,
 
       standardEntries:
         normalizeEntries(
@@ -241,6 +244,7 @@ export function migrateStoredData(
 
     const normalized = normalizeWheel(
       wheel,
+      texts,
       report,
     );
 
@@ -326,7 +330,9 @@ function findKeptCopy(): StoredDataNotice | null {
   }
 }
 
-function loadLegacyData(): AppData | null {
+function loadLegacyData(
+  texts: DefaultTexts,
+): AppData | null {
   try {
     const savedV1 =
       window.localStorage.getItem(
@@ -339,13 +345,16 @@ function loadLegacyData(): AppData | null {
 
     return migrateStoredData(
       JSON.parse(savedV1),
+      texts,
     );
   } catch {
     return null;
   }
 }
 
-export function loadStoredAppData(): StoredDataLoad {
+export function loadStoredAppData(
+  texts: DefaultTexts,
+): StoredDataLoad {
   try {
     const savedV2 =
       window.localStorage.getItem(
@@ -362,6 +371,7 @@ export function loadStoredAppData(): StoredDataLoad {
       try {
         data = migrateStoredData(
           JSON.parse(savedV2),
+          texts,
           report,
         );
       } catch {
@@ -391,7 +401,7 @@ export function loadStoredAppData(): StoredDataLoad {
 
       const legacy = failed
         ? null
-        : loadLegacyData();
+        : loadLegacyData(texts);
 
       return {
         data: legacy,
@@ -404,7 +414,7 @@ export function loadStoredAppData(): StoredDataLoad {
       };
     }
 
-    const legacy = loadLegacyData();
+    const legacy = loadLegacyData(texts);
 
     return {
       data: legacy,
@@ -426,23 +436,46 @@ export function serializeAppData(
   );
 }
 
-export class ImportError extends Error {}
+/*
+ * What was wrong with an import. The words are in the i18n
+ * dictionary (import.error.*), so the error carries a key and
+ * its values, and the page turns it into text for the
+ * current language.
+ */
+export type ImportProblem =
+  | { key: "import.error.notJson" }
+  | {
+      key: "import.error.unsupportedVersion";
+      version: string;
+    }
+  | { key: "import.error.invalidFile" };
+
+export class ImportError extends Error {
+  readonly problem: ImportProblem;
+
+  constructor(problem: ImportProblem) {
+    super(problem.key);
+
+    this.problem = problem;
+  }
+}
 
 export function parseImportedData(
   content: string,
+  texts: DefaultTexts,
 ): AppData {
   let parsed: unknown;
 
   try {
     parsed = JSON.parse(content);
   } catch {
-    throw new ImportError(
-      "This is not a JSON file. Choose a Spin the Wheel export.",
-    );
+    throw new ImportError({
+      key: "import.error.notJson",
+    });
   }
 
   const imported =
-    migrateStoredData(parsed);
+    migrateStoredData(parsed, texts);
 
   if (!imported) {
     const version =
@@ -461,14 +494,15 @@ export function parseImportedData(
       version !== 1 &&
       version !== 2
     ) {
-      throw new ImportError(
-        `This export uses an unsupported version (${String(version).slice(0, 20)}). Only versions 1 and 2 can be imported.`,
-      );
+      throw new ImportError({
+        key: "import.error.unsupportedVersion",
+        version: String(version).slice(0, 20),
+      });
     }
 
-    throw new ImportError(
-      "This file is not a valid Spin the Wheel export.",
-    );
+    throw new ImportError({
+      key: "import.error.invalidFile",
+    });
   }
 
   return imported;

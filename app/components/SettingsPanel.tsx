@@ -10,6 +10,8 @@ import {
 
 import { APPEARANCE_THEMES } from "../lib/appearance-themes";
 import { FEEDBACK_URL } from "../lib/feedback";
+import { useT } from "../lib/i18n/provider";
+import type { PlainMessageKey } from "../lib/i18n/messages";
 import {
   SPIN_SOUND_OPTIONS,
   WINNER_SOUND_OPTIONS,
@@ -215,11 +217,13 @@ function SelectField({
   label: string;
   value: string;
   onChange: (value: string) => void;
-  options: Array<{
+  options: ReadonlyArray<{
     value: string;
-    label: string;
+    labelKey: PlainMessageKey;
   }>;
 }) {
+  const t = useT();
+
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-semibold text-slate-800">
@@ -238,7 +242,7 @@ function SelectField({
             key={option.value}
             value={option.value}
           >
-            {option.label}
+            {t(option.labelKey)}
           </option>
         ))}
       </select>
@@ -248,10 +252,10 @@ function SelectField({
 
 const WINNER_DISPLAY_OPTIONS: Array<{
   value: WinnerDisplayMethod;
-  label: string;
+  labelKey: PlainMessageKey;
 }> = [
-  { value: "panel", label: "Result panel" },
-  { value: "popup", label: "Popup" },
+  { value: "panel", labelKey: "settings.winnerDisplay.panel" },
+  { value: "popup", labelKey: "settings.winnerDisplay.popup" },
 ];
 
 type PreviewKind = "spin" | "winner";
@@ -294,17 +298,36 @@ function SoundField({
   value: string;
   options: ReadonlyArray<{
     readonly value: string;
-    readonly label: string;
+    readonly labelKey: PlainMessageKey;
   }>;
   playing: boolean;
   onChange: (value: string) => void;
   onPreview: () => void;
   accentClass: string;
 }) {
-  const soundLabel =
-    options.find((option) => option.value === value)
-      ?.label ?? value;
+  const t = useT();
+
+  const selectedOption = options.find(
+    (option) => option.value === value,
+  );
+
+  const soundLabel = selectedOption
+    ? t(selectedOption.labelKey)
+    : value;
   const none = value === "none";
+
+  const noSoundLabel =
+    kind === "spin"
+      ? t("settings.sound.noSpin")
+      : t("settings.sound.noWinner");
+
+  const previewLabel = none
+    ? noSoundLabel
+    : playing
+      ? t("settings.sound.stopLabel")
+      : t("settings.sound.playNamed", {
+          sound: soundLabel,
+        });
 
   return (
     <div>
@@ -329,7 +352,7 @@ function SoundField({
               key={option.value}
               value={option.value}
             >
-              {option.label}
+              {t(option.labelKey)}
             </option>
           ))}
         </select>
@@ -338,20 +361,8 @@ function SoundField({
           type="button"
           onClick={onPreview}
           disabled={none}
-          aria-label={
-            none
-              ? `No ${kind} sound to play`
-              : playing
-                ? "Stop sound"
-                : `Play ${soundLabel} sound`
-          }
-          title={
-            none
-              ? `No ${kind} sound to play`
-              : playing
-                ? "Stop sound"
-                : `Play ${soundLabel} sound`
-          }
+          aria-label={previewLabel}
+          title={previewLabel}
           className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-40 ${
             playing
               ? `border-transparent ${accentClass} text-white`
@@ -359,7 +370,9 @@ function SoundField({
           }`}
         >
           <PreviewIcon playing={playing} />
-          {playing ? "Stop" : "Play"}
+          {playing
+            ? t("settings.sound.stop")
+            : t("settings.sound.play")}
         </button>
       </div>
     </div>
@@ -368,23 +381,23 @@ function SoundField({
 
 const TABS: Array<{
   id: SettingsTab;
-  label: string;
+  labelKey: PlainMessageKey;
 }> = [
   {
     id: "main",
-    label: "Main",
+    labelKey: "settings.tab.main",
   },
   {
     id: "sound",
-    label: "Sound",
+    labelKey: "settings.tab.sound",
   },
   {
     id: "confetti",
-    label: "Confetti",
+    labelKey: "settings.tab.confetti",
   },
   {
     id: "theme",
-    label: "Page Theme",
+    labelKey: "settings.tab.theme",
   },
 ];
 
@@ -403,66 +416,51 @@ const THEME_PICKER_ORDER: AppearanceTheme[] = [
 
 const CONFETTI_OPTIONS: Array<{
   value: ConfettiStyle;
-  label: string;
-  description: string;
+  labelKey: PlainMessageKey;
+  descriptionKey: PlainMessageKey;
 }> = [
   {
     value: "burst",
-    label: "Burst",
-    description:
-      "A short burst from the center.",
+    labelKey: "settings.confetti.burst",
+    descriptionKey:
+      "settings.confetti.burstDescription",
   },
   {
     value: "celebration",
-    label: "Celebration",
-    description:
-      "A larger celebratory effect.",
+    labelKey: "settings.confetti.celebration",
+    descriptionKey:
+      "settings.confetti.celebrationDescription",
   },
   {
     value: "fireworks",
-    label: "Fireworks",
-    description:
-      "Multiple bursts around the winner.",
+    labelKey: "settings.confetti.fireworks",
+    descriptionKey:
+      "settings.confetti.fireworksDescription",
   },
   {
     value: "minimal",
-    label: "Minimal",
-    description:
-      "A subtle amount of confetti.",
+    labelKey: "settings.confetti.minimal",
+    descriptionKey:
+      "settings.confetti.minimalDescription",
   },
   {
     value: "none",
-    label: "None",
-    description:
-      "Do not display a confetti animation.",
+    labelKey: "settings.confetti.none",
+    descriptionKey:
+      "settings.confetti.noneDescription",
   },
 ];
 
-const AUTO_GENERATE_OPTIONS = [
-  {
-    value: "names",
-    label: "Names",
-  },
-  {
-    value: "animals",
-    label: "Animals",
-  },
-  {
-    value: "countries",
-    label: "Countries",
-  },
-  {
-    value: "cities",
-    label: "Cities",
-  },
-  {
-    value: "foods",
-    label: "Foods",
-  },
-  {
-    value: "custom",
-    label: "Custom",
-  },
+const AUTO_GENERATE_OPTIONS: Array<{
+  value: string;
+  labelKey: PlainMessageKey;
+}> = [
+  { value: "names", labelKey: "settings.autoGenerate.names" },
+  { value: "animals", labelKey: "settings.autoGenerate.animals" },
+  { value: "countries", labelKey: "settings.autoGenerate.countries" },
+  { value: "cities", labelKey: "settings.autoGenerate.cities" },
+  { value: "foods", labelKey: "settings.autoGenerate.foods" },
+  { value: "custom", labelKey: "settings.autoGenerate.custom" },
 ];
 
 export default function SettingsPanel({
@@ -478,6 +476,8 @@ export default function SettingsPanel({
   accentClass = "bg-slate-900",
   accentHex = "#0f172a",
 }: SettingsPanelProps) {
+  const t = useT();
+
   function updateSettings(
     changes: Partial<WheelSettings>,
   ) {
@@ -567,11 +567,11 @@ export default function SettingsPanel({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-slate-950">
-              Settings
+              {t("settings.title")}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Customize how your wheel behaves and looks.
+              {t("settings.subtitle")}
             </p>
           </div>
 
@@ -580,7 +580,7 @@ export default function SettingsPanel({
             onClick={onRestoreDefaults}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
           >
-            Restore defaults
+            {t("settings.restoreDefaults")}
           </button>
         </div>
 
@@ -606,7 +606,7 @@ export default function SettingsPanel({
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
                 }`}
               >
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             );
           })}
@@ -618,13 +618,13 @@ export default function SettingsPanel({
           <div className="space-y-6">
             <div>
               <SectionTitle
-                title="Spin behavior"
-                description="Control how the wheel spins and how the winner is selected."
+                title={t("settings.spinBehavior.title")}
+                description={t("settings.spinBehavior.description")}
               />
 
               <div className="grid gap-4 md:grid-cols-2">
                 <NumberField
-                  label="Spin speed"
+                  label={t("settings.spinSpeed.label")}
                   value={settings.spinSpeed}
                   min={1}
                   max={10}
@@ -633,11 +633,11 @@ export default function SettingsPanel({
                       spinSpeed: value,
                     })
                   }
-                  suffix="x"
+                  suffix={t("settings.spinSpeed.unit")}
                 />
 
                 <NumberField
-                  label="Spin duration"
+                  label={t("settings.spinDuration.label")}
                   value={
                     settings.spinDuration
                   }
@@ -649,7 +649,7 @@ export default function SettingsPanel({
                       spinDuration: value,
                     })
                   }
-                  suffix="sec"
+                  suffix={t("settings.spinDuration.unit")}
                 />
               </div>
             </div>
@@ -665,9 +665,9 @@ export default function SettingsPanel({
                       checked,
                   })
                 }
-                label="Pointer matches slice color"
+                label={t("settings.pointerMatch.label")}
                 accentClass={accentClass}
-                description="Change the pointer color to match the slice currently under it."
+                description={t("settings.pointerMatch.description")}
               />
 
               <Toggle
@@ -679,14 +679,14 @@ export default function SettingsPanel({
                     confettiEnabled: checked,
                   })
                 }
-                label="Confetti effect"
+                label={t("settings.confettiEffect.label")}
                 accentClass={accentClass}
-                description="Celebrate the winning result when the wheel stops."
+                description={t("settings.confettiEffect.description")}
               />
             </div>
 
             <SelectField
-              label="Winner display"
+              label={t("settings.winnerDisplay.label")}
               value={
                 settings.winnerDisplayMethod
               }
@@ -703,8 +703,8 @@ export default function SettingsPanel({
 
             <div>
               <SectionTitle
-                title="Auto-generate entries"
-                description="Quickly populate the wheel with generated options."
+                title={t("settings.autoGenerate.title")}
+                description={t("settings.autoGenerate.description")}
               />
 
               <div className="space-y-4">
@@ -718,14 +718,14 @@ export default function SettingsPanel({
                         checked,
                     })
                   }
-                  label="Enable auto-generation"
+                  label={t("settings.autoGenerate.enable")}
                   accentClass={accentClass}
                 />
 
                 {settings.autoGenerateEnabled ? (
                   <div className="grid gap-4 md:grid-cols-2">
                     <NumberField
-                      label="Number of entries"
+                      label={t("settings.autoGenerate.count")}
                       value={
                         settings.autoGenerateCount
                       }
@@ -740,7 +740,7 @@ export default function SettingsPanel({
                     />
 
                     <SelectField
-                      label="Category"
+                      label={t("settings.autoGenerate.category")}
                       value={
                         settings.autoGenerateCategory
                       }
@@ -761,12 +761,12 @@ export default function SettingsPanel({
 
             <div>
               <SectionTitle
-                title="Entry limit"
-                description="The most entries a list can hold. Lowering it never removes existing entries; it only stops you adding more."
+                title={t("settings.entryLimit.title")}
+                description={t("settings.entryLimit.description")}
               />
 
               <NumberField
-                label="Maximum entries"
+                label={t("settings.entryLimit.label")}
                 value={
                   settings.numberOfEntries
                 }
@@ -781,7 +781,7 @@ export default function SettingsPanel({
             </div>
 
             <div className="hidden md:block">
-              <SectionTitle title="Help" />
+              <SectionTitle title={t("settings.help.title")} />
 
               <button
                 ref={faqButtonRef}
@@ -797,14 +797,14 @@ export default function SettingsPanel({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900">
-                    FAQ
+                    {t("settings.help.faq")}
                   </p>
 
                   <p
                     id="faq-description"
                     className="mt-1 text-xs leading-5 text-slate-500"
                   >
-                    Short answers to common questions.
+                    {t("settings.help.faqDescription")}
                   </p>
                 </div>
 
@@ -824,7 +824,7 @@ export default function SettingsPanel({
             </div>
 
             <div className="hidden md:block">
-              <SectionTitle title="Feedback" />
+              <SectionTitle title={t("settings.feedback.title")} />
 
               <button
                 ref={feedbackButtonRef}
@@ -840,16 +840,14 @@ export default function SettingsPanel({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900">
-                    Send feedback
+                    {t("settings.feedback.send")}
                   </p>
 
                   <p
                     id="feedback-form-description"
                     className="mt-1 text-xs leading-5 text-slate-500"
                   >
-                    Tell us what happened or what you
-                    would like to see. No account is
-                    needed.
+                    {t("settings.feedback.sendDescription")}
                   </p>
                 </div>
 
@@ -871,7 +869,7 @@ export default function SettingsPanel({
                 href={FEEDBACK_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Report on GitHub (opens in a new tab)"
+                aria-label={t("settings.feedback.githubLabel")}
                 aria-describedby="feedback-description"
                 className="flex items-center justify-between gap-6 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={
@@ -882,15 +880,14 @@ export default function SettingsPanel({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900">
-                    Report on GitHub
+                    {t("settings.feedback.github")}
                   </p>
 
                   <p
                     id="feedback-description"
                     className="mt-1 text-xs leading-5 text-slate-500"
                   >
-                    Opens a new GitHub issue in a new
-                    tab. A GitHub account is needed.
+                    {t("settings.feedback.githubDescription")}
                   </p>
                 </div>
 
@@ -917,8 +914,8 @@ export default function SettingsPanel({
           <div className="space-y-6">
             <div>
               <SectionTitle
-                title="Sound"
-                description="Control sounds played while spinning and after a winner is selected."
+                title={t("settings.sound.title")}
+                description={t("settings.sound.description")}
               />
 
               <Toggle
@@ -930,8 +927,8 @@ export default function SettingsPanel({
                     soundEnabled: checked,
                   })
                 }
-                label="Enable sound"
-                description="On iPhone, the ringer switch can silence web sounds."
+                label={t("settings.sound.enable")}
+                description={t("settings.sound.enableDescription")}
                 accentClass={accentClass}
               />
             </div>
@@ -939,7 +936,7 @@ export default function SettingsPanel({
             <div className="grid gap-4 md:grid-cols-2">
               <SoundField
                 id="spin-sound"
-                label="Spin sound"
+                label={t("settings.sound.spinLabel")}
                 kind="spin"
                 value={settings.spinSound}
                 options={SPIN_SOUND_OPTIONS}
@@ -958,7 +955,7 @@ export default function SettingsPanel({
 
               <SoundField
                 id="winner-sound"
-                label="Winner sound"
+                label={t("settings.sound.winnerLabel")}
                 kind="winner"
                 value={settings.winnerSound}
                 options={WINNER_SOUND_OPTIONS}
@@ -978,13 +975,11 @@ export default function SettingsPanel({
 
             {settings.volume === 0 ? (
               <p className="-mt-2 text-xs leading-5 text-slate-500">
-                Volume is at 0, so previews are silent.
-                Turn it up to hear them.
+                {t("settings.sound.volumeZero")}
               </p>
             ) : !settings.soundEnabled ? (
               <p className="-mt-2 text-xs leading-5 text-slate-500">
-                Sound is off. Previews still play here, but
-                spins and winners stay silent.
+                {t("settings.sound.soundOff")}
               </p>
             ) : null}
 
@@ -993,7 +988,7 @@ export default function SettingsPanel({
                 htmlFor="volume"
                 className="mb-2 block text-sm font-semibold text-slate-800"
               >
-                Volume
+                {t("settings.volume.label")}
               </label>
 
               <div className="rounded-xl border border-slate-300 bg-white px-4 py-4">
@@ -1019,11 +1014,21 @@ export default function SettingsPanel({
                 />
 
                 <div className="mt-2 flex justify-between text-xs font-semibold text-slate-500">
-                  <span>0%</span>
                   <span>
-                    {settings.volume}%
+                    {t("settings.volume.percent", {
+                      value: 0,
+                    })}
                   </span>
-                  <span>100%</span>
+                  <span>
+                    {t("settings.volume.percent", {
+                      value: settings.volume,
+                    })}
+                  </span>
+                  <span>
+                    {t("settings.volume.percent", {
+                      value: 100,
+                    })}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1034,8 +1039,8 @@ export default function SettingsPanel({
           <div className="space-y-6">
             <div>
               <SectionTitle
-                title="Confetti"
-                description="Choose what happens when the wheel produces a winner."
+                title={t("settings.confetti.title")}
+                description={t("settings.confetti.description")}
               />
 
               <Toggle
@@ -1047,14 +1052,14 @@ export default function SettingsPanel({
                     confettiEnabled: checked,
                   })
                 }
-                label="Enable confetti"
+                label={t("settings.confetti.enable")}
                 accentClass={accentClass}
               />
             </div>
 
             <div>
               <SectionTitle
-                title="Celebration style"
+                title={t("settings.confetti.styleTitle")}
               />
 
               <div className="grid gap-3 md:grid-cols-2">
@@ -1082,7 +1087,7 @@ export default function SettingsPanel({
                       >
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-sm font-bold">
-                            {option.label}
+                            {t(option.labelKey)}
                           </span>
 
                           <span
@@ -1101,7 +1106,7 @@ export default function SettingsPanel({
                               : "text-slate-500"
                           }`}
                         >
-                          {option.description}
+                          {t(option.descriptionKey)}
                         </p>
                       </button>
                     );
@@ -1116,8 +1121,8 @@ export default function SettingsPanel({
           <div className="space-y-6">
             <div>
               <SectionTitle
-                title="Page Theme"
-                description="Choose the accent and dark page background used around your wheel."
+                title={t("settings.theme.title")}
+                description={t("settings.theme.description")}
               />
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
@@ -1160,7 +1165,7 @@ export default function SettingsPanel({
 
                         <div className="flex items-center justify-between gap-2 bg-white px-3 py-2.5">
                           <span className="text-xs font-bold text-slate-800">
-                            {theme.label}
+                            {t(theme.labelKey)}
                           </span>
 
                           {selected ? (
@@ -1178,14 +1183,11 @@ export default function SettingsPanel({
 
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-sm font-semibold text-slate-900">
-                Dark page background
+                {t("settings.theme.darkTitle")}
               </p>
 
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                The selected theme will be
-                used to create a dark page
-                background while keeping the
-                wheel controls readable.
+                {t("settings.theme.darkDescription")}
               </p>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useEffect, useId, useRef } from "react";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
 import { useFocusTrap } from "../lib/use-focus-trap";
 import { usePopover } from "../lib/use-popover";
+import { useT } from "../lib/i18n/provider";
 
 type ConfirmDialogProps = {
   theme: AppearanceThemeConfig;
@@ -28,6 +29,7 @@ export default function ConfirmDialog({
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
+  const t = useT();
   const titleId = useId();
   const messageId = useId();
   const panelRef =
@@ -95,7 +97,7 @@ export default function ConfirmDialog({
             onClick={onClose}
             className={`h-11 rounded-lg border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         </div>
       </div>

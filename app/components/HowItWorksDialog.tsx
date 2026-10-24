@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
 import { useFocusTrap } from "../lib/use-focus-trap";
 import { usePopover } from "../lib/use-popover";
+import { useT } from "../lib/i18n/provider";
 
 type HowItWorksDialogProps = {
   theme: AppearanceThemeConfig;
@@ -25,6 +26,8 @@ export default function HowItWorksDialog({
   text,
   onClose,
 }: HowItWorksDialogProps) {
+  const t = useT();
+
   const panelRef =
     useRef<HTMLDivElement>(null);
   const closeRef =
@@ -64,7 +67,7 @@ export default function HowItWorksDialog({
           id="how-it-works-title"
           className={`text-lg font-semibold ${theme.textPrimaryClass}`}
         >
-          How it works
+          {t("howItWorks.title")}
         </h2>
 
         <p
@@ -79,7 +82,7 @@ export default function HowItWorksDialog({
           onClick={onClose}
           className={`mt-5 h-11 w-full rounded-lg px-4 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${accentClass} ${accentHoverClass}`}
         >
-          Close
+          {t("howItWorks.close")}
         </button>
       </div>
     </div>

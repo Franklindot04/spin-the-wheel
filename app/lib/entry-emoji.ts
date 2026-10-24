@@ -1,90 +1,96 @@
+import type { PlainMessageKey } from "./i18n/messages";
+
 export const MAX_EMOJI_LENGTH = 16;
 
+/*
+ * The names are message keys (see i18n/en.ts); the picker shows
+ * them with t().
+ */
 export type EmojiOption = {
   emoji: string;
-  name: string;
+  nameKey: PlainMessageKey;
   toneCapable?: boolean;
 };
 
 export type EmojiGroup = {
-  label: string;
+  labelKey: PlainMessageKey;
   options: EmojiOption[];
 };
 
 export const EMOJI_GROUPS: EmojiGroup[] = [
   {
-    label: "People",
+    labelKey: "emoji.group.people",
     options: [
-      { emoji: "🧑", name: "Person", toneCapable: true },
-      { emoji: "👩", name: "Woman", toneCapable: true },
-      { emoji: "👨", name: "Man", toneCapable: true },
-      { emoji: "👧", name: "Girl", toneCapable: true },
-      { emoji: "👦", name: "Boy", toneCapable: true },
-      { emoji: "🧓", name: "Older person", toneCapable: true },
+      { emoji: "🧑", nameKey: "emoji.name.person", toneCapable: true },
+      { emoji: "👩", nameKey: "emoji.name.woman", toneCapable: true },
+      { emoji: "👨", nameKey: "emoji.name.man", toneCapable: true },
+      { emoji: "👧", nameKey: "emoji.name.girl", toneCapable: true },
+      { emoji: "👦", nameKey: "emoji.name.boy", toneCapable: true },
+      { emoji: "🧓", nameKey: "emoji.name.olderPerson", toneCapable: true },
     ],
   },
   {
-    label: "Faces and gestures",
+    labelKey: "emoji.group.facesAndGestures",
     options: [
-      { emoji: "😀", name: "Grinning face" },
-      { emoji: "😎", name: "Sunglasses" },
-      { emoji: "🤩", name: "Star-struck" },
-      { emoji: "😂", name: "Laughing" },
-      { emoji: "🥳", name: "Party" },
-      { emoji: "👍", name: "Thumbs up", toneCapable: true },
-      { emoji: "👏", name: "Clapping", toneCapable: true },
-      { emoji: "🙌", name: "Raised hands", toneCapable: true },
-      { emoji: "💪", name: "Flexed arm", toneCapable: true },
+      { emoji: "😀", nameKey: "emoji.name.grinningFace" },
+      { emoji: "😎", nameKey: "emoji.name.sunglasses" },
+      { emoji: "🤩", nameKey: "emoji.name.starStruck" },
+      { emoji: "😂", nameKey: "emoji.name.laughing" },
+      { emoji: "🥳", nameKey: "emoji.name.party" },
+      { emoji: "👍", nameKey: "emoji.name.thumbsUp", toneCapable: true },
+      { emoji: "👏", nameKey: "emoji.name.clapping", toneCapable: true },
+      { emoji: "🙌", nameKey: "emoji.name.raisedHands", toneCapable: true },
+      { emoji: "💪", nameKey: "emoji.name.flexedArm", toneCapable: true },
     ],
   },
   {
-    label: "Food and drink",
+    labelKey: "emoji.group.foodAndDrink",
     options: [
-      { emoji: "🍕", name: "Pizza" },
-      { emoji: "🍔", name: "Burger" },
-      { emoji: "🍟", name: "Fries" },
-      { emoji: "🌮", name: "Taco" },
-      { emoji: "🍣", name: "Sushi" },
-      { emoji: "🍩", name: "Doughnut" },
-      { emoji: "🍰", name: "Cake" },
-      { emoji: "🍎", name: "Apple" },
-      { emoji: "🍌", name: "Banana" },
-      { emoji: "🍓", name: "Strawberry" },
-      { emoji: "☕", name: "Coffee" },
-      { emoji: "🍺", name: "Beer" },
+      { emoji: "🍕", nameKey: "emoji.name.pizza" },
+      { emoji: "🍔", nameKey: "emoji.name.burger" },
+      { emoji: "🍟", nameKey: "emoji.name.fries" },
+      { emoji: "🌮", nameKey: "emoji.name.taco" },
+      { emoji: "🍣", nameKey: "emoji.name.sushi" },
+      { emoji: "🍩", nameKey: "emoji.name.doughnut" },
+      { emoji: "🍰", nameKey: "emoji.name.cake" },
+      { emoji: "🍎", nameKey: "emoji.name.apple" },
+      { emoji: "🍌", nameKey: "emoji.name.banana" },
+      { emoji: "🍓", nameKey: "emoji.name.strawberry" },
+      { emoji: "☕", nameKey: "emoji.name.coffee" },
+      { emoji: "🍺", nameKey: "emoji.name.beer" },
     ],
   },
   {
-    label: "Animals and nature",
+    labelKey: "emoji.group.animalsAndNature",
     options: [
-      { emoji: "🐶", name: "Dog" },
-      { emoji: "🐱", name: "Cat" },
-      { emoji: "🦊", name: "Fox" },
-      { emoji: "🐼", name: "Panda" },
-      { emoji: "🌸", name: "Blossom" },
-      { emoji: "🌈", name: "Rainbow" },
+      { emoji: "🐶", nameKey: "emoji.name.dog" },
+      { emoji: "🐱", nameKey: "emoji.name.cat" },
+      { emoji: "🦊", nameKey: "emoji.name.fox" },
+      { emoji: "🐼", nameKey: "emoji.name.panda" },
+      { emoji: "🌸", nameKey: "emoji.name.blossom" },
+      { emoji: "🌈", nameKey: "emoji.name.rainbow" },
     ],
   },
   {
-    label: "Activities and objects",
+    labelKey: "emoji.group.activitiesAndObjects",
     options: [
-      { emoji: "⚽", name: "Soccer ball" },
-      { emoji: "🏀", name: "Basketball" },
-      { emoji: "🎮", name: "Game controller" },
-      { emoji: "🎵", name: "Music note" },
-      { emoji: "🎁", name: "Gift" },
-      { emoji: "📚", name: "Books" },
+      { emoji: "⚽", nameKey: "emoji.name.soccerBall" },
+      { emoji: "🏀", nameKey: "emoji.name.basketball" },
+      { emoji: "🎮", nameKey: "emoji.name.gameController" },
+      { emoji: "🎵", nameKey: "emoji.name.musicNote" },
+      { emoji: "🎁", nameKey: "emoji.name.gift" },
+      { emoji: "📚", nameKey: "emoji.name.books" },
     ],
   },
   {
-    label: "Symbols",
+    labelKey: "emoji.group.symbols",
     options: [
-      { emoji: "⭐", name: "Star" },
-      { emoji: "❤️", name: "Heart" },
-      { emoji: "🔥", name: "Fire" },
-      { emoji: "✅", name: "Check mark" },
-      { emoji: "❌", name: "Cross mark" },
-      { emoji: "💡", name: "Light bulb" },
+      { emoji: "⭐", nameKey: "emoji.name.star" },
+      { emoji: "❤️", nameKey: "emoji.name.heart" },
+      { emoji: "🔥", nameKey: "emoji.name.fire" },
+      { emoji: "✅", nameKey: "emoji.name.checkMark" },
+      { emoji: "❌", nameKey: "emoji.name.crossMark" },
+      { emoji: "💡", nameKey: "emoji.name.lightBulb" },
     ],
   },
 ];
@@ -95,7 +101,9 @@ export const EMOJI_OPTIONS: EmojiOption[] =
   );
 
 export type EmojiTone = {
-  name: string;
+  nameKey: PlainMessageKey;
+  /* The form used inside a sentence, as its own message. */
+  inlineKey: PlainMessageKey;
   modifier: string;
 };
 
@@ -103,12 +111,36 @@ export type EmojiTone = {
  * Index 0 is the default (no modifier).
  */
 export const EMOJI_TONES: EmojiTone[] = [
-  { name: "Default", modifier: "" },
-  { name: "Light", modifier: "\u{1F3FB}" },
-  { name: "Medium-light", modifier: "\u{1F3FC}" },
-  { name: "Medium", modifier: "\u{1F3FD}" },
-  { name: "Medium-dark", modifier: "\u{1F3FE}" },
-  { name: "Dark", modifier: "\u{1F3FF}" },
+  {
+    nameKey: "emoji.tone.default",
+    inlineKey: "emoji.toneInline.default",
+    modifier: "",
+  },
+  {
+    nameKey: "emoji.tone.light",
+    inlineKey: "emoji.toneInline.light",
+    modifier: "\u{1F3FB}",
+  },
+  {
+    nameKey: "emoji.tone.mediumLight",
+    inlineKey: "emoji.toneInline.mediumLight",
+    modifier: "\u{1F3FC}",
+  },
+  {
+    nameKey: "emoji.tone.medium",
+    inlineKey: "emoji.toneInline.medium",
+    modifier: "\u{1F3FD}",
+  },
+  {
+    nameKey: "emoji.tone.mediumDark",
+    inlineKey: "emoji.toneInline.mediumDark",
+    modifier: "\u{1F3FE}",
+  },
+  {
+    nameKey: "emoji.tone.dark",
+    inlineKey: "emoji.toneInline.dark",
+    modifier: "\u{1F3FF}",
+  },
 ];
 
 const TONE_MODIFIER_PATTERN =

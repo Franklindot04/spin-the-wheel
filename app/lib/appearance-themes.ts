@@ -17,8 +17,8 @@ export const APPEARANCE_THEMES: Record<
   AppearanceThemeConfig
 > = {
   classic: {
-    label: "Classic",
-    description: "Clean and neutral.",
+    labelKey: "theme.classic.label",
+    descriptionKey: "theme.classic.description",
 
     pageClass: "bg-slate-950",
 
@@ -57,8 +57,8 @@ export const APPEARANCE_THEMES: Record<
   },
 
   ocean: {
-    label: "Ocean",
-    description: "Cool blue tones.",
+    labelKey: "theme.ocean.label",
+    descriptionKey: "theme.ocean.description",
 
     pageClass: "bg-cyan-950",
 
@@ -92,8 +92,8 @@ export const APPEARANCE_THEMES: Record<
   },
 
   forest: {
-    label: "Forest",
-    description: "Natural green tones.",
+    labelKey: "theme.forest.label",
+    descriptionKey: "theme.forest.description",
 
     pageClass: "bg-emerald-950",
 
@@ -127,8 +127,8 @@ export const APPEARANCE_THEMES: Record<
   },
 
   sunset: {
-    label: "Sunset",
-    description: "Warm orange tones.",
+    labelKey: "theme.sunset.label",
+    descriptionKey: "theme.sunset.description",
 
     pageClass: "bg-orange-950",
 
@@ -162,8 +162,8 @@ export const APPEARANCE_THEMES: Record<
   },
 
   violet: {
-    label: "Violet",
-    description: "Soft purple tones.",
+    labelKey: "theme.violet.label",
+    descriptionKey: "theme.violet.description",
 
     pageClass: "bg-violet-950",
 

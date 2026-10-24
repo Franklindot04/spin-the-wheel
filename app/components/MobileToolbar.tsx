@@ -5,6 +5,7 @@ import type { ReactNode, RefObject } from "react";
 import { flushSync } from "react-dom";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
 import { usePopover } from "../lib/use-popover";
+import { useT } from "../lib/i18n/provider";
 
 type MobileToolbarProps = {
   theme: AppearanceThemeConfig;
@@ -75,6 +76,8 @@ export default function MobileToolbar({
   moreButtonRef,
   settingsButtonRef,
 }: MobileToolbarProps) {
+  const t = useT();
+
   const focusClass =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
@@ -91,9 +94,9 @@ export default function MobileToolbar({
         : idleClass
     }`;
 
-  const historyLabel = `Show history, ${historyCount} ${
-    historyCount === 1 ? "spin" : "spins"
-  }`;
+  const historyLabel = t("toolbar.historyLabel", {
+    count: historyCount,
+  });
 
   return (
     <div className="mx-auto mt-4 max-w-lg md:hidden max-[359px]:-mx-3">
@@ -102,10 +105,10 @@ export default function MobileToolbar({
           type="button"
           onClick={onShowEntries}
           aria-pressed={!historyOpen}
-          aria-label="Show entries"
+          aria-label={t("toolbar.showEntries")}
           className={textClass(!historyOpen)}
         >
-          Entries
+          {t("toolbar.entries")}
         </button>
 
         <button
@@ -115,7 +118,7 @@ export default function MobileToolbar({
           aria-label={historyLabel}
           className={textClass(historyOpen)}
         >
-          History
+          {t("toolbar.history")}
         </button>
 
         <button
@@ -124,8 +127,8 @@ export default function MobileToolbar({
           disabled={hideAllDisabled}
           aria-label={
             allEntriesHidden
-              ? "Show all entries"
-              : "Hide all entries"
+              ? t("toolbar.showAllEntries")
+              : t("toolbar.hideAllEntries")
           }
           className={iconClass}
         >
@@ -151,7 +154,7 @@ export default function MobileToolbar({
           type="button"
           onClick={onOpenSettings}
           disabled={spinning}
-          aria-label="Settings"
+          aria-label={t("toolbar.settings")}
           className={iconClass}
         >
           <Icon>
@@ -212,6 +215,8 @@ function MoreMenu({
   onExport,
   onShare,
 }: MoreMenuProps) {
+  const t = useT();
+
   const menuId = useId();
   const wrapperRef =
     useRef<HTMLDivElement>(null);
@@ -249,7 +254,7 @@ function MoreMenu({
         ref={buttonRef}
         type="button"
         onClick={onToggle}
-        aria-label="More actions"
+        aria-label={t("toolbar.moreActions")}
         aria-haspopup="true"
         aria-expanded={open}
         aria-controls={menuId}
@@ -271,7 +276,7 @@ function MoreMenu({
         <div
           ref={menuRef}
           id={menuId}
-          aria-label="More actions"
+          aria-label={t("toolbar.moreActions")}
           className={`absolute bottom-full right-0 z-50 mb-1 w-48 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border py-1 shadow-xl ${theme.surfaceClass} ${theme.borderClass} ${theme.textPrimaryClass}`}
         >
           <button
@@ -287,7 +292,7 @@ function MoreMenu({
               <path d="m7 14 5-5 5 5" />
               <path d="M5 3h14" />
             </Icon>
-            Import
+            {t("toolbar.import")}
           </button>
 
           <button
@@ -302,7 +307,7 @@ function MoreMenu({
               <path d="m7 10 5 5 5-5" />
               <path d="M5 21h14" />
             </Icon>
-            Export
+            {t("toolbar.export")}
           </button>
 
           <button
@@ -318,7 +323,7 @@ function MoreMenu({
               <path d="M8.6 13.5l6.8 4" />
               <path d="M15.4 6.5l-6.8 4" />
             </Icon>
-            Share
+            {t("toolbar.share")}
           </button>
         </div>
       )}

@@ -5,6 +5,7 @@ import type { RefObject } from "react";
 import { flushSync } from "react-dom";
 import { FEEDBACK_URL } from "../lib/feedback";
 import { usePopover } from "../lib/use-popover";
+import { useT } from "../lib/i18n/provider";
 
 type AppMenuProps = {
   open: boolean;
@@ -40,6 +41,7 @@ export default function AppMenu({
   hoverClass,
   textColor,
 }: AppMenuProps) {
+  const t = useT();
   const menuId = useId();
   const wrapperRef =
     useRef<HTMLDivElement>(null);
@@ -71,7 +73,7 @@ export default function AppMenu({
   const itemClass = `flex min-h-11 w-full items-center gap-3 px-4 py-2 text-left text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current disabled:cursor-not-allowed disabled:opacity-50 ${hoverClass}`;
 
   const spinTitle = spinning
-    ? "Wait for the spin to finish."
+    ? t("common.waitForSpin")
     : undefined;
 
   return (
@@ -84,7 +86,7 @@ export default function AppMenu({
         ref={buttonRef}
         type="button"
         onClick={onToggle}
-        aria-label="Menu"
+        aria-label={t("menu.label")}
         aria-expanded={open}
         aria-controls={menuId}
         className={`flex h-11 w-11 items-center justify-center rounded-lg border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${surfaceClass} ${borderClass} ${hoverClass}`}
@@ -109,7 +111,7 @@ export default function AppMenu({
         <div
           ref={menuRef}
           id={menuId}
-          aria-label="Menu"
+          aria-label={t("menu.label")}
           className={`absolute right-0 top-full z-50 mt-1 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border py-1 shadow-xl ${surfaceClass} ${borderClass}`}
           style={{ color: textColor }}
         >
@@ -123,7 +125,7 @@ export default function AppMenu({
             title={spinTitle}
             className={itemClass}
           >
-            Edit title
+            {t("menu.editTitle")}
           </button>
 
           <button
@@ -136,7 +138,7 @@ export default function AppMenu({
             title={spinTitle}
             className={itemClass}
           >
-            Edit description
+            {t("menu.editDescription")}
           </button>
 
           <button
@@ -147,7 +149,7 @@ export default function AppMenu({
             }
             className={itemClass}
           >
-            How it works
+            {t("menu.howItWorks")}
           </button>
 
           <button
@@ -156,7 +158,7 @@ export default function AppMenu({
             onClick={() => activate(onFaq)}
             className={itemClass}
           >
-            FAQ
+            {t("menu.faq")}
           </button>
 
           <div
@@ -174,7 +176,7 @@ export default function AppMenu({
             title={spinTitle}
             className={itemClass}
           >
-            Send feedback
+            {t("menu.sendFeedback")}
           </button>
 
           <a
@@ -182,11 +184,11 @@ export default function AppMenu({
             target="_blank"
             rel="noopener noreferrer"
             data-menu-item=""
-            aria-label="Report on GitHub (opens in a new tab)"
+            aria-label={t("menu.reportOnGithubLabel")}
             onClick={() => onClose(true)}
             className={itemClass}
           >
-            Report on GitHub
+            {t("menu.reportOnGithub")}
           </a>
         </div>
       )}

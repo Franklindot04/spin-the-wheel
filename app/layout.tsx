@@ -4,13 +4,21 @@ import {
   APPEARANCE_THEMES,
   THEME_STORAGE_KEY,
 } from "./lib/appearance-themes";
+import { en } from "./lib/i18n/en";
+import { languageScript } from "./lib/i18n/head-script";
+import { LanguageProvider } from "./lib/i18n/provider";
 
+/*
+ * The English page title and description are the fallback written
+ * into the built page. The head script (and the language store, when
+ * the language changes) replace them for another language.
+ */
 export const metadata: Metadata = {
-  title: "Spin the Wheel",
-  description: "Create and customize wheels for games, quizzes, decisions, and more.",
+  title: en["meta.title"],
+  description: en["meta.description"],
   appleWebApp: {
     capable: true,
-    title: "Spin the Wheel",
+    title: en["meta.title"],
     statusBarStyle: "black",
   },
 };
@@ -40,8 +48,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script
           dangerouslySetInnerHTML={{ __html: themeScript }}
         />
+        <script
+          dangerouslySetInnerHTML={{ __html: languageScript }}
+        />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <LanguageProvider>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

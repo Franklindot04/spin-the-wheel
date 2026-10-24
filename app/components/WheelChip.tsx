@@ -5,6 +5,7 @@ import type { RefObject } from "react";
 import { flushSync } from "react-dom";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
 import { usePopover } from "../lib/use-popover";
+import { useT } from "../lib/i18n/provider";
 
 type WheelChipProps = {
   theme: AppearanceThemeConfig;
@@ -41,6 +42,8 @@ export default function WheelChip({
   onRename,
   onDelete,
 }: WheelChipProps) {
+  const t = useT();
+
   const menuId = useId();
   const wrapperRef =
     useRef<HTMLDivElement>(null);
@@ -80,9 +83,9 @@ export default function WheelChip({
   const canDelete = wheels.length > 1;
 
   const deleteReason = spinning
-    ? "Wait for the spin to finish."
+    ? t("common.waitForSpin")
     : !canDelete
-      ? "Needs at least two wheels."
+      ? t("wheelChip.needsTwo")
       : "";
 
   const itemClass = `flex min-h-11 w-full items-center gap-3 px-4 py-2 text-left text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current disabled:cursor-not-allowed disabled:opacity-50 ${theme.controlHoverClass}`;
@@ -98,7 +101,9 @@ export default function WheelChip({
         type="button"
         onClick={onToggle}
         disabled={spinning}
-        aria-label={`Wheel: ${activeName}`}
+        aria-label={t("wheelChip.label", {
+          name: activeName,
+        })}
         aria-haspopup="true"
         aria-expanded={open}
         aria-controls={menuId}
@@ -125,7 +130,7 @@ export default function WheelChip({
         <div
           ref={menuRef}
           id={menuId}
-          aria-label="Wheels"
+          aria-label={t("wheelChip.menu")}
           className={`absolute left-0 top-full z-50 mt-1 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border py-1 shadow-xl ${theme.surfaceClass} ${theme.borderClass} ${theme.textPrimaryClass}`}
         >
           <div className="max-h-60 overflow-y-auto overscroll-contain">
@@ -188,7 +193,7 @@ export default function WheelChip({
             disabled={spinning}
             className={itemClass}
           >
-            Add wheel
+            {t("wheelChip.add")}
           </button>
 
           <button
@@ -198,7 +203,7 @@ export default function WheelChip({
             disabled={spinning}
             className={itemClass}
           >
-            Rename wheel
+            {t("wheelChip.rename")}
           </button>
 
           <button
@@ -209,7 +214,7 @@ export default function WheelChip({
             title={deleteReason || undefined}
             className={`${itemClass} flex-col items-start gap-0`}
           >
-            <span>Delete wheel</span>
+            <span>{t("wheelChip.delete")}</span>
             {deleteReason ? (
               <span
                 className={`text-xs font-normal ${theme.textMutedClass}`}
