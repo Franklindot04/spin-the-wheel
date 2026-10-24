@@ -312,6 +312,137 @@ export const en = {
   "entryMenu.deleteKeepTitle": "Keep at least 2 visible entries",
   "entryMenu.done": "Done",
 
+  "loading.text": "Loading saved wheels…",
+
+  "header.editTitleLabel": "Edit wheel title",
+  "header.editDescriptionLabel": "Edit wheel description",
+  "header.selectWheel": "Select wheel",
+  "header.addWheel": "+ Wheel",
+  "header.removeWheel": "− Wheel",
+  "header.rename": "Rename",
+  "header.shareLabel": "Share Spin the Wheel",
+
+  "share.copied": "Link copied",
+  "share.copyFailed": "Could not copy the link",
+
+  "banner.stale":
+    "Your wheels were changed in another tab. Reload to load the latest version. Changes made in this tab are not saved until you reload.",
+  "banner.reload": "Reload",
+  "banner.exportTabData": "Export this tab's data",
+  "banner.unreadable.defaults.stored.ok":
+    "Your saved data could not be read, so the app started with defaults. A copy was kept.",
+  "banner.unreadable.defaults.stored.failed":
+    "Your saved data could not be read, so the app started with defaults. A copy was kept. The copy could not be deleted. Export it first if you need it, then try again.",
+  "banner.unreadable.defaults.memory.ok":
+    "Your saved data could not be read, so the app started with defaults. A copy was kept. The copy lasts only until the page is closed.",
+  "banner.unreadable.defaults.memory.failed":
+    "Your saved data could not be read, so the app started with defaults. A copy was kept. The copy lasts only until the page is closed. The copy could not be deleted. Export it first if you need it, then try again.",
+  "banner.unreadable.repaired.stored.ok":
+    "Some of your saved data was repaired when it loaded. A copy of the original was kept.",
+  "banner.unreadable.repaired.stored.failed":
+    "Some of your saved data was repaired when it loaded. A copy of the original was kept. The copy could not be deleted. Export it first if you need it, then try again.",
+  "banner.unreadable.repaired.memory.ok":
+    "Some of your saved data was repaired when it loaded. A copy of the original was kept. The copy lasts only until the page is closed.",
+  "banner.unreadable.repaired.memory.failed":
+    "Some of your saved data was repaired when it loaded. A copy of the original was kept. The copy lasts only until the page is closed. The copy could not be deleted. Export it first if you need it, then try again.",
+  "banner.unreadable.legacy.stored.ok":
+    "Your saved data could not be read, so the app loaded an older saved copy instead. A copy was kept.",
+  "banner.unreadable.legacy.stored.failed":
+    "Your saved data could not be read, so the app loaded an older saved copy instead. A copy was kept. The copy could not be deleted. Export it first if you need it, then try again.",
+  "banner.unreadable.legacy.memory.ok":
+    "Your saved data could not be read, so the app loaded an older saved copy instead. A copy was kept. The copy lasts only until the page is closed.",
+  "banner.unreadable.legacy.memory.failed":
+    "Your saved data could not be read, so the app loaded an older saved copy instead. A copy was kept. The copy lasts only until the page is closed. The copy could not be deleted. Export it first if you need it, then try again.",
+  "banner.unreadable.kept.stored.ok":
+    "A copy of saved data that could not be read earlier is still kept.",
+  "banner.unreadable.kept.stored.failed":
+    "A copy of saved data that could not be read earlier is still kept. The copy could not be deleted. Export it first if you need it, then try again.",
+  "banner.unreadable.kept.memory.ok":
+    "A copy of saved data that could not be read earlier is still kept. The copy lasts only until the page is closed.",
+  "banner.unreadable.kept.memory.failed":
+    "A copy of saved data that could not be read earlier is still kept. The copy lasts only until the page is closed. The copy could not be deleted. Export it first if you need it, then try again.",
+  "banner.stillUnreadable":
+    "The saved data is still unreadable. It will be replaced when you make a change or import a file.",
+  "banner.saveFailed":
+    "Your changes could not be saved because browser storage is full. Export your data to keep a copy.",
+  "banner.storageFull":
+    "Browser storage is about {percent}% full. Large images and sounds take the most space. Export your data to keep a copy, or remove media you no longer need.",
+  "banner.dismiss": "Dismiss",
+  "banner.dismissImportLabel": "Dismiss import error",
+
+  "import.tooLarge": "This file is too large to import. The limit is {size}.",
+  "import.failed":
+    "The selected file could not be imported. Choose a valid Spin the Wheel JSON export.",
+  "import.confirmTitle": "Import wheel data?",
+  "import.confirmMessage": "This will replace the current saved wheel data.",
+
+  "tabs.showHistoryLabel": "Show history",
+
+  "entriesPanel.exportLabel": "Export data",
+  "entriesPanel.importLabel": "Import data",
+  "entriesPanel.exportNote": "Exports include all questions and answers.",
+
+  "history.title": "Spin History",
+  "history.description": "Completed spins are recorded here.",
+  "history.close": "Close",
+  "history.empty": "No spins recorded yet.",
+  "history.clear": "Clear History",
+  "history.rowNumber": "#{number}",
+
+  "result.title": "Result",
+  "result.clear": "Clear result",
+  "result.questionIntro": "And the question is...",
+  "result.yourQuestion": "Your question",
+  "result.answer": "The answer",
+  "result.hideAnswer": "Hide Answer",
+  "result.showAnswer": "Show Answer",
+  "result.anotherSpin": "Give it another spin 😉",
+  "result.backToSetup": "Back to Setup",
+  "result.done": "Done",
+
+  "quizStatus.spinning": "Spinning... 🎡",
+  "quizStatus.allHidden": "All remaining questions are hidden.",
+  "quizStatus.readyToSpin": "Alright... give it a spin 😉",
+  "quizStatus.spinningHint": "The question will appear when the wheel stops.",
+  "quizStatus.showOne": "Show one or go back to setup.",
+  "quizStatus.waiting": "The question is waiting.",
+
+  "quizCard.title": "Quiz Mode",
+  "quizCard.description":
+    "Configure your questions and answers, then start the quiz before handing the wheel to the contestant.",
+  "quizCard.needsAnswers":
+    "Every question needs both a question and an answer before the quiz can start.",
+  "quizCard.needsTwo": "Show at least 2 questions to start the quiz.",
+
+  "quizSetup.title": "Quiz Setup",
+  "quizSetup.description":
+    "Add a question and answer for every entry before starting.",
+  "quizSetup.start": "Start Quiz",
+  "quizSetup.needsAnswers":
+    "Every question needs both a question and an answer.",
+
+  "quizProgress.complete": "Quiz Complete",
+  "quizProgress.inProgress": "Quiz in Progress",
+  "quizProgress.allSelected": "All questions have been selected.",
+  "quizProgress.allHidden":
+    "All remaining questions are hidden. Show one or go back to setup.",
+  "quizProgress.contestant": "The contestant can now spin the wheel.",
+  "quizProgress.remaining": "Questions Remaining",
+
+  "wheelEmpty.completeTitle": "Quiz complete",
+  "wheelEmpty.hiddenTitle": "All remaining questions are hidden",
+  "wheelEmpty.completeMessage":
+    "Every question has been asked. Back to Setup to run it again.",
+  "wheelEmpty.hiddenMessage": "Show one to keep going, or go back to setup.",
+
+  "wheel.keepTwoVisible": "Keep at least 2 entries visible.",
+  "wheel.showTwoToSpin": "Show at least 2 entries to spin.",
+
+  "footer.entries": {
+    one: "{count} entry",
+    other: "{count} entries",
+  },
+
   "faq.item.add-options.question": "How do I add options?",
   "faq.item.add-options.answer":
     "Use + Add in the Entries list, then type a name. Press Spin when you are ready.",

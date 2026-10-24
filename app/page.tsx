@@ -26,6 +26,7 @@ import { ImportError, MAX_IMPORT_FILE_SIZE, STORAGE_KEY, UNREADABLE_BACKUP_KEY, 
 import type { ImportProblem } from "./lib/wheel-storage";
 import type { StoredDataNotice } from "./lib/wheel-storage";
 import { canDeleteEntry, formatHistoryTime, getEntryWeight, resolveStateValue, } from "./lib/wheel-utils";
+import { formatFileSize } from "./lib/media-limits";
 import { shareLink } from "./lib/share";
 import { useFocusTrap } from "./lib/use-focus-trap";
 function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partial<Wheel>): AppData {
@@ -170,10 +171,10 @@ export default function Home() {
     async function handleShare() {
         const result = await shareLink(t("share.title"));
         if (result === "copied") {
-            showShareMessage("Link copied");
+            showShareMessage(t("share.copied"));
         }
         else if (result === "failed") {
-            showShareMessage("Could not copy the link");
+            showShareMessage(t("share.copyFailed"));
         }
     }
     function updateActiveWheel(changes: Partial<Wheel>) {
@@ -807,14 +808,14 @@ export default function Home() {
     const quizTextLocked = mode === "quiz" &&
         quizStarted;
     const wheelEmptyTitle = quizComplete
-        ? "Quiz complete"
+        ? t("wheelEmpty.completeTitle")
         : remainingQuizEntriesHidden
-            ? "All remaining questions are hidden"
+            ? t("wheelEmpty.hiddenTitle")
             : undefined;
     const wheelEmptyMessage = quizComplete
-        ? "Every question has been asked. Back to Setup to run it again."
+        ? t("wheelEmpty.completeMessage")
         : remainingQuizEntriesHidden
-            ? "Show one to keep going, or go back to setup."
+            ? t("wheelEmpty.hiddenMessage")
             : undefined;
     function addEntry() {
         if (spinning) {
@@ -1523,7 +1524,7 @@ export default function Home() {
         }
         setImportError("");
         if (file.size > MAX_IMPORT_FILE_SIZE) {
-            setImportError(`This file is too large to import. The limit is ${MAX_IMPORT_FILE_SIZE / (1024 * 1024)} MB.`);
+            setImportError(t("import.tooLarge", { size: formatFileSize(t, MAX_IMPORT_FILE_SIZE, 0) }));
             return;
         }
         file
@@ -1534,7 +1535,7 @@ export default function Home() {
             .catch((error: unknown) => {
             setImportError(error instanceof ImportError
                 ? importProblemText(error.problem)
-                : "The selected file could not be imported. Choose a valid Spin the Wheel JSON export.");
+                : t("import.failed"));
         });
     }
     function importProblemText(problem: ImportProblem) {
@@ -1605,14 +1606,14 @@ export default function Home() {
         }
         return (<div className={inView ? "text-center" : "mt-6 text-center"} inert={inView ? undefined : wheelExpanded} aria-hidden={inView ? undefined : wheelExpanded || undefined}>
           <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
-            Result
+            {t("result.title")}
           </p>
           <p className={`mt-2 break-words text-2xl font-bold ${theme.textPrimaryClass}`}>
             {selectedEntry.emoji && (<span aria-hidden="true">{selectedEntry.emoji}{" "}</span>)}
             {selectedEntry.label}
           </p>
           <button type="button" onClick={clearResult} className={`mt-1 min-h-11 rounded-lg px-3 text-xs font-semibold underline-offset-4 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current ${theme.textMutedClass}`}>
-            Clear result
+            {t("result.clear")}
           </button>
         </div>);
     }
@@ -1622,7 +1623,7 @@ export default function Home() {
         }
         return (<div inert={inView ? undefined : wheelExpanded} aria-hidden={inView ? undefined : wheelExpanded || undefined} className={`mx-auto max-w-2xl rounded-2xl border text-center shadow-sm ${inView ? "p-4" : "mt-6 p-6"} ${theme.borderClass} ${theme.surfaceClass}`}>
           <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
-            And the question is...
+            {t("result.questionIntro")}
           </p>
           <p className={`mt-2 break-words text-xl font-bold ${theme.textPrimaryClass}`}>
             {displayedQuizEntry.emoji && (<span aria-hidden="true">{displayedQuizEntry.emoji}{" "}</span>)}
@@ -1630,7 +1631,7 @@ export default function Home() {
           </p>
           <div className={`mt-4 rounded-xl p-5 text-left ${theme.subtleSurfaceClass}`}>
             <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
-              Your question
+              {t("result.yourQuestion")}
             </p>
             <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
               {displayedQuizEntry.question}
@@ -1638,7 +1639,7 @@ export default function Home() {
           </div>
           {showAnswer && (<div className={`mt-4 rounded-xl border p-5 text-left ${theme.borderClass} ${theme.surfaceClass}`}>
               <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
-                The answer
+                {t("result.answer")}
               </p>
               <p tabIndex={0} className={`mt-2 max-h-60 overflow-y-auto break-words pr-1 text-base leading-7 ${theme.textPrimaryClass}`}>
                 {displayedQuizEntry.answer}
@@ -1647,23 +1648,23 @@ export default function Home() {
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <button type="button" data-keep-quiz-box="" onClick={toggleAnswer} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass}`}>
               {showAnswer
-            ? "Hide Answer"
-            : "Show Answer"}
+            ? t("result.hideAnswer")
+            : t("result.showAnswer")}
             </button>
             {!quizComplete &&
                 !remainingQuizEntriesHidden && (<button type="button" onClick={nextSpin} disabled={spinning ||
                 remainingVisibleQuizCount <
                     1} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
-                Give it another spin 😉
+                {t("result.anotherSpin")}
               </button>)}
             {!inView &&
                 (quizComplete ||
                     remainingQuizEntriesHidden) && (<>
                 <button type="button" onClick={backToQuizSetup} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                  Back to Setup
+                  {t("result.backToSetup")}
                 </button>
                 <button type="button" onClick={dismissQuizCard} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                  Done
+                  {t("result.done")}
                 </button>
               </>)}
           </div>
@@ -1677,7 +1678,7 @@ export default function Home() {
         <div className="hidden h-[70px] md:block"/>
         <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <div className="shell-panel min-h-[560px] rounded-2xl border shadow-sm" role="status">
-            <span className="sr-only">Loading saved wheels…</span>
+            <span className="sr-only">{t("loading.text")}</span>
           </div>
         </section>
       </main>);
@@ -1694,7 +1695,7 @@ export default function Home() {
               <h1 className="truncate text-2xl font-extrabold tracking-tight" style={{ color: headerTextColor }}>
                 {wheelTitle.trim() || DEFAULT_WHEEL_TITLE}
               </h1>
-              <button type="button" onClick={editWheelTitle} disabled={spinning} aria-label="Edit wheel title" title="Edit title" className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
+              <button type="button" onClick={editWheelTitle} disabled={spinning} aria-label={t("header.editTitleLabel")} title={t("menu.editTitle")} className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 20h9"/>
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4Z"/>
@@ -1705,7 +1706,7 @@ export default function Home() {
               <p className="truncate text-sm font-medium" style={{ color: headerMutedColor }}>
                 {wheelDescription.trim() || DEFAULT_WHEEL_DESCRIPTION}
               </p>
-              <button type="button" onClick={editWheelDescription} disabled={spinning} aria-label="Edit wheel description" title="Edit description" className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
+              <button type="button" onClick={editWheelDescription} disabled={spinning} aria-label={t("header.editDescriptionLabel")} title={t("menu.editDescription")} className={`shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} style={{ color: headerMutedColor }}>
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 20h9"/>
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L8 18l-4 1 1-4Z"/>
@@ -1714,20 +1715,20 @@ export default function Home() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:flex-nowrap">
-            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label="Select wheel" style={{ "--tw-ring-color": headerTextColor } as CSSProperties} className={`max-w-[9rem] max-[348px]:max-w-[6.5rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none transition md:max-w-none ${theme.controlClass} ${spinning ? "" : theme.controlHoverClass} focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50`}>
+            <select value={appData.activeWheelId} onChange={(event) => switchWheel(event.target.value)} disabled={spinning} aria-label={t("header.selectWheel")} style={{ "--tw-ring-color": headerTextColor } as CSSProperties} className={`max-w-[9rem] max-[348px]:max-w-[6.5rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none transition md:max-w-none ${theme.controlClass} ${spinning ? "" : theme.controlHoverClass} focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50`}>
               {appData.wheels.map((wheel) => (<option key={wheel.id} value={wheel.id}>
                     {wheel.name}
                   </option>))}
             </select>
             <button type="button" onClick={addWheel} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
-              + Wheel
+              {t("header.addWheel")}
             </button>
             {appData.wheels.length >
             1 && (<button type="button" onClick={deleteActiveWheel} disabled={spinning} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition not-disabled:hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
-                − Wheel
+                {t("header.removeWheel")}
               </button>)}
             <button type="button" onClick={renameActiveWheel} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
-              Rename
+              {t("header.rename")}
             </button>
             <button ref={settingsButtonRef} type="button" onClick={() => {
                 if (anyDialogOpen()) {
@@ -1736,9 +1737,9 @@ export default function Home() {
                 settingsOpenerRef.current = settingsButtonRef.current;
                 setSettingsOpen(true);
             }} disabled={spinning} className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass} disabled:cursor-not-allowed disabled:opacity-50`} style={{ color: headerTextColor }}>
-              Settings
+              {t("toolbar.settings")}
             </button>
-            <button type="button" onClick={handleShare} aria-label="Share Spin the Wheel" title="Share" className={`relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border transition before:absolute before:-inset-1 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass}`} style={{ color: headerTextColor }}>
+            <button type="button" onClick={handleShare} aria-label={t("header.shareLabel")} title={t("toolbar.share")} className={`relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border transition before:absolute before:-inset-1 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${headerSurfaceClass} ${headerBorderClass} ${headerHoverClass}`} style={{ color: headerTextColor }}>
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="18" cy="5" r="3"/>
                 <circle cx="6" cy="12" r="3"/>
@@ -1757,65 +1758,53 @@ export default function Home() {
       </div>
       <div className="mx-auto max-w-7xl space-y-3 px-4 empty:hidden pt-4 sm:px-6">
         {storageStale && (<div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-start sm:justify-between">
-            <p className="min-w-0 break-words">Your wheels were changed in another tab. Reload to load the latest version. Changes made in this tab are not saved until you reload.</p>
+            <p className="min-w-0 break-words">{t("banner.stale")}</p>
             <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
               <button type="button" onClick={() => window.location.reload()} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
-                Reload
+                {t("banner.reload")}
               </button>
               <button type="button" onClick={exportData} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
-                Export this tab&apos;s data
+                {t("banner.exportTabData")}
               </button>
             </div>
           </div>)}
         {storedDataNotice && (<div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-start sm:justify-between">
             <p className="min-w-0 break-words">
-              {storedDataNotice.kind === "defaults"
-                ? "Your saved data could not be read, so the app started with defaults. A copy was kept."
-                : storedDataNotice.kind === "repaired"
-                    ? "Some of your saved data was repaired when it loaded. A copy of the original was kept."
-                    : storedDataNotice.kind === "legacy"
-                        ? "Your saved data could not be read, so the app loaded an older saved copy instead. A copy was kept."
-                        : "A copy of saved data that could not be read earlier is still kept."}
-              {storedDataNotice.memoryOnly
-                ? " The copy lasts only until the page is closed."
-                : ""}
-              {deleteCopyFailed
-                ? " The copy could not be deleted. Export it first if you need it, then try again."
-                : ""}
+              {t(`banner.unreadable.${storedDataNotice.kind}.${storedDataNotice.memoryOnly ? "memory" : "stored"}.${deleteCopyFailed ? "failed" : "ok"}`)}
             </p>
             <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
               <button type="button" onClick={exportRawData} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
-                Export raw data
+                {t("deleteCopy.exportRaw")}
               </button>
               <button ref={deleteCopyButtonRef} type="button" onClick={() => setDeleteCopyOpen(true)} className="rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
-                Delete copy
+                {t("deleteCopy.confirm")}
               </button>
             </div>
           </div>)}
         {!storedDataNotice && v2StillUnreadable && (<div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <p className="min-w-0 break-words">The saved data is still unreadable. It will be replaced when you make a change or import a file.</p>
+            <p className="min-w-0 break-words">{t("banner.stillUnreadable")}</p>
           </div>)}
         {saveFailed && (<div ref={saveAlertRef} role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            <p className="min-w-0 break-words">Your changes could not be saved because browser storage is full. Export your data to keep a copy.</p>
+            <p className="min-w-0 break-words">{t("banner.saveFailed")}</p>
             <button type="button" onClick={exportData} className="shrink-0 rounded font-semibold text-red-800 underline transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
-              Export
+              {t("toolbar.export")}
             </button>
           </div>)}
         {!saveFailed && storageNearlyFull && !storageNoticeDismissed && (<div role="status" className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-start sm:justify-between">
-            <p className="min-w-0 break-words">Browser storage is about {storageNearlyFull.percent}% full. Large images and sounds take the most space. Export your data to keep a copy, or remove media you no longer need.</p>
+            <p className="min-w-0 break-words">{t("banner.storageFull", { percent: storageNearlyFull.percent })}</p>
             <div className="flex flex-wrap gap-3 sm:shrink-0 sm:justify-end">
               <button type="button" onClick={exportData} className="rounded font-semibold text-amber-900 underline transition hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-900">
-                Export
+                {t("toolbar.export")}
               </button>
               <button type="button" onClick={() => setStorageNoticeDismissed(true)} className="rounded font-semibold text-amber-900 underline transition hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-900">
-                Dismiss
+                {t("banner.dismiss")}
               </button>
             </div>
           </div>)}
         {importError && (<div ref={importAlertRef} role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <p className="min-w-0 break-words">{importError}</p>
-            <button type="button" onClick={() => setImportError("")} aria-label="Dismiss import error" className="shrink-0 rounded font-semibold text-red-800 transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
-              Dismiss
+            <button type="button" onClick={() => setImportError("")} aria-label={t("banner.dismissImportLabel")} className="shrink-0 rounded font-semibold text-red-800 transition hover:text-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-800">
+              {t("banner.dismiss")}
             </button>
           </div>)}
       </div>
@@ -1824,12 +1813,12 @@ export default function Home() {
           <button type="button" onClick={() => changeMode("standard")} disabled={spinning} className={`rounded-lg px-5 py-2 text-sm font-medium transition ${mode === "standard"
             ? `${actionAccentClass} text-white`
             : `${theme.textSecondaryClass} ${theme.controlHoverClass}`} disabled:cursor-not-allowed disabled:opacity-50`}>
-            Standard
+            {t("mode.standard")}
           </button>
           <button type="button" onClick={() => changeMode("quiz")} disabled={spinning} className={`rounded-lg px-5 py-2 text-sm font-medium transition ${mode === "quiz"
             ? `${actionAccentClass} text-white`
             : `${theme.textSecondaryClass} ${theme.controlHoverClass}`} disabled:cursor-not-allowed disabled:opacity-50`}>
-            Quiz
+            {t("mode.quiz")}
           </button>
         </div>
       </div>
@@ -1849,7 +1838,7 @@ export default function Home() {
                 },
             })))} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} theme={theme} controlsStart={<WheelChip theme={theme} open={popover === "wheel"} onToggle={() => togglePopover("wheel")} onClose={closePopover} buttonRef={chipButtonRef} wheels={appData.wheels} activeWheelId={appData.activeWheelId} spinning={spinning} onSwitch={switchWheel} onAdd={addWheel} onRename={renameActiveWheel} onDelete={deleteActiveWheel}/>} onExpandedChange={handleExpandedChange} result={winnerEntryExists && selectedEntry
                 ? { label: selectedEntry.label, emoji: selectedEntry.emoji, image: selectedEntry.image }
-                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason="Keep at least 2 entries visible." spinReason={mode === "standard" && !spinning && !standardResultExists && standardEntries.filter((entry) => !entry.hidden).length < 2 ? "Show at least 2 entries to spin." : undefined} onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} quiz={mode === "quiz" && quizStarted && displayedQuizEntry && showAnswer
+                : null} onContinue={closeWinnerBox} onRemove={removeWinner} removeDisabled={winnerRemoveDisabled} reason={t("wheel.keepTwoVisible")} spinReason={mode === "standard" && !spinning && !standardResultExists && standardEntries.filter((entry) => !entry.hidden).length < 2 ? t("wheel.showTwoToSpin") : undefined} onBoxFitChange={setWinnerBoxFits} focusSpinRequest={spinFocusRequest} quiz={mode === "quiz" && quizStarted && displayedQuizEntry && showAnswer
                 ? {
                     label: displayedQuizEntry.label,
                     emoji: displayedQuizEntry.emoji,
@@ -1885,17 +1874,17 @@ export default function Home() {
             !quizComplete && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-5 text-center ${theme.borderClass} ${theme.subtleSurfaceClass}`}>
               <p className={`text-sm font-semibold ${theme.textPrimaryClass}`}>
                 {spinning
-                ? "Spinning... 🎡"
+                ? t("quizStatus.spinning")
                 : remainingQuizEntriesHidden
-                    ? "All remaining questions are hidden."
-                    : "Alright... give it a spin 😉"}
+                    ? t("quizStatus.allHidden")
+                    : t("quizStatus.readyToSpin")}
               </p>
               <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
                 {spinning
-                ? "The question will appear when the wheel stops."
+                ? t("quizStatus.spinningHint")
                 : remainingQuizEntriesHidden
-                    ? "Show one or go back to setup."
-                    : "The question is waiting."}
+                    ? t("quizStatus.showOne")
+                    : t("quizStatus.waiting")}
               </p>
             </div>)}
           {mode === "standard" &&
@@ -1919,16 +1908,16 @@ export default function Home() {
           {mode === "quiz" &&
             !quizStarted && (<div className={`mx-auto mt-6 max-w-2xl rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
               <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-                Quiz Mode
+                {t("quizCard.title")}
               </h2>
               <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
-                Configure your questions and answers, then start the quiz before handing the wheel to the contestant.
+                {t("quizCard.description")}
               </p>
               {!quizEntriesComplete && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
-                  Every question needs both a question and an answer before the quiz can start.
+                  {t("quizCard.needsAnswers")}
                 </div>)}
               {!enoughVisibleQuizEntries && (<div className={`mt-4 rounded-xl p-4 text-sm ${theme.subtleSurfaceClass} ${theme.textSecondaryClass}`}>
-                  Show at least 2 questions to start the quiz.
+                  {t("quizCard.needsTwo")}
                 </div>)}
             </div>)}
         </div>
@@ -1936,13 +1925,13 @@ export default function Home() {
           <div className="mb-4 hidden flex-wrap items-center gap-2 md:flex">
             <button type="button" onClick={() => setHistoryOpen(false)} className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition ${!historyOpen
             ? `${actionAccentClass} text-white shadow-sm`
-            : `${theme.borderClass} ${theme.surfaceClass} ${theme.textMutedClass} ${theme.controlHoverClass}`}`} aria-label="Show entries" title="Entries">
-              Entries
+            : `${theme.borderClass} ${theme.surfaceClass} ${theme.textMutedClass} ${theme.controlHoverClass}`}`} aria-label={t("toolbar.showEntries")} title={t("toolbar.entries")}>
+              {t("toolbar.entries")}
             </button>
             <button type="button" onClick={() => setHistoryOpen(true)} className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition ${historyOpen
             ? `${actionAccentClass} text-white shadow-sm`
-            : `${theme.borderClass} ${theme.surfaceClass} ${theme.textMutedClass} ${theme.controlHoverClass}`}`} aria-label="Show history" title="History">
-              History
+            : `${theme.borderClass} ${theme.surfaceClass} ${theme.textMutedClass} ${theme.controlHoverClass}`}`} aria-label={t("tabs.showHistoryLabel")} title={t("toolbar.history")}>
+              {t("toolbar.history")}
               <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${theme.subtleSurfaceClass} ${theme.textMutedClass}`}>
                 {mode === "standard"
             ? standardHistory.length
@@ -1951,10 +1940,10 @@ export default function Home() {
             </button>
             <button type="button" onClick={toggleAllEntriesHidden} disabled={spinning ||
             currentSetupEntries.length === 0} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label={allEntriesHidden
-            ? "Show all entries"
-            : "Hide all entries"} title={allEntriesHidden
-            ? "Show all entries"
-            : "Hide all entries"}>
+            ? t("toolbar.showAllEntries")
+            : t("toolbar.hideAllEntries")} title={allEntriesHidden
+            ? t("toolbar.showAllEntries")
+            : t("toolbar.hideAllEntries")}>
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 {allEntriesHidden ? (<>
                     <path d="M3 3l18 18"/>
@@ -1967,14 +1956,14 @@ export default function Home() {
                   </>)}
               </svg>
             </button>
-            <button type="button" onClick={exportData} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Export data" title="Export data">
+            <button type="button" onClick={exportData} disabled={spinning} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label={t("entriesPanel.exportLabel")} title={t("entriesPanel.exportLabel")}>
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 3v12"/>
                 <path d="m7 10 5 5 5-5"/>
                 <path d="M5 21h14"/>
               </svg>
             </button>
-            <button type="button" onClick={openImportPicker} disabled={spinning || storageStale} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label="Import data" title={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"}>
+            <button type="button" onClick={openImportPicker} disabled={spinning || storageStale} className={`shrink-0 rounded-lg border p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.surfaceClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-40`} aria-label={t("entriesPanel.importLabel")} title={storageStale ? t("toolbar.importStale") : t("toolbar.importTitle")}>
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 21V9"/>
                 <path d="m7 14 5-5 5 5"/>
@@ -1984,7 +1973,7 @@ export default function Home() {
             <input ref={importInputRef} type="file" accept=".json,application/json" onChange={handleImportFile} className="hidden"/>
           </div>
           {quizTextLocked && (<p className={`mb-4 text-xs leading-5 md:-mt-2 ${theme.textMutedClass}`}>
-              Exports include all questions and answers.
+              {t("entriesPanel.exportNote")}
             </p>)}
           {!historyOpen && (<>
               <EntryList entries={currentSetupEntries} mode={mode} onAdd={addEntry} onUpdate={updateEntry} onDelete={deleteEntry} onDuplicate={duplicateEntry} additionsDisabled={mode === "quiz" &&
@@ -2001,7 +1990,7 @@ export default function Home() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className={`text-base font-semibold ${theme.textPrimaryClass}`}>
-                      Spin History
+                      {t("history.title")}
                     </h2>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${theme.subtleSurfaceClass} ${theme.textMutedClass}`}>
                       {(mode ===
@@ -2011,11 +2000,11 @@ export default function Home() {
                     </span>
                   </div>
                   <p className={`mt-1 text-sm leading-5 ${theme.textSecondaryClass}`}>
-                    Completed spins are recorded here.
+                    {t("history.description")}
                   </p>
                 </div>
                 <button type="button" onClick={() => setHistoryOpen(false)} className={`text-sm font-semibold ${theme.textMutedClass} transition hover:opacity-80`}>
-                  Close
+                  {t("history.close")}
                 </button>
               </div>
               <div className="mt-5">
@@ -2025,7 +2014,7 @@ export default function Home() {
                 : quizHistory).length ===
                 0 ? (<div className={`rounded-xl p-5 text-center ${theme.subtleSurfaceClass}`}>
                     <p className={`text-sm ${theme.textMutedClass}`}>
-                      No spins recorded yet.
+                      {t("history.empty")}
                     </p>
                   </div>) : (<div className="max-h-72 space-y-2 overflow-y-auto pr-1">
                     {(mode ===
@@ -2034,12 +2023,13 @@ export default function Home() {
                     : quizHistory).map((item, index) => (<div key={item.id} className={`rounded-xl border px-3 py-2.5 ${theme.borderClass} ${theme.subtleSurfaceClass}`}>
                           <div className="flex items-center gap-3">
                             <span className={`w-7 shrink-0 text-xs font-semibold ${theme.textMutedClass}`}>
-                              #
-                              {(mode ===
+                              {t("history.rowNumber", {
+                                number: (mode ===
                         "standard"
                         ? standardHistory
                         : quizHistory).length -
-                        index}
+                        index,
+                            })}
                             </span>
                             <span className={`min-w-0 flex-1 truncate text-sm font-medium ${theme.textPrimaryClass}`}>
                               {item.emoji && (<span aria-hidden="true">{item.emoji}{" "}</span>)}
@@ -2061,26 +2051,26 @@ export default function Home() {
                     "standard"
                     ? standardHistory
                     : quizHistory).length === 0} className="mt-4 w-full rounded-lg border border-red-400 px-4 py-2.5 text-sm font-semibold text-red-300 transition not-disabled:hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40">
-                Clear History
+                {t("history.clear")}
               </button>
             </div>)}
           {mode ===
             "quiz" &&
             !quizStarted && (<div className={`mt-6 rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
               <h2 className={`text-base font-semibold ${theme.textPrimaryClass}`}>
-                Quiz Setup
+                {t("quizSetup.title")}
               </h2>
               <p className={`mt-1 text-sm leading-5 ${theme.textSecondaryClass}`}>
-                Add a question and answer for every entry before starting.
+                {t("quizSetup.description")}
               </p>
               <button type="button" onClick={startQuiz} disabled={!quizReady} className={`mt-5 w-full rounded-lg px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${actionAccentClass} ${actionHoverClass}`}>
-                Start Quiz
+                {t("quizSetup.start")}
               </button>
               {!quizEntriesComplete && (<p className={`mt-2 text-center text-xs ${theme.textMutedClass}`}>
-                  Every question needs both a question and an answer.
+                  {t("quizSetup.needsAnswers")}
                 </p>)}
               {!enoughVisibleQuizEntries && (<p className={`mt-2 text-center text-xs ${theme.textMutedClass}`}>
-                  Show at least 2 questions to start the quiz.
+                  {t("quizCard.needsTwo")}
                 </p>)}
             </div>)}
           {mode ===
@@ -2088,26 +2078,26 @@ export default function Home() {
             quizStarted && (<div className={`mt-6 rounded-2xl border p-6 shadow-sm ${theme.borderClass} ${theme.surfaceClass}`}>
               <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
                 {quizComplete
-                ? "Quiz Complete"
-                : "Quiz in Progress"}
+                ? t("quizProgress.complete")
+                : t("quizProgress.inProgress")}
               </h2>
               <p className={`mt-1 text-sm ${theme.textSecondaryClass}`}>
                 {quizComplete
-                ? "All questions have been selected."
+                ? t("quizProgress.allSelected")
                 : remainingQuizEntriesHidden
-                    ? "All remaining questions are hidden. Show one or go back to setup."
-                    : "The contestant can now spin the wheel."}
+                    ? t("quizProgress.allHidden")
+                    : t("quizProgress.contestant")}
               </p>
               {!quizComplete && (<div className={`mt-5 rounded-xl p-4 ${theme.subtleSurfaceClass}`}>
                   <p className={`text-xs font-semibold uppercase tracking-widest ${theme.textMutedClass}`}>
-                    Questions Remaining
+                    {t("quizProgress.remaining")}
                   </p>
                   <p className={`mt-1 text-2xl font-bold ${theme.textPrimaryClass}`}>
                     {remainingVisibleQuizCount}
                   </p>
                 </div>)}
               <button type="button" onClick={backToQuizSetup} disabled={spinning} className={`mt-6 w-full rounded-lg border px-4 py-3 text-sm font-medium transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-50`}>
-                Back to Setup
+                {t("result.backToSetup")}
               </button>
             </div>)}
         </div>
@@ -2117,11 +2107,9 @@ export default function Home() {
           {activeWheel.name}
         </span>
         <span>
-          {currentSetupEntries.length}{" "}
-          {currentSetupEntries.length ===
-            1
-            ? "entry"
-            : "entries"}
+          {t("footer.entries", {
+            count: currentSetupEntries.length,
+          })}
         </span>
       </footer>
       {settingsOpen && (<div ref={settingsDialogRef} tabIndex={-1} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 outline-none" role="dialog" aria-modal="true" aria-label={t("settings.dialogLabel")} onMouseDown={(event) => {
@@ -2145,17 +2133,17 @@ export default function Home() {
       {pendingImport && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
           <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl ${theme.surfaceClass}`}>
             <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-              Import wheel data?
+              {t("import.confirmTitle")}
             </h2>
             <p className={`mt-2 text-sm leading-6 ${theme.textSecondaryClass}`}>
-              This will replace the current saved wheel data.
+              {t("import.confirmMessage")}
             </p>
             <div className="mt-5 flex gap-3">
               <button type="button" onClick={applyImportedData} disabled={spinning || storageStale} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${actionAccentClass} ${actionHoverClass} disabled:cursor-not-allowed disabled:opacity-40`}>
-                Import
+                {t("toolbar.import")}
               </button>
               <button type="button" onClick={() => setPendingImport(null)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}>
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>
