@@ -5,6 +5,7 @@ import type { AppearanceThemeConfig } from "../lib/wheel-types";
 import type { FaqItem } from "../lib/faq";
 import { useFocusTrap } from "../lib/use-focus-trap";
 import { usePopover } from "../lib/use-popover";
+import { useT } from "../lib/i18n/provider";
 
 type FaqDialogProps = {
   theme: AppearanceThemeConfig;
@@ -39,6 +40,7 @@ export default function FaqDialog({
   feedbackDisabled = false,
   onClose,
 }: FaqDialogProps) {
+  const t = useT();
   const titleId = useId();
   const idPrefix = useId();
   const panelRef =
@@ -165,7 +167,7 @@ export default function FaqDialog({
                       disabled={feedbackDisabled}
                       title={
                         feedbackDisabled
-                          ? "Wait for the spin to finish."
+                          ? t("common.waitForSpin")
                           : undefined
                       }
                       className={`mt-3 min-h-11 rounded-lg border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.textPrimaryClass} not-disabled:hover:bg-white/10`}

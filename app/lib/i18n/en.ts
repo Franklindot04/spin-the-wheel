@@ -19,6 +19,70 @@ export const en = {
   "faq.title": "FAQ",
   "faq.close": "Close",
   "faq.feedback": "Send feedback",
+  "common.cancel": "Cancel",
+  "common.ok": "OK",
+  "common.waitForSpin": "Wait for the spin to finish.",
+
+  "mode.standard": "Standard",
+  "mode.quiz": "Quiz",
+
+  "menu.label": "Menu",
+  "menu.editTitle": "Edit title",
+  "menu.editDescription": "Edit description",
+  "menu.howItWorks": "How it works",
+  "menu.faq": "FAQ",
+  "menu.sendFeedback": "Send feedback",
+  "menu.reportOnGithub": "Report on GitHub",
+  "menu.reportOnGithubLabel":
+    "Report on GitHub (opens in a new tab)",
+
+  "toolbar.entries": "Entries",
+  "toolbar.history": "History",
+  "toolbar.showEntries": "Show entries",
+  "toolbar.historyLabel": {
+    one: "Show history, {count} spin",
+    other: "Show history, {count} spins",
+  },
+  "toolbar.showAllEntries": "Show all entries",
+  "toolbar.hideAllEntries": "Hide all entries",
+  "toolbar.settings": "Settings",
+  "toolbar.moreActions": "More actions",
+  "toolbar.import": "Import",
+  "toolbar.export": "Export",
+  "toolbar.share": "Share",
+  "toolbar.importTitle": "Import data",
+  "toolbar.importStale":
+    "Reload first: this tab is out of date and its changes are not saved",
+
+  "wheelChip.label": "Wheel: {name}",
+  "wheelChip.menu": "Wheels",
+  "wheelChip.add": "Add wheel",
+  "wheelChip.rename": "Rename wheel",
+  "wheelChip.delete": "Delete wheel",
+  "wheelChip.needsTwo": "Needs at least two wheels.",
+
+  "textDialog.name.title": "Rename wheel",
+  "textDialog.name.label": "Wheel name",
+  "textDialog.name.required": "Enter a name for the wheel.",
+  "textDialog.title.title": "Edit title",
+  "textDialog.title.label": "Wheel title",
+  "textDialog.title.hint": "Leave it empty to use \"{default}\".",
+  "textDialog.description.title": "Edit description",
+  "textDialog.description.label": "Wheel description",
+  "textDialog.description.hint":
+    "Leave it empty to use \"{default}\".",
+
+  "deleteWheel.title": "Delete wheel?",
+  "deleteWheel.message":
+    "Delete \"{name}\"? Its entries, quiz questions, settings and history are removed. This cannot be undone.",
+  "deleteWheel.confirm": "Delete wheel",
+
+  "howItWorks.title": "How it works",
+  "howItWorks.close": "Close",
+  "standardMode.title": "Standard Mode",
+  "standardMode.help":
+    "Add your options in the list, then press Spin. Change a name or colour with the entry's ... menu, and its weight with the − and + buttons. Hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.",
+
   "faq.item.add-options.question": "How do I add options?",
   "faq.item.add-options.answer":
     "Use + Add in the Entries list, then type a name. Press Spin when you are ready.",

@@ -5,6 +5,7 @@ import type { FormEvent, RefObject } from "react";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
 import { useFocusTrap } from "../lib/use-focus-trap";
 import { usePopover } from "../lib/use-popover";
+import { useT } from "../lib/i18n/provider";
 
 /*
  * A name and an id that do not look like a contact field, so that
@@ -47,11 +48,12 @@ export default function TextDialog({
   initialValue,
   multiline = false,
   hint,
-  submitLabel = "OK",
+  submitLabel,
   validate,
   onSubmit,
   onClose,
 }: TextDialogProps) {
+  const t = useT();
   const titleId = useId();
   const messageId = useId();
   const panelRef =
@@ -228,7 +230,7 @@ export default function TextDialog({
               type="submit"
               className={`h-11 flex-1 rounded-lg px-4 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${accentClass} ${accentHoverClass}`}
             >
-              {submitLabel}
+              {submitLabel ?? t("common.ok")}
             </button>
 
             <button
@@ -236,7 +238,7 @@ export default function TextDialog({
               onClick={onClose}
               className={`h-11 rounded-lg border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.borderClass} ${theme.textSecondaryClass} ${theme.controlHoverClass}`}
             >
-              Cancel
+              {t("common.cancel")}
             </button>
           </div>
         </form>

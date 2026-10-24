@@ -40,8 +40,6 @@ function updateActiveWheelOf(current: AppData, changes: (wheel: Wheel) => Partia
             : wheel),
     };
 }
-/* Shown in the Standard Mode card, and in the How it works dialog on phones. */
-const STANDARD_MODE_HELP = "Add your options in the list, then press Spin. Change a name or colour with the entry's ... menu, and its weight with the − and + buttons. Hide an option with its eye icon. When a winner comes up, choose Continue to keep every option, or Remove to hide the winner. At least 2 options must stay visible.";
 type TextDialogKind = "name" | "title" | "description";
 const QUIZ_LOCKED_TEXT_KEYS: string[] = [
     "label",
@@ -327,11 +325,11 @@ export default function Home() {
         apply: (text: string) => void;
     }> = {
         name: {
-            title: "Rename wheel",
-            label: "Wheel name",
+            title: t("textDialog.name.title"),
+            label: t("textDialog.name.label"),
             current: activeWheel.name,
             multiline: false,
-            validate: (text) => text === "" ? "Enter a name for the wheel." : null,
+            validate: (text) => text === "" ? t("textDialog.name.required") : null,
             apply: (text) => {
                 if (text !== activeWheel.name) {
                     updateActiveWheel({ name: text });
@@ -339,11 +337,11 @@ export default function Home() {
             },
         },
         title: {
-            title: "Edit title",
-            label: "Wheel title",
+            title: t("textDialog.title.title"),
+            label: t("textDialog.title.label"),
             current: activeWheel.title,
             multiline: false,
-            hint: `Leave it empty to use "${DEFAULT_WHEEL_TITLE}".`,
+            hint: t("textDialog.title.hint", { default: DEFAULT_WHEEL_TITLE }),
             apply: (text) => {
                 const next = text || DEFAULT_WHEEL_TITLE;
                 if (next !== activeWheel.title) {
@@ -352,11 +350,11 @@ export default function Home() {
             },
         },
         description: {
-            title: "Edit description",
-            label: "Wheel description",
+            title: t("textDialog.description.title"),
+            label: t("textDialog.description.label"),
             current: activeWheel.description,
             multiline: true,
-            hint: `Leave it empty to use "${DEFAULT_WHEEL_DESCRIPTION}".`,
+            hint: t("textDialog.description.hint", { default: DEFAULT_WHEEL_DESCRIPTION }),
             apply: (text) => {
                 const next = text || DEFAULT_WHEEL_DESCRIPTION;
                 if (next !== activeWheel.description) {
@@ -1902,7 +1900,7 @@ export default function Home() {
             </div>)}
           {mode === "standard" &&
             selectedEntry && !winnerBoxShown && renderStandardResult(false)}
-          <MobileToolbar theme={theme} accentClass={actionAccentClass} spinning={spinning} historyOpen={historyOpen} historyCount={(mode === "standard" ? standardHistory : quizHistory).length} onShowEntries={() => setHistoryOpen(false)} onShowHistory={() => setHistoryOpen(true)} allEntriesHidden={allEntriesHidden} hideAllDisabled={spinning || currentSetupEntries.length === 0} onToggleAllEntriesHidden={toggleAllEntriesHidden} importDisabled={spinning || storageStale} importTitle={storageStale ? "Reload first: this tab is out of date and its changes are not saved" : "Import data"} onImport={openImportPicker} onExport={exportData} onShare={handleShare} onOpenSettings={() => {
+          <MobileToolbar theme={theme} accentClass={actionAccentClass} spinning={spinning} historyOpen={historyOpen} historyCount={(mode === "standard" ? standardHistory : quizHistory).length} onShowEntries={() => setHistoryOpen(false)} onShowHistory={() => setHistoryOpen(true)} allEntriesHidden={allEntriesHidden} hideAllDisabled={spinning || currentSetupEntries.length === 0} onToggleAllEntriesHidden={toggleAllEntriesHidden} importDisabled={spinning || storageStale} importTitle={storageStale ? t("toolbar.importStale") : t("toolbar.importTitle")} onImport={openImportPicker} onExport={exportData} onShare={handleShare} onOpenSettings={() => {
                 if (anyDialogOpen()) {
                     return;
                 }
@@ -1912,10 +1910,10 @@ export default function Home() {
           {mode === "standard" &&
             !hasSpun && (<div inert={wheelExpanded} aria-hidden={wheelExpanded || undefined} className={`mx-auto mt-6 hidden max-w-2xl rounded-2xl border p-6 shadow-sm md:block ${theme.borderClass} ${theme.surfaceClass}`}>
               <h2 className={`text-lg font-semibold ${theme.textPrimaryClass}`}>
-                Standard Mode
+                {t("standardMode.title")}
               </h2>
               <p className={`mt-1 text-sm leading-6 ${theme.textSecondaryClass}`}>
-                {STANDARD_MODE_HELP}
+                {t("standardMode.help")}
               </p>
             </div>)}
           {mode === "quiz" &&
@@ -2190,8 +2188,8 @@ export default function Home() {
                 TEXT_DIALOGS[textDialog].apply(text);
                 closeTextDialog();
             }} onClose={closeTextDialog}/>)}
-      {deleteWheelOpen && (<ConfirmDialog theme={theme} title="Delete wheel?" message={`Delete "${activeWheel.name}"? Its entries, quiz questions, settings and history are removed. This cannot be undone.`} confirmLabel="Delete wheel" onConfirm={confirmDeleteWheel} onClose={closeDeleteWheel}/>)}
-      {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={STANDARD_MODE_HELP} onClose={closeHowItWorks}/>)}
+      {deleteWheelOpen && (<ConfirmDialog theme={theme} title={t("deleteWheel.title")} message={t("deleteWheel.message", { name: activeWheel.name })} confirmLabel={t("deleteWheel.confirm")} onConfirm={confirmDeleteWheel} onClose={closeDeleteWheel}/>)}
+      {howOpen && (<HowItWorksDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} text={t("standardMode.help")} onClose={closeHowItWorks}/>)}
       {faqOpen && (<FaqDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} title={t("faq.title")} closeLabel={t("faq.close")} feedbackLabel={t("faq.feedback")} items={FAQ_ITEMS.map((item) => ({ id: item.id, question: t(item.question), answer: t(item.answer), action: item.action }))} onFeedback={openFeedbackFromFaq} feedbackDisabled={spinning} onClose={closeFaq}/>)}
       {feedbackOpen && (<FeedbackDialog theme={theme} accentClass={actionAccentClass} accentHoverClass={actionHoverClass} draft={feedbackDraftRef.current} onDraftChange={(draft) => {
                 feedbackDraftRef.current = draft;
