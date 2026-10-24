@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
-import type { KeyboardEvent } from "react";
 import type { AppearanceThemeConfig } from "../lib/wheel-types";
+import { useFocusTrap } from "../lib/use-focus-trap";
 import { usePopover } from "../lib/use-popover";
 
 type ConfirmDialogProps = {
@@ -42,6 +42,8 @@ export default function ConfirmDialog({
     () => cancelRef.current,
   );
 
+  useFocusTrap(true, panelRef);
+
   useEffect(() => {
     const previousBodyOverflow =
       document.body.style.overflow;
@@ -54,48 +56,6 @@ export default function ConfirmDialog({
     };
   }, []);
 
-  function handleKeyDown(
-    event: KeyboardEvent<HTMLDivElement>,
-  ) {
-    if (event.key !== "Tab") {
-      return;
-    }
-
-    const panel = panelRef.current;
-
-    if (!panel) {
-      return;
-    }
-
-    const focusable = Array.from(
-      panel.querySelectorAll<HTMLElement>(
-        "button:not([disabled])",
-      ),
-    );
-
-    const first = focusable[0];
-    const last =
-      focusable[focusable.length - 1];
-
-    const active = document.activeElement;
-
-    if (
-      event.shiftKey &&
-      (active === first ||
-        !panel.contains(active))
-    ) {
-      event.preventDefault();
-      last.focus();
-    } else if (
-      !event.shiftKey &&
-      (active === last ||
-        !panel.contains(active))
-    ) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center bg-slate-950/60 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] sm:items-center sm:p-4">
       <div
@@ -104,7 +64,6 @@ export default function ConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={messageId}
-        onKeyDown={handleKeyDown}
         className={`max-h-[calc(100dvh-max(1rem,env(safe-area-inset-top))-1rem)] w-full max-w-md overflow-y-auto sm:max-h-[90dvh] rounded-2xl p-5 shadow-2xl sm:p-6 ${theme.surfaceClass}`}
       >
         <h2

@@ -14,6 +14,12 @@ import type {
 import { APPEARANCE_THEMES } from "./appearance-themes";
 import { normalizeEmoji } from "./entry-emoji";
 import { getEntryWeight } from "./wheel-utils";
+import {
+  DEFAULT_SPIN_SOUND,
+  DEFAULT_WINNER_SOUND,
+  SPIN_SOUND_OPTIONS,
+  WINNER_SOUND_OPTIONS,
+} from "./sound-options";
 
 export const COLORS = [
   "#bfdbfe",
@@ -93,23 +99,20 @@ export const DEFAULT_SOUND_ENABLED =
 
 export const DEFAULT_VOLUME = 80;
 
-export const SPIN_SOUNDS = [
-  "tick",
-  "click",
-  "pop",
-  "none",
-] as const;
+export const SPIN_SOUNDS =
+  SPIN_SOUND_OPTIONS.map(
+    (option) => option.value,
+  );
 
-export const WINNER_SOUNDS = [
-  "success",
-  "chime",
-  "applause",
-  "none",
-] as const;
+export const WINNER_SOUNDS =
+  WINNER_SOUND_OPTIONS.map(
+    (option) => option.value,
+  );
 
-export const DEFAULT_SPIN_SOUND = "tick";
-
-export const DEFAULT_WINNER_SOUND = "success";
+export {
+  DEFAULT_SPIN_SOUND,
+  DEFAULT_WINNER_SOUND,
+};
 
 export function createDefaultWheelSettings(): WheelSettings {
   return {

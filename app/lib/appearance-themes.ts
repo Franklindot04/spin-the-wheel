@@ -19,12 +19,22 @@ export const APPEARANCE_THEMES: Record<
   classic: {
     label: "Classic",
     description: "Clean and neutral.",
-    swatchClass: "bg-slate-100",
 
     pageClass: "bg-slate-950",
 
-    headerClass: "bg-slate-50",
-    headerBorderClass: "border-slate-200",
+    /*
+     * The loading shell in globals.css (.shell-header, one rule per
+     * theme) repeats the header surface and border colours of every
+     * theme below. Change them there together with these.
+     */
+    header: {
+      surfaceClass: "bg-slate-100",
+      borderClass: "border-slate-300",
+      hoverClass: "not-disabled:hover:bg-slate-200",
+      titleHex: "#0f172a",
+      mutedHex: "#334155",
+      toastTextClass: "text-slate-900",
+    },
 
     accentClass: "bg-slate-900",
     accentHoverClass: "not-disabled:hover:bg-slate-800",
@@ -49,12 +59,17 @@ export const APPEARANCE_THEMES: Record<
   ocean: {
     label: "Ocean",
     description: "Cool blue tones.",
-    swatchClass: "bg-cyan-100",
 
     pageClass: "bg-cyan-950",
 
-    headerClass: "bg-cyan-50",
-    headerBorderClass: "border-cyan-200",
+    header: {
+      surfaceClass: "bg-cyan-100",
+      borderClass: "border-cyan-300",
+      hoverClass: "not-disabled:hover:bg-cyan-200",
+      titleHex: "#164e63",
+      mutedHex: "#155e75",
+      toastTextClass: "text-cyan-950",
+    },
 
     accentClass: "bg-cyan-700",
     accentHoverClass: "not-disabled:hover:bg-cyan-800",
@@ -79,12 +94,17 @@ export const APPEARANCE_THEMES: Record<
   forest: {
     label: "Forest",
     description: "Natural green tones.",
-    swatchClass: "bg-emerald-100",
 
     pageClass: "bg-emerald-950",
 
-    headerClass: "bg-emerald-50",
-    headerBorderClass: "border-emerald-200",
+    header: {
+      surfaceClass: "bg-emerald-100",
+      borderClass: "border-emerald-300",
+      hoverClass: "not-disabled:hover:bg-emerald-200",
+      titleHex: "#064e3b",
+      mutedHex: "#065f46",
+      toastTextClass: "text-emerald-950",
+    },
 
     accentClass: "bg-emerald-700",
     accentHoverClass: "not-disabled:hover:bg-emerald-800",
@@ -109,12 +129,17 @@ export const APPEARANCE_THEMES: Record<
   sunset: {
     label: "Sunset",
     description: "Warm orange tones.",
-    swatchClass: "bg-orange-100",
 
     pageClass: "bg-orange-950",
 
-    headerClass: "bg-orange-50",
-    headerBorderClass: "border-orange-200",
+    header: {
+      surfaceClass: "bg-orange-100",
+      borderClass: "border-orange-300",
+      hoverClass: "not-disabled:hover:bg-orange-200",
+      titleHex: "#7c2d12",
+      mutedHex: "#9a3412",
+      toastTextClass: "text-orange-950",
+    },
 
     accentClass: "bg-orange-700",
     accentHoverClass: "not-disabled:hover:bg-orange-800",
@@ -139,12 +164,17 @@ export const APPEARANCE_THEMES: Record<
   violet: {
     label: "Violet",
     description: "Soft purple tones.",
-    swatchClass: "bg-violet-100",
 
     pageClass: "bg-violet-950",
 
-    headerClass: "bg-violet-50",
-    headerBorderClass: "border-violet-200",
+    header: {
+      surfaceClass: "bg-violet-100",
+      borderClass: "border-violet-300",
+      hoverClass: "not-disabled:hover:bg-violet-200",
+      titleHex: "#4c1d95",
+      mutedHex: "#5b21b6",
+      toastTextClass: "text-violet-950",
+    },
 
     accentClass: "bg-violet-700",
     accentHoverClass: "not-disabled:hover:bg-violet-800",

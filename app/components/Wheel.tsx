@@ -32,6 +32,7 @@ import {
   stopWinnerSound,
   unlock,
 } from "../lib/sound-engine";
+import { DEFAULT_SPIN_SOUND } from "../lib/sound-options";
 import { createTickTracker } from "../lib/spin-ticks";
 import {
   getEntryWeight,
@@ -809,7 +810,7 @@ export default function Wheel({
   emptyTitle = "No visible entries",
   emptyMessage = "Add entries or show hidden ones to spin the wheel.",
   spinDuration = 4.5,
-  spinSound = "tick",
+  spinSound = DEFAULT_SPIN_SOUND,
   soundActive = false,
   confettiStyle = "none",
   confettiRun = 0,

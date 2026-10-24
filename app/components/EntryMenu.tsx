@@ -10,7 +10,6 @@ import type {
   AppearanceThemeConfig,
   WheelEntry,
 } from "../lib/wheel-types";
-import { getEntryWeight } from "../lib/wheel-utils";
 import {
   EMOJI_GROUPS,
   EMOJI_OPTIONS,
@@ -325,7 +324,6 @@ function MenuIcon({
     | "color"
     | "text"
     | "font"
-    | "weight"
     | "emoji"
     | "image"
     | "sound"
@@ -421,40 +419,6 @@ function MenuIcon({
       >
         <path d="m5 19 5-14h4l5 14" />
         <path d="M7 14h10" />
-      </svg>
-    );
-  }
-
-  if (type === "weight") {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className="h-4 w-4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M4 7h16" />
-        <path d="M4 12h16" />
-        <path d="M4 17h16" />
-        <circle
-          cx="9"
-          cy="7"
-          r="1.5"
-        />
-        <circle
-          cx="15"
-          cy="12"
-          r="1.5"
-        />
-        <circle
-          cx="11"
-          cy="17"
-          r="1.5"
-        />
       </svg>
     );
   }
@@ -561,7 +525,6 @@ function MenuRow({
     | "color"
     | "text"
     | "font"
-    | "weight"
     | "image"
     | "sound"
     | "duplicate"
@@ -1048,26 +1011,6 @@ export default function EntryMenu({
     };
   }, [open, onClose]);
 
-  const weight =
-    getEntryWeight(entry);
-
-  function updateWeight(
-    direction: -1 | 1,
-  ) {
-    const nextWeight = Math.max(
-      1,
-      weight + direction,
-    );
-
-    if (nextWeight === weight) {
-      return;
-    }
-
-    onUpdate(entry.id, {
-      weight: nextWeight,
-    });
-  }
-
   async function handleImageChange(
     event: React.ChangeEvent<HTMLInputElement>,
   ) {
@@ -1507,53 +1450,6 @@ export default function EntryMenu({
                   ),
                 )}
               </select>
-            </MenuRow>
-
-            <MenuRow
-              icon="weight"
-              label="Slice weight"
-              theme={theme}
-            >
-              <div
-                className={`flex items-center overflow-hidden rounded-lg border ${theme.borderClass}`}
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateWeight(
-                      -1,
-                    )
-                  }
-                  disabled={
-                    spinning ||
-                    weight <= 1
-                  }
-                  aria-label="Decrease slice weight"
-                  className={`flex h-8 w-8 items-center justify-center text-sm font-bold ${theme.textSecondaryClass} transition ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-35`}
-                >
-                  −
-                </button>
-
-                <span
-                  className={`min-w-[42px] border-x ${theme.borderClass} px-2 text-center text-[11px] font-bold ${theme.textSecondaryClass}`}
-                >
-                  {weight}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateWeight(
-                      1,
-                    )
-                  }
-                  disabled={spinning}
-                  aria-label="Increase slice weight"
-                  className={`flex h-8 w-8 items-center justify-center text-sm font-bold ${theme.textSecondaryClass} transition ${theme.controlHoverClass} disabled:cursor-not-allowed disabled:opacity-35`}
-                >
-                  +
-                </button>
-              </div>
             </MenuRow>
 
             <div
